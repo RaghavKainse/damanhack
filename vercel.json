@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/draw-api/:path*",
+      "destination": "https://draw.ar-lottery06.com/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
