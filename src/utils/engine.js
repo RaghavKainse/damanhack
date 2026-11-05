@@ -3,11 +3,36 @@
  * Implements:
  * 1. Second-Order Exponentiated Gradient / Multiplicative Weights Hedge Algorithm
  * 2. Persistent 10x10 Bayesian Digit Transition Matrix with Laplace Smoothing
- * 3. Omission Index & Cold/Hot Chi-Square Reversion Potential
+ * 3. Six Independent Statistical Models (A through F) & Calibrated Gating
  * 4. Full-Day (2,880 Rounds) Intraday Session & Period Dynamics Engine
- * 5. Ultra Sniper High-Confluence Gating (Filters choppy noise to achieve 90-98% win rate on confirmed signals)
- * 6. 3-Tier Golden Basket Digit Engine (Primary VIP Number + Top 3 Combo with 9x Payout) - PREDICTED ON EVERY ROUND
+ * 5. Strict Chronological Walk-Forward Validation Engine
+ * 6. 3-Tier Golden Basket Digit Engine (Primary VIP Number + Top 3 Combo with 9x Payout)
  */
+
+export {
+  modelHistoricalFrequency,
+  modelRollingWindow,
+  modelBayesianBetaBinomial,
+  modelMarkovTransition,
+  modelExponentiallyWeighted,
+  modelStatisticalBaseline,
+  calculateBrierScore,
+  calculateLogLoss,
+  calculateConfusionMatrix,
+  calculateCalibration,
+  calculateBinomialSignificance,
+  detectPageHinkleyDrift,
+  runChronologicalWalkForward,
+  generateCalibratedPrediction
+} from './statisticalEngine.js';
+
+import {
+  calculateBrierScore,
+  calculateLogLoss,
+  calculateConfusionMatrix,
+  calculateCalibration,
+  calculateBinomialSignificance
+} from './statisticalEngine.js';
 
 // Core classification rules for WinGo
 export function classifyNumber(num) {
@@ -1282,10 +1307,32 @@ export function getMartingalePlan(baseBet = 10, lossStreak = 0, multiplier = 3) 
 
 export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetType = 'bigSmall') {
   if (!list || list.length < 10) {
-    return { winRate: 50.0, totalWins: 0, totalLosses: 0, skippedRounds: 0, maxStreak: 0, logs: [], goldenBasketHits: 0 };
+    return { 
+      winRate: 50.0, 
+      totalWins: 0, 
+      totalLosses: 0, 
+      skippedRounds: 0, 
+      totalBets: 0,
+      maxStreak: 0, 
+      logs: [], 
+      goldenBasketHits: 0,
+      brierScore: 0.2500,
+      logLoss: 0.6931,
+      bigAccuracy: 50.0,
+      smallAccuracy: 50.0
+    };
   }
 
+  const isBS = targetType === 'bigSmall';
+  const valA = isBS ? 'BIG' : 'ODD';
+
   const logs = [];
+  const probabilities = [];
+  const outcomesBinary = [];
+  const predChoices = [];
+  const actualChoices = [];
+  const isWinsList = [];
+
   let wins = 0;
   let losses = 0;
   let skippedRounds = 0;
@@ -1327,6 +1374,14 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
     }
 
     const isWin = pred.prediction === actualTarget;
+    const isTargetA = actualTarget === valA;
+    const probA = pred.prediction === valA ? (pred.confidence / 100) : (1 - pred.confidence / 100);
+
+    probabilities.push(probA);
+    outcomesBinary.push(isTargetA ? 1.0 : 0.0);
+    predChoices.push(pred.prediction);
+    actualChoices.push(actualTarget);
+    isWinsList.push(isWin ? 1 : 0);
 
     if (isWin) {
       wins++;
@@ -1357,6 +1412,12 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
   const totalBets = wins + losses;
   const winRate = totalBets > 0 ? Math.round((wins / totalBets) * 1000) / 10 : 50.0;
 
+  const brierScore = calculateBrierScore(probabilities, outcomesBinary);
+  const logLoss = calculateLogLoss(probabilities, outcomesBinary);
+  const confusionMatrix = calculateConfusionMatrix(predChoices, actualChoices, valA);
+  const calibration = calculateCalibration(probabilities, isWinsList, 5);
+  const significance = calculateBinomialSignificance(wins, totalBets, 0.50);
+
   return {
     winRate,
     totalWins: wins,
@@ -1365,6 +1426,13 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
     totalBets,
     maxStreak: maxWinStreak,
     goldenBasketHits,
+    brierScore,
+    logLoss,
+    bigAccuracy: confusionMatrix.bigAccuracy,
+    smallAccuracy: confusionMatrix.smallAccuracy,
+    confusionMatrix,
+    calibration,
+    significance,
     logs
   };
 }
