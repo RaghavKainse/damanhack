@@ -64,7 +64,7 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
 
-  const [predictionMode, setPredictionMode] = useState('ultra_sniper'); // 'ultra_sniper' (90-98%), 'sniper', or 'all'
+  const [predictionMode, setPredictionMode] = useState('all'); // 'all' (Predict Every Round), 'sniper', or 'ultra_sniper'
   const [targetType, setTargetType] = useState('bigSmall'); // 'bigSmall' (default) or 'oddEven'
   const [learnedWeights, setLearnedWeights] = useState(getLearnedWeights());
 

@@ -201,15 +201,15 @@ function PredictionHero({
           border: '1px solid var(--border-subtle)',
           gap: '3px'
         }}>
-          {/* High Confluence Mode */}
+          {/* 1. All Rounds Mode (Predicts Every Round) */}
           <button
-            onClick={() => onTogglePredictionMode('ultra_sniper')}
+            onClick={() => onTogglePredictionMode('all')}
             style={{
-              background: predictionMode === 'ultra_sniper' 
-                ? 'linear-gradient(135deg, rgba(0, 245, 155, 0.3), rgba(0, 242, 254, 0.3))' 
+              background: predictionMode === 'all' 
+                ? 'linear-gradient(135deg, rgba(255, 183, 3, 0.3), rgba(251, 133, 0, 0.3))' 
                 : 'transparent',
-              color: predictionMode === 'ultra_sniper' ? 'var(--neon-green)' : '#94a3b8',
-              border: predictionMode === 'ultra_sniper' ? '1px solid rgba(0, 245, 155, 0.6)' : '1px solid transparent',
+              color: predictionMode === 'all' ? 'var(--neon-gold)' : '#94a3b8',
+              border: predictionMode === 'all' ? '1px solid rgba(255, 183, 3, 0.6)' : '1px solid transparent',
               padding: '6px 12px',
               borderRadius: '8px',
               fontSize: '0.76rem',
@@ -217,20 +217,20 @@ function PredictionHero({
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '5px'
+              gap: '4px'
             }}
           >
-            <Crown size={13} color="var(--neon-gold)" />
-            <span>{isHi ? '💎 सख्त संगम (Strict Filter)' : '💎 Strict Filter'}</span>
+            <Zap size={13} color="var(--neon-gold)" />
+            <span>{isHi ? '⚡ हर राउंड प्रेडिक्ट (All Rounds)' : '⚡ All Rounds (Every Draw)'}</span>
           </button>
 
-          {/* Balanced Mode */}
+          {/* 2. Balanced Sniper Mode */}
           <button
             onClick={() => onTogglePredictionMode('sniper')}
             style={{
-              background: predictionMode === 'sniper' ? 'rgba(0, 242, 254, 0.2)' : 'transparent',
+              background: predictionMode === 'sniper' ? 'rgba(0, 242, 254, 0.25)' : 'transparent',
               color: predictionMode === 'sniper' ? 'var(--neon-cyan)' : '#94a3b8',
-              border: predictionMode === 'sniper' ? '1px solid rgba(0, 242, 254, 0.4)' : '1px solid transparent',
+              border: predictionMode === 'sniper' ? '1px solid rgba(0, 242, 254, 0.5)' : '1px solid transparent',
               padding: '6px 10px',
               borderRadius: '8px',
               fontSize: '0.74rem',
@@ -242,16 +242,18 @@ function PredictionHero({
             }}
           >
             <Crosshair size={12} />
-            <span>{isHi ? 'संतुलित (Balanced)' : 'Balanced'}</span>
+            <span>{isHi ? '🎯 संतुलित (6/8 सहमति)' : 'Balanced (6/8)'}</span>
           </button>
 
-          {/* All Rounds Mode */}
+          {/* 3. Strict Confluence Mode */}
           <button
-            onClick={() => onTogglePredictionMode('all')}
+            onClick={() => onTogglePredictionMode('ultra_sniper')}
             style={{
-              background: predictionMode === 'all' ? 'rgba(255, 183, 3, 0.2)' : 'transparent',
-              color: predictionMode === 'all' ? 'var(--neon-gold)' : '#94a3b8',
-              border: predictionMode === 'all' ? '1px solid rgba(255, 183, 3, 0.4)' : '1px solid transparent',
+              background: predictionMode === 'ultra_sniper' 
+                ? 'linear-gradient(135deg, rgba(0, 245, 155, 0.3), rgba(0, 242, 254, 0.3))' 
+                : 'transparent',
+              color: predictionMode === 'ultra_sniper' ? 'var(--neon-green)' : '#94a3b8',
+              border: predictionMode === 'ultra_sniper' ? '1px solid rgba(0, 245, 155, 0.6)' : '1px solid transparent',
               padding: '6px 10px',
               borderRadius: '8px',
               fontSize: '0.74rem',
@@ -262,8 +264,8 @@ function PredictionHero({
               gap: '4px'
             }}
           >
-            <Zap size={12} />
-            <span>{isHi ? 'सभी राउंड' : 'All Rounds'}</span>
+            <Crown size={12} color="var(--neon-green)" />
+            <span>{isHi ? '💎 सख्त स्नाइपर' : 'Strict Sniper'}</span>
           </button>
         </div>
 

@@ -1187,16 +1187,10 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
       evidenceLevel = 'MODERATE';
     }
   } else {
-    // Mode === 'all'
-    if (isLowDeltaNoise || agreementCount <= 4) {
-      action = 'NO_CLEAR_SIGNAL';
-      badge = 'WAIT';
-      evidenceLevel = 'INSUFFICIENT';
-    } else {
-      action = 'CONFIRMED_BET';
-      badge = (agreementCount >= 6 && confidence >= 60) ? 'STRONG' : 'MODERATE';
-      evidenceLevel = agreementCount >= 6 ? 'HIGH' : 'MODERATE';
-    }
+    // Mode === 'all' (Continuous Every-Round Forecast: Never skips, always predicts direction)
+    action = 'CONFIRMED_BET';
+    badge = agreementCount >= 6 ? 'STRONG' : 'MODERATE';
+    evidenceLevel = agreementCount >= 6 ? 'HIGH' : 'MODERATE';
   }
 
   const isNoSignal = action === 'NO_CLEAR_SIGNAL' || action === 'WAIT_SKIP';
