@@ -444,8 +444,8 @@ function PredictionHero({
                 borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
               }}>
                 <div style={{ textAlign: 'left' }}>
-                  <span style={{ fontSize: '0.74rem', color: '#ffb703', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Crown size={13} color="#ffb703" /> {isHi ? 'मुख्य VIP सिंगल नंबर (Top Digit)' : 'PRIMARY VIP SINGLE NUMBER'}
+                  <span style={{ fontSize: '0.74rem', color: isWait ? '#cbd5e1' : '#ffb703', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Crown size={13} color={isWait ? '#cbd5e1' : '#ffb703'} /> {isWait ? (isHi ? '⚠️ अनुमानित सिंगल डिजिट (इस राउंड दांव न लगाएं)' : 'OBSERVATION ONLY (DO NOT BET)') : (isHi ? 'मुख्य VIP सिंगल नंबर (Top Digit)' : 'PRIMARY VIP SINGLE NUMBER')}
                   </span>
                   <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
                     {isHi ? '2,880 दैनिक चक्र व बायेसियन गणना' : 'Full Day Bayesian Prediction'}
@@ -518,7 +518,7 @@ function PredictionHero({
               fontWeight: 700,
               color: '#f8fafc'
             }}>
-              {secondaryType}: <strong style={{ color: 'var(--neon-cyan)' }}>{secondaryPrediction}</strong>
+              {secondaryType}: <strong style={{ color: isWait ? 'var(--neon-amber)' : 'var(--neon-cyan)' }}>{isWait ? 'PAUSE' : secondaryPrediction}</strong>
             </span>
 
             <button
@@ -589,10 +589,12 @@ function PredictionHero({
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <TrendingUp size={16} color="var(--neon-green)" />
-                {isHi ? `${prediction} आने की सटीक संभावना (Calibrated Confidence)` : 'Calibrated Confluence'}
+                <TrendingUp size={16} color={isWait ? 'var(--neon-amber)' : 'var(--neon-green)'} />
+                {isWait 
+                  ? (isHi ? 'सिग्नल विश्वसनीयता (कमजोर सिग्नल / छोड़ें)' : 'Signal Reliability (Weak Signal / SKIP)')
+                  : (isHi ? `${prediction} आने की सटीक संभावना (Calibrated Confidence)` : 'Calibrated Confluence')}
               </span>
-              <span className="font-mono glow-text-green" style={{ fontSize: '1.45rem', fontWeight: 900 }}>
+              <span className="font-mono glow-text-green" style={{ fontSize: '1.45rem', fontWeight: 900, color: isWait ? 'var(--neon-amber)' : 'var(--neon-green)' }}>
                 {confidence}%
               </span>
             </div>

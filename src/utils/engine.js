@@ -73,14 +73,14 @@ const STORAGE_KEY_WEIGHTS = 'wingo_self_learning_weights_v3';
 const STORAGE_KEY_TRANSITION = 'wingo_bayesian_transition_matrix_v3';
 
 const DEFAULT_LEARNED_WEIGHTS = {
-  crowdLiquidity: 1.55, // Live Betting Pool & Casino House Liability
-  markov2: 1.35,        // Hierarchical Higher-Order Markov Chains
-  dragonTrend: 1.45,    // Dragon Streak Momentum & Decay
-  bayesianTrans: 1.30,  // 10x10 Bayesian Transition Matrix
-  nGram: 1.15,          // N-Gram Pattern Matcher
-  omissionRev: 1.10,    // Omission Chi-Square Reversion
-  clusterParity: 1.05,  // Multi-Horizon Cluster Parity
-  fourierCycle: 0.95,   // Harmonic Fourier Cycle
+  crowdLiquidity: 0.25, // Informational pool monitor (damped to prevent synthetic noise distortion)
+  markov2: 1.50,        // Hierarchical Higher-Order Markov Chains
+  dragonTrend: 1.05,    // Controlled Streak Momentum & Decay
+  bayesianTrans: 1.45,  // 10x10 Bayesian Transition Matrix
+  nGram: 1.20,          // N-Gram Pattern Matcher
+  omissionRev: 1.25,    // Omission Chi-Square Reversion
+  clusterParity: 1.30,  // Multi-Horizon Cluster Parity
+  fourierCycle: 0.85,   // Harmonic Fourier Cycle
   learningRounds: 0,
   winScore: 0,
   lossScore: 0,
@@ -925,14 +925,18 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   let streakReason = '';
 
   if (analysis.isPingPong && analysis.pingPongCount >= 3) {
-    dragonProbA = last1 === valB ? 58 : 42;
+    dragonProbA = last1 === valB ? 56 : 44;
     streakReason = `${analysis.pingPongCount}-राउंड ${valA}/${valB} पिंग-पोंग अदला-बदली सक्रिय।`;
   } else if (streak.count >= 2) {
-    if (streak.count <= 4) {
-      dragonProbA = streak.type === valA ? 58 : 42;
+    if (streak.count === 2) {
+      // Length 2 streaks break 50% of the time in Bernoulli processes - avoid premature continuation traps
+      dragonProbA = 50;
+      streakReason = `2-राउंड डबल (${streak.type}) - तटस्थ संतुलन क्षेत्र (ब्रेकआउट या निरंतरता समान)।`;
+    } else if (streak.count <= 4) {
+      dragonProbA = streak.type === valA ? 54 : 46;
       streakReason = `सक्रिय ${streak.count}-राउंड ${streak.type} ड्रैगन मोमेंटम (ट्रेंड निरंतरता)।`;
     } else if (streak.count <= 6) {
-      dragonProbA = streak.type === valA ? 53 : 47;
+      dragonProbA = streak.type === valA ? 52 : 48;
       streakReason = `${streak.count}-राउंड ड्रैगन संतुलन क्षेत्र।`;
     } else {
       dragonProbA = streak.type === valA ? 48 : 52;
@@ -1026,25 +1030,25 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   }
 
   // 🧠 APPLY SELF-LEARNED ADAPTIVE WEIGHTS
-  let wCrowd = learnedW.crowdLiquidity || 1.55;
-  let wMarkov = learnedW.markov2 || 1.35;
-  let wDragon = learnedW.dragonTrend || 1.45;
-  let wBayes = learnedW.bayesianTrans || 1.30;
-  let wNGram = learnedW.nGram || 1.15;
-  let wOmission = learnedW.omissionRev || 1.10;
-  let wCluster = learnedW.clusterParity || 1.05;
-  let wFourier = learnedW.fourierCycle || 0.95;
+  let wCrowd = learnedW.crowdLiquidity ?? 0.25;
+  let wMarkov = learnedW.markov2 ?? 1.50;
+  let wDragon = learnedW.dragonTrend ?? 1.05;
+  let wBayes = learnedW.bayesianTrans ?? 1.45;
+  let wNGram = learnedW.nGram ?? 1.20;
+  let wOmission = learnedW.omissionRev ?? 1.25;
+  let wCluster = learnedW.clusterParity ?? 1.30;
+  let wFourier = learnedW.fourierCycle ?? 0.85;
 
   // Dynamic Regime Multipliers
   if (analysis.regime === 'DRAGON_STREAK') {
-    wDragon *= 1.8;
-    wCrowd *= 1.4; // Counter-betting on dragons is intense
+    wDragon *= 1.3;
+    wMarkov *= 1.2;
   } else if (analysis.regime === 'PING_PONG_WAVE') {
-    wMarkov *= 1.8;
-    wDragon *= 1.6;
+    wMarkov *= 1.5;
+    wDragon *= 1.1;
   } else if (analysis.regime === 'MEAN_REVERSION_SKEW') {
-    wOmission *= 1.9;
-    wCrowd *= 1.5;
+    wOmission *= 1.5;
+    wCluster *= 1.3;
   }
 
   const totalWeight = wCrowd + wMarkov + wDragon + wBayes + wNGram + wOmission + wCluster + wFourier;
@@ -1201,11 +1205,13 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     finalReason = `📊 ${histDepth}-राउंड्स डीप क्वांट एनालिसिस: मार्कोव, बायेसियन और लिक्विडिटी में से ${agreementCount}/8 मॉडल्स की ${prediction} पर पुष्टि। [24/7 एक्टिव ट्रेंडिंग: ${trainedRounds} ड्रा]`;
   }
 
+  const finalConfidence = action === 'WAIT_SKIP' ? 50 : confidence;
+
   return {
     field,
     action,
     prediction,
-    confidence,
+    confidence: finalConfidence,
     agreementCount,
     shields: {
       isStreakExhausted,

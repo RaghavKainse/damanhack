@@ -397,7 +397,7 @@ export default function App() {
       <div style={{ marginTop: '20px' }}>
         <PredictionHero
           predictionData={prediction}
-          targetPeriod={nextPeriod}
+          targetPeriod={currentPeriod}
           martingalePlan={martingalePlan}
           language={language}
           predictionMode={predictionMode}
