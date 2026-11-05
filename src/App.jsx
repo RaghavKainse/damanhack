@@ -21,6 +21,7 @@ import {
   classifyNumber,
   getLearnedWeights,
   updateLearningFromOutcome,
+  replayUntrainedHistory,
   resetLearnedWeights
 } from './utils/engine';
 import { soundManager } from './utils/audio';
@@ -133,6 +134,14 @@ export default function App() {
       if (historyRes && historyRes.list && historyRes.list.length > 0) {
         setIsLive(historyRes.success);
         setDataSource(historyRes.source);
+
+        // 24/7 Continuous Self-Training Catch-Up (Offline/Missed Rounds Experience Replay)
+        try {
+          const freshWeights = replayUntrainedHistory(historyRes.list, predictionMode, targetType);
+          setLearnedWeights({ ...freshWeights });
+        } catch (e) {
+          console.warn('Continuous self-training replay error:', e);
+        }
 
         const latestDraw = historyRes.list[0];
         if (latestDraw) {

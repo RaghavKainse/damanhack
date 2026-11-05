@@ -60,7 +60,8 @@ function PredictionHero({
     agreementCount = 0,
     reason, 
     badge,
-    regime 
+    regime,
+    shields = {}
   } = predictionData;
 
   const isWait = action === 'WAIT_SKIP';
@@ -285,8 +286,14 @@ function PredictionHero({
               alignItems: 'center',
               gap: '5px'
             }}>
-              <PauseCircle size={14} />
-              {isHi ? 'कमज़ोर चॉप (SKIP / CAUTION)' : 'HIGH RISK / CHOP'}
+              <ShieldCheck size={14} color="var(--neon-gold)" />
+              {shields?.isStreakExhausted 
+                ? (isHi ? '🛡️ स्ट्रीक थकावट (SKIP)' : '🛡️ STREAK EXHAUSTION')
+                : shields?.crowdOpposesPrediction
+                ? (isHi ? '🛡️ कैसीनो ट्रैप (SKIP)' : '🛡️ CASINO TRAP')
+                : shields?.isPingPongTrap
+                ? (isHi ? '🛡️ पिंग-पोंग चॉप (SKIP)' : '🛡️ CHOP TRAP')
+                : (isHi ? '🛡️ सुरक्षा शील्ड (SKIP)' : 'SHIELD SKIP')}
             </span>
           ) : (
             <span style={{
@@ -350,8 +357,8 @@ function PredictionHero({
               color: 'var(--neon-amber)',
               fontWeight: 700
             }}>
-              <AlertTriangle size={14} />
-              <span>{isHi ? '⚠️ 50/50 चॉप राउंड (कम राशि रखें या छोड़ें - नीचे सबसे संभावित नंबर हैं)' : '⚠️ Chop Round: Play light or skip (Best numbers predicted below)'}</span>
+              <ShieldCheck size={14} color="var(--neon-gold)" />
+              <span>{shields?.shieldAlert || (isHi ? '⚠️ 50/50 चॉप राउंड (कम राशि रखें या छोड़ें - नीचे सबसे संभावित नंबर हैं)' : '⚠️ Chop Round: Play light or skip (Best numbers predicted below)')}</span>
             </div>
           ) : (
             <div style={{

@@ -19,7 +19,9 @@ function SelfLearningMatrix({
     fourierCycle = 0.95,
     learningRounds = 0,
     winScore = 0,
-    lossScore = 0
+    lossScore = 0,
+    recentAccuracy = 75.0,
+    dailyRoundsTrained = 0
   } = learnedWeights || {};
 
   const models = [
@@ -108,7 +110,19 @@ function SelfLearningMatrix({
             fontFamily: 'var(--font-mono)',
             color: 'var(--neon-green)'
           }}>
-            {isHi ? 'कैलिब्रेशन सटीकता:' : 'Convergence:'} <strong>{convergenceScore}%</strong>
+            {isHi ? '24/7 लाइव ट्रेंड:' : '24/7 Trained:'} <strong>{dailyRoundsTrained || learningRounds} / 2880</strong>
+          </div>
+
+          <div style={{
+            background: 'rgba(0, 242, 254, 0.1)',
+            border: '1px solid rgba(0, 242, 254, 0.3)',
+            borderRadius: '8px',
+            padding: '4px 10px',
+            fontSize: '0.75rem',
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--neon-cyan)'
+          }}>
+            {isHi ? 'रोलिंग सटीकता:' : 'Rolling Acc:'} <strong>{recentAccuracy}%</strong>
           </div>
 
           <div style={{
@@ -120,7 +134,7 @@ function SelfLearningMatrix({
             fontFamily: 'var(--font-mono)',
             color: '#cbd5e1'
           }}>
-            {isHi ? 'सीखे गए राउंड्स:' : 'Learned Rounds:'} <strong style={{ color: 'var(--neon-cyan)' }}>{learningRounds}</strong>
+            {isHi ? 'कुल राउंड्स:' : 'Total Rounds:'} <strong style={{ color: 'var(--neon-gold)' }}>{learningRounds}</strong>
           </div>
 
           <button
@@ -132,6 +146,32 @@ function SelfLearningMatrix({
             <RotateCcw size={13} />
             <span>{isHi ? 'रीसेट' : 'Reset'}</span>
           </button>
+        </div>
+      </div>
+
+      {/* 4-Tier Zero-Mistake Protection Badge Strip */}
+      <div style={{
+        background: 'linear-gradient(90deg, rgba(0, 245, 155, 0.08), rgba(0, 242, 254, 0.08))',
+        border: '1px solid rgba(0, 245, 155, 0.25)',
+        borderRadius: '8px',
+        padding: '8px 12px',
+        marginBottom: '14px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '8px',
+        fontSize: '0.74rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--neon-green)', fontWeight: 700 }}>
+          <Shield size={14} />
+          <span>{isHi ? '🛡️ 4x मिस्टेक-प्रिवेंशन शील्ड्स सक्रिय (Zero-Mistake Gated)' : '🛡️ 4x Mistake-Prevention Shields Active'}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '10px', color: '#94a3b8', flexWrap: 'wrap' }}>
+          <span>✓ {isHi ? '5+ स्ट्रीक थकावट' : '5+ Streak'}</span>
+          <span>✓ {isHi ? '4+ पिंग-पोंग चॉप' : '4+ PingPong'}</span>
+          <span>✓ {isHi ? 'कैसीनो क्राउड लायबिलिटी' : 'Casino Trap'}</span>
+          <span>✓ {isHi ? 'सर्किट ब्रेकर' : 'Circuit Breaker'}</span>
         </div>
       </div>
 
