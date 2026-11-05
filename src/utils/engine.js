@@ -719,12 +719,12 @@ export function calculateNumberProbabilities(historyList, primaryLeanBS = 'BIG',
 // 🚀 6. ULTRA QUANT 7-MODEL ENSEMBLE WITH HIGH CONFLUENCE GATING
 // -------------------------------------------------------------
 
-export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 'ultra_sniper', fullDayDynamics = null, crowdLiquidity = null) {
+export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 'ultra_sniper', fullDayDynamics = null, crowdLiquidity = null, customWeights = null) {
   const isBS = field === 'bigSmall';
   const valA = isBS ? 'BIG' : 'ODD';
   const valB = isBS ? 'SMALL' : 'EVEN';
 
-  const learnedW = getLearnedWeights();
+  const learnedW = customWeights || getLearnedWeights();
 
   if (!historyList || historyList.length < 3) {
     return {
@@ -747,9 +747,19 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   const last2 = items.length > 1 ? `${items[1][field]}->${items[0][field]}` : null;
   const last3 = items.length > 2 ? `${items[2][field]}->${items[1][field]}->${items[0][field]}` : null;
 
-  // 1. MODEL 1: Higher-Order Markov Chain (Order 2 + Order 1)
+  // 1. MODEL 1: Hierarchical Higher-Order Markov Chains (Order 3, Order 2, Order 1)
+  let trans3A = 0, trans3Total = 0;
   let trans2A = 0, trans2Total = 0;
   let trans1A = 0, trans1Total = 0;
+
+  if (last3) {
+    for (let i = 0; i < chronological.length - 3; i++) {
+      if (`${chronological[i]}->${chronological[i + 1]}->${chronological[i + 2]}` === last3) {
+        trans3Total++;
+        if (chronological[i + 3] === valA) trans3A++;
+      }
+    }
+  }
 
   for (let i = 0; i < chronological.length - 2; i++) {
     if (`${chronological[i]}->${chronological[i + 1]}` === last2) {
@@ -764,9 +774,10 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     }
   }
 
-  const markovProbA = trans2Total >= 2 
-    ? ((trans2A + 2) / (trans2Total + 4)) * 100 // Regularized Laplace smoothed
-    : (trans1Total >= 2 ? ((trans1A + 2) / (trans1Total + 4)) * 100 : 50);
+  const p1 = (trans1A + 2) / (trans1Total + 4);
+  const p2 = trans2Total >= 2 ? (trans2A + 2) / (trans2Total + 4) : p1;
+  const p3 = trans3Total >= 2 ? (trans3A + 2) / (trans3Total + 4) : p2;
+  const markovProbA = (p3 * 0.45 + p2 * 0.35 + p1 * 0.20) * 100;
 
   // 2. MODEL 2: Dragon Streak Momentum & Mean Survival Curve
   const analysis = analyzeFieldPatterns(historyList, field);
@@ -816,19 +827,19 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     bayesProbA = countTotal > 0 ? (countA / countTotal) * 100 : 50;
   }
 
-  // 4. MODEL 4: N-Gram Sequence Pattern Resonance (Tri-gram and 4-gram)
+  // 4. MODEL 4: N-Gram Sequence Pattern Resonance (Scanning Full Chronological History)
   let nGramProbA = 50;
-  if (items.length >= 5 && last3) {
+  if (chronological.length >= 4 && last2) {
     let matchTotal = 0, matchA = 0;
-    for (let i = 1; i < items.length - 4; i++) {
-      const chunk = `${items[i + 2][field]}->${items[i + 1][field]}->${items[i][field]}`;
-      if (chunk === last3) {
+    for (let i = 0; i < chronological.length - 2; i++) {
+      const chunk = `${chronological[i]}->${chronological[i + 1]}`;
+      if (chunk === last2) {
         matchTotal++;
-        if (items[i - 1][field] === valA) matchA++;
+        if (chronological[i + 2] === valA) matchA++;
       }
     }
     if (matchTotal >= 1) {
-      nGramProbA = ((matchA + 1) / (matchTotal + 2)) * 100;
+      nGramProbA = ((matchA + 2) / (matchTotal + 4)) * 100;
     }
   }
 
@@ -847,10 +858,14 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     omissionRevProbA = 50 + Math.min(10, Math.abs(zScore) * 4.5);
   }
 
-  // 6. MODEL 6: Multi-Window Cluster & Color Parity
-  const recentSlice = items.slice(0, Math.min(items.length, 15));
-  const countAInCluster = recentSlice.filter(x => x[field] === valA).length;
-  const clusterProbA = (countAInCluster / recentSlice.length) * 100;
+  // 6. MODEL 6: Multi-Horizon Spectrum (10 vs 30 vs Macro Historical Balance)
+  const win10 = items.slice(0, Math.min(items.length, 10));
+  const win30 = items.slice(0, Math.min(items.length, 30));
+  const count10A = win10.filter(x => x[field] === valA).length;
+  const count30A = win30.filter(x => x[field] === valA).length;
+  const ratio10 = (count10A / win10.length) * 100;
+  const ratio30 = (count30A / win30.length) * 100;
+  const clusterProbA = (ratio10 * 0.55 + ratio30 * 0.45);
 
   // 7. MODEL 7: Modulo Fourier Harmonics (Phase Wave)
   const currentPeriodNum = parseInt((historyList[0]?.issueNumber || '0').slice(-3), 10);
@@ -972,14 +987,15 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   }
 
   let finalReason = '';
+  const histDepth = historyList.length;
   if (crowdOpposesPrediction) {
     finalReason = `⚠️ कैसीनो ट्रैप अलर्ट: भीड़ का भारी दांव (${crowdExposure.heavyExposurePercent}%) ${prediction} पर लगा है। कैसीनो कम पेआउट (${crowdExposure.lighterSide}) देकर भीड़ को हरा सकता है।`;
   } else if (isBettingAligned) {
-    finalReason = `💎 उच्च संगम: बैटिंग पूल (${crowdExposure.heavyExposurePercent}% विपरीत दांव) और ${agreementCount}/8 क्वांट मॉडल्स दोनों ${prediction} की पुष्टि कर रहे हैं।`;
+    finalReason = `💎 उच्च संगम: बैटिंग पूल (${crowdExposure.heavyExposurePercent}% विपरीत दांव) और ${histDepth}-ड्रा इतिहास में ${agreementCount}/8 क्वांट मॉडल्स ${prediction} की पुष्टि कर रहे हैं।`;
   } else if (streakReason) {
-    finalReason = `${streakReason} साथ ही ${agreementCount}/8 मॉडल्स की सहमति।`;
+    finalReason = `${streakReason} [${histDepth}-राउंड्स डीप एनालिसिस: ${agreementCount}/8 मॉडल्स सहमति]`;
   } else {
-    finalReason = `${agreementCount}/8 क्वांट मॉडल्स (बैटिंग लिक्विडिटी, ड्रैगन, बायेसियन) की सहमति।`;
+    finalReason = `📊 ${histDepth}-राउंड्स डीप हिस्ट्री एनालिसिस: मार्कोव, बायेसियन और लिक्विडिटी में से ${agreementCount}/8 मॉडल्स की ${prediction} पर सहमति।`;
   }
 
   return {
@@ -1010,15 +1026,15 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
 /**
  * Master Comprehensive Prediction Generator with Full-Day Dynamics and 3-Tier Golden Basket Digits
  */
-export function generatePrediction(historyList, mode = 'ultra_sniper', targetType = 'bigSmall') {
+export function generatePrediction(historyList, mode = 'ultra_sniper', targetType = 'bigSmall', customWeights = null) {
   const currentIssue = historyList[0]?.issueNumber;
   const fullDayDynamics = analyzeFullDayDynamics(historyList, currentIssue);
 
   const crowdLiquidityBS = calculateCrowdLiquidityExposure(historyList, 'bigSmall', fullDayDynamics, currentIssue);
   const crowdLiquidityOE = calculateCrowdLiquidityExposure(historyList, 'oddEven', fullDayDynamics, currentIssue);
 
-  const bsPred = generateFieldPrediction(historyList, 'bigSmall', mode, fullDayDynamics, crowdLiquidityBS);
-  const oePred = generateFieldPrediction(historyList, 'oddEven', mode, fullDayDynamics, crowdLiquidityOE);
+  const bsPred = generateFieldPrediction(historyList, 'bigSmall', mode, fullDayDynamics, crowdLiquidityBS, customWeights);
+  const oePred = generateFieldPrediction(historyList, 'oddEven', mode, fullDayDynamics, crowdLiquidityOE, customWeights);
 
   const primary = targetType === 'bigSmall' ? bsPred : oePred;
   const secondary = targetType === 'bigSmall' ? oePred : bsPred;

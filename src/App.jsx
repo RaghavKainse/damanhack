@@ -143,7 +143,7 @@ export default function App() {
           prevIssueRef.current = latestDraw.issueNumber;
         }
 
-        // Merge and accumulate history (up to 100 rounds for deep statistical accuracy)
+        // Merge and accumulate history (up to 300 rounds for deep statistical accuracy)
         setHistoryList(prev => {
           const combined = [...historyRes.list];
           const seen = new Set(historyRes.list.map(x => x.issueNumber));
@@ -152,10 +152,10 @@ export default function App() {
               combined.push(item);
               seen.add(item.issueNumber);
             }
-            if (combined.length >= 100) break;
+            if (combined.length >= 300) break;
           }
           try {
-            localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(combined.slice(0, 100)));
+            localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(combined.slice(0, 300)));
           } catch {}
           return combined;
         });
@@ -172,11 +172,25 @@ export default function App() {
   const handleNewResultArrival = (newDraw) => {
     const classified = classifyNumber(newDraw.number);
     
-    // Update online reinforcement weights dynamically from this settled draw!
+    // Update online reinforcement weights and Bayesian transition matrix dynamically!
+    let freshWeights = learnedWeights;
     if (prediction) {
-      const updatedW = updateLearningFromOutcome(prediction, newDraw);
-      setLearnedWeights({ ...updatedW });
+      freshWeights = updateLearningFromOutcome(prediction, newDraw);
+      setLearnedWeights({ ...freshWeights });
     }
+
+    // Immediately trigger deep historical re-analysis with new draw and updated weights
+    setHistoryList(currentHistory => {
+      const merged = [newDraw, ...currentHistory.filter(h => h.issueNumber !== newDraw.issueNumber)].slice(0, 300);
+      const nextPred = generatePrediction(merged, predictionMode, targetType, freshWeights);
+      setPrediction(nextPred);
+      const nextPerf = evaluateHistoryPerformance(merged, predictionMode, targetType);
+      setPerformance(nextPerf);
+      try {
+        localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(merged));
+      } catch {}
+      return merged;
+    });
 
     // Check if previous prediction was active (if action was WAIT_SKIP, no bet was made!)
     if (prediction && prediction.action === 'CONFIRMED_BET') {
@@ -203,16 +217,16 @@ export default function App() {
     setLearnedWeights({ ...resetW });
   };
 
-  // Re-calculate predictions whenever historyList, predictionMode, or targetType changes
+  // Re-calculate predictions whenever historyList, predictionMode, targetType, OR learnedWeights change
   useEffect(() => {
     if (historyList && historyList.length > 0) {
-      const pred = generatePrediction(historyList, predictionMode, targetType);
+      const pred = generatePrediction(historyList, predictionMode, targetType, learnedWeights);
       setPrediction(pred);
 
       const perf = evaluateHistoryPerformance(historyList, predictionMode, targetType);
       setPerformance(perf);
     }
-  }, [historyList, predictionMode, targetType]);
+  }, [historyList, predictionMode, targetType, learnedWeights]);
 
   // Background safety polling (every 10 seconds)
   useEffect(() => {
@@ -279,10 +293,9 @@ export default function App() {
           setNextPeriod(nextIssue);
         }
 
-        // When a new round starts, fetch settled draw at remSec = totalDuration - 3 (e.g. 27s for 30s game)
-        // This gives the official Daman draw server 2 full seconds to settle the RNG and write result
-        if (remSec === totalDuration - 3 && activeIssue !== lastRefreshedIssueRef.current) {
-          lastRefreshedIssueRef.current = activeIssue;
+        // When a new round starts, fetch settled draw at remSec = totalDuration - 2, with retry at totalDuration - 5
+        // This gives the official Daman draw server 2-5 seconds to settle RNG and write results
+        if (remSec === totalDuration - 2 || remSec === totalDuration - 5) {
           loadDataRef.current();
         }
 
