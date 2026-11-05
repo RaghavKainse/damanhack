@@ -426,8 +426,27 @@ function PredictionHero({
             </div>
           </div>
 
-          {/* 🎯 EXACT PREDICTED NUMBER + GOLDEN BASKET (ALWAYS VISIBLE ON EVERY ROUND!) */}
-          {topNumber && (
+          {/* 🎯 EXACT PREDICTED NUMBER + GOLDEN BASKET */}
+          {isWait ? (
+            <div style={{
+              marginTop: '14px',
+              padding: '16px 14px',
+              background: 'rgba(251, 133, 0, 0.08)',
+              border: '1px dashed rgba(251, 133, 0, 0.45)',
+              borderRadius: '14px',
+              textAlign: 'center'
+            }}>
+              <span style={{ fontSize: '0.82rem', color: 'var(--neon-amber)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <ShieldCheck size={18} color="var(--neon-gold)" />
+                {isHi ? '⚠️ कमजोर संगम: इस राउंड कोई सिंगल डिजिट या बास्केट सक्रिय नहीं है' : 'INSUFFICIENT CONFLUENCE: No Digit Forecast Active'}
+              </span>
+              <p style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '6px', lineHeight: 1.4 }}>
+                {isHi 
+                  ? 'जब 6/8+ मॉडल एकमत नहीं होते, तब सिंगल नंबर पर दांव लगाने से नुकसान का जोखिम 90% होता है। कृपया पुष्ट सिग्नल का इंतज़ार करें।'
+                  : 'Single digit betting carries high variance. Await high consensus signal before wagering.'}
+              </p>
+            </div>
+          ) : topNumber && (
             <div style={{
               marginTop: '14px',
               padding: '12px 14px',
@@ -444,8 +463,8 @@ function PredictionHero({
                 borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
               }}>
                 <div style={{ textAlign: 'left' }}>
-                  <span style={{ fontSize: '0.74rem', color: isWait ? '#cbd5e1' : '#ffb703', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Crown size={13} color={isWait ? '#cbd5e1' : '#ffb703'} /> {isWait ? (isHi ? '⚠️ अनुमानित सिंगल डिजिट (इस राउंड दांव न लगाएं)' : 'OBSERVATION ONLY (DO NOT BET)') : (isHi ? 'मुख्य VIP सिंगल नंबर (Top Digit)' : 'PRIMARY VIP SINGLE NUMBER')}
+                  <span style={{ fontSize: '0.74rem', color: '#ffb703', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Crown size={13} color="#ffb703" /> {isHi ? 'मुख्य VIP सिंगल नंबर (Top Digit)' : 'PRIMARY VIP SINGLE NUMBER'}
                   </span>
                   <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
                     {isHi ? '2,880 दैनिक चक्र व बायेसियन गणना' : 'Full Day Bayesian Prediction'}

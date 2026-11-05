@@ -1177,14 +1177,10 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
         badge = 'STRONG';
         evidenceLevel = 'MODERATE';
       }
-    } else if (agreementCount < 5 || confidence < 57 || rawDelta < 1.2) {
+    } else if (agreementCount < 6 || confidence < 58 || rawDelta < 1.5) {
       action = 'NO_CLEAR_SIGNAL';
       badge = 'WAIT';
       evidenceLevel = 'INSUFFICIENT';
-    } else if (confidence >= 65 && agreementCount >= 6) {
-      badge = 'ULTRA_SNIPER';
-      action = 'CONFIRMED_BET';
-      evidenceLevel = 'HIGH';
     } else {
       badge = 'STRONG';
       action = 'CONFIRMED_BET';

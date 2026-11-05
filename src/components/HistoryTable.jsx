@@ -18,8 +18,9 @@ function HistoryTable({ historyLogs, language }) {
       return false;
     }
     // Type filter
-    if (filterType === 'WINS') return log.isWin;
-    if (filterType === 'LOSSES') return !log.isWin;
+    if (filterType === 'WINS') return log.isWin === true;
+    if (filterType === 'LOSSES') return log.isWin === false && log.action !== 'NO_CLEAR_SIGNAL' && log.action !== 'SKIP';
+    if (filterType === 'SKIPS') return log.action === 'NO_CLEAR_SIGNAL' || log.action === 'SKIP' || log.isWin === null;
     if (filterType === 'BIG') return log.actualBigSmall === 'BIG';
     if (filterType === 'SMALL') return log.actualBigSmall === 'SMALL';
     if (filterType === 'ODD') return log.actualOddEven === 'ODD';
@@ -267,7 +268,7 @@ function HistoryTable({ historyLogs, language }) {
 
                   {/* Win / Loss Verdict */}
                   <td style={{ padding: '10px 12px' }}>
-                    {log.action === 'SKIP' ? (
+                    {(log.action === 'NO_CLEAR_SIGNAL' || log.action === 'SKIP' || log.isWin === null) ? (
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -280,7 +281,7 @@ function HistoryTable({ historyLogs, language }) {
                         fontWeight: 800,
                         fontSize: '0.72rem'
                       }}>
-                        ⏸️ SKIPPED
+                        ⏸️ NO SIGNAL (छोड़ा गया)
                       </span>
                     ) : log.isWin ? (
                       <span style={{
