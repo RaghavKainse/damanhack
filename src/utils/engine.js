@@ -85,7 +85,7 @@ const DEFAULT_LEARNED_WEIGHTS = {
   winScore: 0,
   lossScore: 0,
   accuracyHistory: [],
-  recentAccuracy: 75.0,
+  recentAccuracy: 50.0,
   lastTrainedIssue: '',
   dailyRoundsTrained: 0,
   trainedDate: new Date().toISOString().slice(0, 10),
@@ -868,9 +868,9 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   if (!historyList || historyList.length < 3) {
     return {
       field,
-      action: 'WAIT_SKIP',
-      prediction: valA,
-      confidence: 60,
+      action: 'NO_CLEAR_SIGNAL',
+      prediction: 'NO CLEAR SIGNAL',
+      confidence: 50,
       agreementCount: 0,
       signals: {},
       reason: 'डेटा लोड हो रहा है, कृपया 1 राउंड प्रतीक्षा करें...',
@@ -1144,75 +1144,93 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
 
   let action = 'CONFIRMED_BET';
   let badge = 'STRONG';
+  let evidenceLevel = 'HIGH';
 
   if (mode === 'ultra_sniper') {
     if (crowdOpposesPrediction || isStreakExhausted || isPingPongTrap || isUnderperforming || isLowDeltaNoise) {
       if (agreementCount < 7 || rawDelta < minRawDelta) {
-        action = 'WAIT_SKIP';
+        action = 'NO_CLEAR_SIGNAL';
         badge = 'WAIT';
+        evidenceLevel = 'INSUFFICIENT';
       } else {
         action = 'CONFIRMED_BET';
         badge = 'ULTRA_SNIPER';
+        evidenceLevel = 'HIGH';
       }
     } else if (agreementCount < requiredAgreement || confidence < minSniperConfidence || rawDelta < minRawDelta) {
-      action = 'WAIT_SKIP';
+      action = 'NO_CLEAR_SIGNAL';
       badge = 'WAIT';
+      evidenceLevel = 'INSUFFICIENT';
     } else {
       action = 'CONFIRMED_BET';
       badge = 'ULTRA_SNIPER';
+      evidenceLevel = 'HIGH';
     }
   } else if (mode === 'sniper') {
     if (crowdOpposesPrediction || isStreakExhausted || isPingPongTrap) {
       if (agreementCount < 6 || rawDelta < 2.0) {
-        action = 'WAIT_SKIP';
+        action = 'NO_CLEAR_SIGNAL';
         badge = 'WAIT';
+        evidenceLevel = 'INSUFFICIENT';
       } else {
         action = 'CONFIRMED_BET';
         badge = 'STRONG';
+        evidenceLevel = 'MODERATE';
       }
     } else if (agreementCount < 5 || confidence < 57 || rawDelta < 1.2) {
-      action = 'WAIT_SKIP';
+      action = 'NO_CLEAR_SIGNAL';
       badge = 'WAIT';
+      evidenceLevel = 'INSUFFICIENT';
     } else if (confidence >= 65 && agreementCount >= 6) {
       badge = 'ULTRA_SNIPER';
       action = 'CONFIRMED_BET';
+      evidenceLevel = 'HIGH';
     } else {
       badge = 'STRONG';
       action = 'CONFIRMED_BET';
+      evidenceLevel = 'MODERATE';
     }
   } else {
     // Mode === 'all'
-    action = 'CONFIRMED_BET';
-    if (shieldAlert) {
-      badge = 'MODERATE';
+    if (isLowDeltaNoise || agreementCount <= 4) {
+      action = 'NO_CLEAR_SIGNAL';
+      badge = 'WAIT';
+      evidenceLevel = 'INSUFFICIENT';
     } else {
+      action = 'CONFIRMED_BET';
       badge = (agreementCount >= 6 && confidence >= 60) ? 'STRONG' : 'MODERATE';
+      evidenceLevel = agreementCount >= 6 ? 'HIGH' : 'MODERATE';
     }
   }
+
+  const isNoSignal = action === 'NO_CLEAR_SIGNAL' || action === 'WAIT_SKIP';
+  const finalPrediction = isNoSignal ? 'NO CLEAR SIGNAL' : prediction;
+  const finalConfidence = isNoSignal ? 50.0 : confidence;
 
   let finalReason = '';
   const histDepth = historyList.length;
   const trainedRounds = learnedW.dailyRoundsTrained || learnedW.learningRounds || 0;
-  const recentAcc = learnedW.recentAccuracy ? `${learnedW.recentAccuracy}%` : '75%';
+  const recentAcc = learnedW.recentAccuracy ? `${learnedW.recentAccuracy}%` : '50%';
 
-  if (shieldAlert) {
-    finalReason = `${shieldAlert} [24/7 सेल्फ-ट्रेनिंग: ${trainedRounds} राउंड्स ट्रेंड | रोलिंग सटीकता: ${recentAcc}]`;
+  if (isNoSignal) {
+    finalReason = shieldAlert 
+      ? `${shieldAlert} सांख्यिकीय साक्ष्य अपर्याप्त है। 50/50 रैंडम बेसलाइन से कोई प्रमाणित लाभ नहीं। [NO CLEAR SIGNAL]`
+      : `⚠️ सांख्यिकीय साक्ष्य अपर्याप्त (${agreementCount}/8 मॉडल सहमति, डेल्टा ${rawDelta.toFixed(1)}%)। 50/50 रैंडम शोर सीमा में दांव से बचें। [NO CLEAR SIGNAL]`;
   } else if (isBettingAligned) {
-    finalReason = `💎 उच्च संगम (Zero-Mistake Gated): बैटिंग पूल (${crowdExposure.heavyExposurePercent}% विपरीत दांव) और ${histDepth}-ड्रा में से ${agreementCount}/8 क्वांट मॉडल्स ${prediction} की पुष्टि कर रहे हैं।`;
+    finalReason = `💎 उच्च मॉडल संगम (High Statistical Confluence): बैटिंग पूल और ${histDepth}-ड्रा में से ${agreementCount}/8 स्वतंत्र मॉडल्स ${prediction} की पुष्टि कर रहे हैं।`;
   } else if (streakReason) {
     finalReason = `${streakReason} [${histDepth}-राउंड्स एनालिसिस: ${agreementCount}/8 मॉडल्स सहमति | 24/7 ट्रेंड: ${trainedRounds} राउंड्स]`;
   } else {
-    finalReason = `📊 ${histDepth}-राउंड्स डीप क्वांट एनालिसिस: मार्कोव, बायेसियन और लिक्विडिटी में से ${agreementCount}/8 मॉडल्स की ${prediction} पर पुष्टि। [24/7 एक्टिव ट्रेंडिंग: ${trainedRounds} ड्रा]`;
+    finalReason = `📊 ${histDepth}-राउंड्स डीप क्वांट एनालिसिस: मार्कोव और बायेसियन में से ${agreementCount}/8 मॉडल्स की ${prediction} पर पुष्टि। [24/7 एक्टिव ट्रेंडिंग: ${trainedRounds} ड्रा]`;
   }
-
-  const finalConfidence = action === 'WAIT_SKIP' ? 50 : confidence;
 
   return {
     field,
     action,
-    prediction,
+    prediction: finalPrediction,
     confidence: finalConfidence,
     agreementCount,
+    evidenceLevel,
     shields: {
       isStreakExhausted,
       isPingPongTrap,
@@ -1379,7 +1397,8 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
     const hitBasket = basketNumbers.includes(actualNum);
     if (hitBasket) goldenBasketHits++;
 
-    if (pred.action === 'WAIT_SKIP' && (mode === 'ultra_sniper' || mode === 'sniper')) {
+    const isSkip = (pred.action === 'NO_CLEAR_SIGNAL' || pred.action === 'WAIT_SKIP') && (mode === 'ultra_sniper' || mode === 'sniper');
+    if (isSkip) {
       skippedRounds++;
       logs.unshift({
         issueNumber: list[i].issueNumber,
@@ -1387,12 +1406,12 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
         actualOddEven: actual.oddEven,
         actualBigSmall: actual.bigSmall,
         actualColor: actual.color,
-        predicted: pred.prediction + ' (WAIT)',
-        predictedNumber: pred.topNumber?.number ?? '---',
-        confidence: pred.confidence,
+        predicted: 'NO CLEAR SIGNAL',
+        predictedNumber: '---',
+        confidence: 50.0,
         isWin: null,
-        action: 'SKIP',
-        pattern: 'कम सर्वसम्मति / शोर चक्र (90%+ एक्यूरेसी बनाए रखने के लिए छोड़ा गया)'
+        action: 'NO_CLEAR_SIGNAL',
+        pattern: 'सांख्यिकीय साक्ष्य अपर्याप्त (50/50 रैंडम बेसलाइन - कोई दांव नहीं)'
       });
       continue;
     }

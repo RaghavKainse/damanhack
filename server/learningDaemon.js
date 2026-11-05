@@ -206,6 +206,46 @@ class LearningDaemon {
         console.log(`   - ${mName.padEnd(22)}: Acc=${stats.winRate}% | Brier=${stats.brierScore} | LogLoss=${stats.logLoss} | p-val=${stats.pValueVsRandom}`);
       }
     }
+
+    // Strict Scientific Model Promotion Gate
+    await this.evaluateCandidateModel(wfResults);
+  }
+
+  /**
+   * Evaluates candidate models against strict significance gate (p < 0.05 & N >= 100)
+   */
+  async evaluateCandidateModel(wfResults) {
+    const w100 = wfResults?.windows?.[100];
+    if (!w100) return;
+
+    let bestModel = null;
+    let bestScore = Infinity;
+
+    for (const [mName, stats] of Object.entries(w100)) {
+      if (stats.isSignificant && stats.winRate > 50.0 && stats.brierScore < 0.2480) {
+        if (stats.brierScore < bestScore) {
+          bestScore = stats.brierScore;
+          bestModel = { name: mName, stats };
+        }
+      }
+    }
+
+    if (bestModel) {
+      console.log(`🏆 Candidate Promotion Qualified: ${bestModel.name} (Acc: ${bestModel.stats.winRate}%, p: ${bestModel.stats.pValueVsRandom})`);
+      const newVersion = `v2.4.${Date.now().toString(36).slice(-4)}-${bestModel.name.toLowerCase()}`;
+      await storage.saveModelVersion({
+        version: newVersion,
+        promotedAt: Date.now(),
+        model: bestModel.name,
+        accuracy100: bestModel.stats.winRate,
+        brierScore: bestModel.stats.brierScore,
+        logLoss: bestModel.stats.logLoss,
+        pValue: bestModel.stats.pValueVsRandom,
+        status: 'ACTIVE_PRODUCTION'
+      });
+    } else {
+      console.log('ℹ️ Statistical Integrity Check: No candidate model demonstrated statistically significant edge (all p ≥ 0.05). Retaining conservative baseline.');
+    }
   }
 }
 

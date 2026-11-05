@@ -12,3 +12,4 @@ async function checkRound1334() {
 }
 
 checkRound1334();
+

@@ -381,6 +381,42 @@ async function runTestSuite() {
     assert(wf.windows[50].StatisticalBaseline !== undefined);
   });
 
+  // -------------------------------------------------------------
+  // Test Group 11: Statistical Honesty Principles
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 11: Statistical Honesty Principles & No Short-Streak Promotion');
+
+  it('Verifies candidate model promotion is rejected when statistical significance fails (p >= 0.05)', () => {
+    // 6 wins out of 10 draws (60% win rate on tiny sample of 10)
+    const shortStreakStats = calculateBinomialSignificance(6, 10, 0.50);
+    assert.strictEqual(shortStreakStats.isSignificant, false, '6/10 streak must NOT be statistically significant');
+    assert.strictEqual(shortStreakStats.hasEdge, false, 'Short streak must NOT qualify as a predictive edge');
+    assert(shortStreakStats.pValue >= 0.05, 'p-value must exceed 0.05 threshold');
+
+    // 95% Confidence Interval for 6/10 spans across 50% [29.6%, 90.4%]
+    assert(shortStreakStats.ciLower < 50.0, 'CI lower bound must include null hypothesis 50%');
+    assert(shortStreakStats.ciUpper > 50.0, 'CI upper bound must include null hypothesis 50%');
+  });
+
+  it('Verifies NO CLEAR SIGNAL is emitted when market regime is chopped and models conflict', () => {
+    // Highly volatile chopped sequence
+    const choppyList = [
+      { issueNumber: '20261105100050010', number: '7' },
+      { issueNumber: '20261105100050009', number: '2' },
+      { issueNumber: '20261105100050008', number: '8' },
+      { issueNumber: '20261105100050007', number: '1' },
+      { issueNumber: '20261105100050006', number: '6' },
+      { issueNumber: '20261105100050005', number: '3' },
+      { issueNumber: '20261105100050004', number: '9' },
+      { issueNumber: '20261105100050003', number: '0' }
+    ];
+
+    const pred = generatePrediction(choppyList, 'ultra_sniper', 'bigSmall');
+    assert.strictEqual(pred.action, 'NO_CLEAR_SIGNAL', 'Chopped sequence must yield NO_CLEAR_SIGNAL');
+    assert.strictEqual(pred.prediction, 'NO CLEAR SIGNAL', 'Must output NO CLEAR SIGNAL');
+    assert.strictEqual(pred.confidence, 50.0, 'Confidence must be strictly 50.0% neutral');
+  });
+
   console.log('\n======================================================');
   console.log(`🎉 ALL ${passedTests}/${totalTests} AUTOMATED TESTS PASSED SUCCESSFULLY!`);
   console.log('======================================================\n');

@@ -319,10 +319,24 @@ export function calculateCalibration(probabilities, outcomes, numBins = 5) {
 }
 
 /**
- * Two-tailed Binomial test against random 50% baseline (H0: p = 0.50)
+ * Two-tailed Binomial test against random 50% baseline (H0: p = 0.50) with 95% Confidence Intervals
  */
 export function calculateBinomialSignificance(wins, total, nullProb = 0.50) {
-  if (total <= 0) return { zScore: 0, pValue: 1.0, isSignificant: false };
+  if (total <= 0) {
+    return { 
+      zScore: 0, 
+      pValue: 1.0, 
+      isSignificant: false,
+      sampleSize: 0,
+      observedWinRate: 50.0,
+      baselineDelta: 0.0,
+      ciLower: 50.0,
+      ciUpper: 50.0,
+      hasEdge: false
+    };
+  }
+
+  const pObs = wins / total;
   const expected = total * nullProb;
   const variance = total * nullProb * (1 - nullProb);
   const stdDev = Math.sqrt(variance);
@@ -337,10 +351,24 @@ export function calculateBinomialSignificance(wins, total, nullProb = 0.50) {
   const prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
   const pValue = Math.min(1.0, Math.round(2 * prob * 10000) / 10000);
 
+  // Wilson Score / Wald 95% Confidence Interval
+  const stdErr = Math.sqrt(Math.max(0.0001, (pObs * (1 - pObs)) / total));
+  const ciLower = Math.max(0.0, Math.round((pObs - 1.96 * stdErr) * 1000) / 10);
+  const ciUpper = Math.min(100.0, Math.round((pObs + 1.96 * stdErr) * 1000) / 10);
+  const baselineDelta = Math.round((pObs - nullProb) * 1000) / 10;
+  const isSignificant = pValue < 0.05;
+  const hasEdge = isSignificant && baselineDelta > 0;
+
   return {
     zScore: Math.round(zScore * 100) / 100,
     pValue,
-    isSignificant: pValue < 0.05
+    isSignificant,
+    sampleSize: total,
+    observedWinRate: Math.round(pObs * 1000) / 10,
+    baselineDelta,
+    ciLower,
+    ciUpper,
+    hasEdge
   };
 }
 

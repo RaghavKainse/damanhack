@@ -64,7 +64,7 @@ function PredictionHero({
     shields = {}
   } = predictionData;
 
-  const isWait = action === 'WAIT_SKIP';
+  const isWait = action === 'NO_CLEAR_SIGNAL' || action === 'WAIT_SKIP';
   const isBig = prediction === 'BIG';
   const isOdd = prediction === 'ODD';
 
@@ -201,7 +201,7 @@ function PredictionHero({
           border: '1px solid var(--border-subtle)',
           gap: '3px'
         }}>
-          {/* Ultra Sniper Mode (90-98%) */}
+          {/* High Confluence Mode */}
           <button
             onClick={() => onTogglePredictionMode('ultra_sniper')}
             style={{
@@ -221,10 +221,10 @@ function PredictionHero({
             }}
           >
             <Crown size={13} color="var(--neon-gold)" />
-            <span>{isHi ? '💎 अल्ट्रा स्नाइपर (90-98%)' : '💎 Ultra Sniper (90-98%)'}</span>
+            <span>{isHi ? '💎 सख्त संगम (Strict Filter)' : '💎 Strict Filter'}</span>
           </button>
 
-          {/* Balanced Sniper Mode (80-88%) */}
+          {/* Balanced Mode */}
           <button
             onClick={() => onTogglePredictionMode('sniper')}
             style={{
@@ -242,7 +242,7 @@ function PredictionHero({
             }}
           >
             <Crosshair size={12} />
-            <span>{isHi ? 'संतुलित (80-88%)' : 'Balanced'}</span>
+            <span>{isHi ? 'संतुलित (Balanced)' : 'Balanced'}</span>
           </button>
 
           {/* All Rounds Mode */}
@@ -398,14 +398,14 @@ function PredictionHero({
           {/* Big / Small Primary Text */}
           <div style={{ margin: '4px 0' }}>
             <h2 className="font-heading pulse-badge" style={{
-              fontSize: isWait ? '3.5rem' : '4.2rem',
+              fontSize: isWait ? (action === 'NO_CLEAR_SIGNAL' ? '2.4rem' : '3.5rem') : '4.2rem',
               fontWeight: 900,
               color: isWait ? 'var(--neon-amber)' : primaryColor,
-              lineHeight: 1,
+              lineHeight: 1.15,
               letterSpacing: '-1px',
               textShadow: `0 0 35px ${isWait ? 'var(--neon-amber)' : primaryColor}`
             }}>
-              {isWait ? '⏸️ WAIT' : prediction}
+              {action === 'NO_CLEAR_SIGNAL' ? '⏸️ NO CLEAR SIGNAL' : (isWait ? '⏸️ WAIT' : prediction)}
             </h2>
 
             <div style={{
@@ -415,7 +415,7 @@ function PredictionHero({
               marginTop: '4px'
             }}>
               {isWait ? (
-                isHi ? '⚠️ यह राउंड छोड़ें (कमजोर सिग्नल / उच्च जोखिम)' : '⚠️ SKIP THIS ROUND (Wait for High Consensus)'
+                isHi ? '⚠️ सांख्यिकीय साक्ष्य अपर्याप्त (यह राउंड छोड़ें - कोई दांव न लगाएं)' : '⚠️ INSUFFICIENT EVIDENCE (Abstain from betting this round)'
               ) : (
                 targetType === 'bigSmall' ? (
                   isBig ? 'बड़ी संख्याएं (BIG: 5, 6, 7, 8, 9)' : 'छोटी संख्याएं (SMALL: 0, 1, 2, 3, 4)'

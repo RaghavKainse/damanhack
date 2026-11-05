@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Sparkles, RotateCcw, Activity, Shield, Zap, Database, TrendingUp } from 'lucide-react';
+import { Brain, Sparkles, RotateCcw, Activity, Shield, Zap, Database, TrendingUp, HelpCircle } from 'lucide-react';
 
 function SelfLearningMatrix({ 
   learnedWeights, 
@@ -9,43 +9,40 @@ function SelfLearningMatrix({
 }) {
   const isHi = language === 'hi';
   const {
-    crowdLiquidity = 1.55,
-    markov2 = 1.35,
-    dragonTrend = 1.45,
-    bayesianTrans = 1.30,
-    nGram = 1.15,
-    omissionRev = 1.10,
-    clusterParity = 1.05,
-    fourierCycle = 0.95,
+    crowdLiquidity = 0.25,
+    markov2 = 1.50,
+    dragonTrend = 1.05,
+    bayesianTrans = 1.45,
+    nGram = 1.20,
+    omissionRev = 1.25,
+    clusterParity = 1.30,
+    fourierCycle = 0.85,
     learningRounds = 0,
     winScore = 0,
     lossScore = 0,
-    recentAccuracy = 75.0,
+    recentAccuracy = 50.0,
     dailyRoundsTrained = 0
   } = learnedWeights || {};
 
   const models = [
-    { key: 'crowdLiquidity', name: isHi ? 'बैटिंग पूल व हाउस लायबिलिटी' : 'Betting Pool & House Liability', weight: crowdLiquidity, color: '#ffb703' },
-    { key: 'dragonTrend', name: isHi ? 'ड्रैगन मोमेंटम & स्ट्रीक' : 'Dragon Momentum', weight: dragonTrend, color: '#00f59b' },
     { key: 'markov2', name: isHi ? '2nd-ऑर्डर मार्कोव चेन' : '2nd-Order Markov', weight: markov2, color: '#00f2fe' },
     { key: 'bayesianTrans', name: isHi ? '10x10 बायेसियन मैट्रिक्स' : 'Bayesian 10x10 Matrix', weight: bayesianTrans, color: '#ffb703' },
-    { key: 'nGram', name: isHi ? 'एन-ग्राम पैटर्न मैचर' : 'N-Gram Pattern', weight: nGram, color: '#4facfe' },
+    { key: 'clusterParity', name: isHi ? 'मल्टी-हॉरिजॉन क्लस्टर' : 'Multi-Horizon Cluster', weight: clusterParity, color: '#06d6a0' },
     { key: 'omissionRev', name: isHi ? 'ओमिशन रिवर्शन (Z-Score)' : 'Omission Reversion', weight: omissionRev, color: '#ff3366' },
-    { key: 'clusterParity', name: isHi ? 'हॉट नंबर क्लस्टर' : 'Hot Cluster Parity', weight: clusterParity, color: '#06d6a0' },
+    { key: 'nGram', name: isHi ? 'एन-ग्राम पैटर्न मैचर' : 'N-Gram Pattern', weight: nGram, color: '#4facfe' },
+    { key: 'dragonTrend', name: isHi ? 'नियंत्रित ड्रैगन ट्रेंड' : 'Damped Dragon Trend', weight: dragonTrend, color: '#00f59b' },
     { key: 'fourierCycle', name: isHi ? 'हार्मोनिक चक्र वेव' : 'Fourier Harmonic', weight: fourierCycle, color: '#9d4edd' },
+    { key: 'crowdLiquidity', name: isHi ? 'पूल मॉनिटर (कम वेट)' : 'Pool Monitor (Low Weight)', weight: crowdLiquidity, color: '#64748b' }
   ];
 
   // Regime Hindi labels
   const regimeLabels = {
-    DRAGON_STREAK: isHi ? '🐉 ड्रैगन स्ट्रीक चरण (लगातार लड़ी सक्रिय - मोमेंटम 1.8x बूस्ट)' : '🐉 Dragon Streak Regime (Momentum 1.8x Boost)',
-    PING_PONG_WAVE: isHi ? '🏓 पिंग-पोंग तरंग चरण (अदला-बदली सक्रिय - मार्कोव 1.8x बूस्ट)' : '🏓 Ping-Pong Wave Regime (Markov 1.8x Boost)',
-    MEAN_REVERSION_SKEW: isHi ? '⚖️ मीन रिवर्शन असंतुलन (रिवर्सल निकट - ओमिशन 1.9x बूस्ट)' : '⚖️ Mean Reversion Skew (Omission 1.9x Boost)',
-    OSCILLATION_CHOP: isHi ? '🌀 ऑसिलेशन शोर (अनिश्चित बाज़ार - 90%+ स्नाइपर गेट सक्रिय)' : '🌀 Choppy Oscillation (90%+ Sniper Gate Active)',
-    EQUILIBRIUM: isHi ? '⚖️ संतुलित साम्यावस्था' : '⚖️ Equilibrium'
+    DRAGON_STREAK: isHi ? '🐉 ड्रैगन स्ट्रीक चरण (लगातार लड़ी सक्रिय - मोमेंटम 1.3x)' : '🐉 Dragon Streak Regime (1.3x Momentum)',
+    PING_PONG_WAVE: isHi ? '🏓 पिंग-पोंग तरंग चरण (अदला-बदली सक्रिय - मार्कोव 1.5x)' : '🏓 Ping-Pong Wave Regime (1.5x Markov)',
+    MEAN_REVERSION_SKEW: isHi ? '⚖️ मीन रिवर्शन असंतुलन (रिवर्सल निकट - ओमिशन 1.5x)' : '⚖️ Mean Reversion Skew (1.5x Omission)',
+    OSCILLATION_CHOP: isHi ? '🌀 ऑसिलेशन शोर (अनिश्चित बाज़ार - कड़ा सांख्यिकीय फिल्टर)' : '🌀 Choppy Oscillation (Strict Evidence Filter Active)',
+    EQUILIBRIUM: isHi ? '⚖️ संतुलित साम्यावस्था (Equilibrium)' : '⚖️ Equilibrium'
   };
-
-  // Convergence calculation based on learning rounds
-  const convergenceScore = Math.min(98.8, 88.0 + (learningRounds * 0.45)).toFixed(1);
 
   return (
     <div className="glass-panel" style={{ padding: '20px', marginBottom: '20px' }}>
@@ -77,7 +74,7 @@ function SelfLearningMatrix({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h3 className="font-heading" style={{ fontSize: '1.05rem', fontWeight: 800 }}>
-                {isHi ? '🧠 डीप रीइन्फोर्समेंट सेल्फ-लर्निंग इंजन (Deep Quant Engine)' : '🧠 DEEP REINFORCEMENT QUANT ENGINE'}
+                {isHi ? '🧠 सांख्यिकीय एडेप्टिव लर्निंग मैट्रिक्स (Adaptive Quant Matrix)' : '🧠 ADAPTIVE STATISTICAL QUANT MATRIX'}
               </h3>
               <span style={{
                 background: 'rgba(0, 245, 155, 0.15)',
@@ -88,13 +85,13 @@ function SelfLearningMatrix({
                 fontWeight: 800,
                 border: '1px solid rgba(0, 245, 155, 0.3)'
               }}>
-                DEEP CONTINUOUS LEARN
+                CONTINUOUS ONLINE LEARNING
               </span>
             </div>
             <p style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
               {isHi 
-                ? 'यह एल्गोरिदम हर 30 सेकंड राउंड के ड्रा से बायेसियन स्टेट्स सीखता है और जीतने वाले मॉडल्स को ऑटो-रिवॉर्ड देकर सटीकता 90-98% बनाए रखता है।'
-                : 'Second-order online hedge & 10x10 Bayesian transition engine adapts after every settled round.'}
+                ? 'यह एल्गोरिदम हर सत्यापित ड्रा से बायेसियन स्टेट्स सीखता है। यदि डेटा में कोई प्रमाणित बढ़त नहीं मिलती, तो सिस्टम NO CLEAR SIGNAL देता है।'
+                : 'Second-order online gradient & 10x10 Bayesian transition engine adapts after verified rounds without lookahead bias.'}
             </p>
           </div>
         </div>
@@ -110,7 +107,7 @@ function SelfLearningMatrix({
             fontFamily: 'var(--font-mono)',
             color: 'var(--neon-green)'
           }}>
-            {isHi ? '24/7 लाइव ट्रेंड:' : '24/7 Trained:'} <strong>{dailyRoundsTrained || learningRounds} / 2880</strong>
+            {isHi ? '24/7 प्रशिक्षित ड्रा:' : '24/7 Trained Draws:'} <strong>{dailyRoundsTrained || learningRounds} / 2880</strong>
           </div>
 
           <div style={{
@@ -149,7 +146,7 @@ function SelfLearningMatrix({
         </div>
       </div>
 
-      {/* 4-Tier Zero-Mistake Protection Badge Strip */}
+      {/* 4-Tier Statistical Guardrails Badge Strip */}
       <div style={{
         background: 'linear-gradient(90deg, rgba(0, 245, 155, 0.08), rgba(0, 242, 254, 0.08))',
         border: '1px solid rgba(0, 245, 155, 0.25)',
@@ -165,13 +162,13 @@ function SelfLearningMatrix({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--neon-green)', fontWeight: 700 }}>
           <Shield size={14} />
-          <span>{isHi ? '🛡️ 4x मिस्टेक-प्रिवेंशन शील्ड्स सक्रिय (Zero-Mistake Gated)' : '🛡️ 4x Mistake-Prevention Shields Active'}</span>
+          <span>{isHi ? '🛡️ 4x सांख्यिकीय सुरक्षा गार्ड्स सक्रिय (Statistical Guardrails Active)' : '🛡️ 4x Statistical Guardrails Active'}</span>
         </div>
         <div style={{ display: 'flex', gap: '10px', color: '#94a3b8', flexWrap: 'wrap' }}>
           <span>✓ {isHi ? '5+ स्ट्रीक थकावट' : '5+ Streak'}</span>
           <span>✓ {isHi ? '4+ पिंग-पोंग चॉप' : '4+ PingPong'}</span>
-          <span>✓ {isHi ? 'कैसीनो क्राउड लायबिलिटी' : 'Casino Trap'}</span>
-          <span>✓ {isHi ? 'सर्किट ब्रेकर' : 'Circuit Breaker'}</span>
+          <span>✓ {isHi ? 'अति-दांव क्राउड ट्रैप' : 'Crowd Trap'}</span>
+          <span>✓ {isHi ? 'सर्किट ब्रेकर (कम सहमति पर रोक)' : 'Circuit Breaker'}</span>
         </div>
       </div>
 
@@ -204,14 +201,14 @@ function SelfLearningMatrix({
         </div>
       </div>
 
-      {/* 7 Models Adaptive Weights Grid */}
+      {/* 8 Models Adaptive Weights Grid */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
         gap: '10px'
       }}>
         {models.map(m => {
-          const percent = Math.min(100, Math.round((m.weight / 3.5) * 100));
+          const percent = Math.min(100, Math.round((m.weight / 2.5) * 100));
           return (
             <div
               key={m.key}
