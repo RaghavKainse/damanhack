@@ -366,6 +366,13 @@ export function analyzeFieldPatterns(list, field = 'bigSmall') {
     if (v0 === v1 && v2 === v3 && v0 !== v2) isDoubleJump = true;
   }
 
+  // 3b. Double Forming (B-B-S or S-S-B: previous was a completed pair, current is single)
+  let isDoubleForming = false;
+  if (values.length >= 3) {
+    const v0 = values[0], v1 = values[1], v2 = values[2];
+    if (v1 === v2 && v0 !== v1) isDoubleForming = true;
+  }
+
   // 4. Mirror Symmetry (B-S-S-B or S-B-B-S)
   let isMirror = false;
   if (values.length >= 3) {
@@ -383,6 +390,7 @@ export function analyzeFieldPatterns(list, field = 'bigSmall') {
   let regime = 'EQUILIBRIUM';
   if (streakCount >= 4) regime = 'DRAGON_STREAK';
   else if (isPingPong) regime = 'PING_PONG_WAVE';
+  else if (isDoubleJump || isDoubleForming) regime = 'DOUBLE_JUMP';
   else if (Math.abs(firstRatio - 50) >= 16) regime = 'MEAN_REVERSION_SKEW';
   else regime = 'OSCILLATION_CHOP';
 
@@ -391,6 +399,7 @@ export function analyzeFieldPatterns(list, field = 'bigSmall') {
     isPingPong,
     pingPongCount,
     isDoubleJump,
+    isDoubleForming,
     isMirror,
     firstCount,
     secondCount,
@@ -886,6 +895,9 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   const last2 = items.length > 1 ? `${items[1][field]}->${items[0][field]}` : null;
   const last3 = items.length > 2 ? `${items[2][field]}->${items[1][field]}->${items[0][field]}` : null;
 
+  const analysis = analyzeFieldPatterns(historyList, field);
+  const streak = analysis.currentStreak;
+
   // 1. MODEL 1: Hierarchical Higher-Order Markov Chains (Order 3, Order 2, Order 1)
   let trans3A = 0, trans3Total = 0;
   let trans2A = 0, trans2Total = 0;
@@ -914,19 +926,33 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   }
 
   const p1 = (trans1A + 2) / (trans1Total + 4);
-  const p2 = trans2Total >= 2 ? (trans2A + 2) / (trans2Total + 4) : p1;
-  const p3 = trans3Total >= 2 ? (trans3A + 2) / (trans3Total + 4) : p2;
+  let p2 = trans2Total >= 2 ? (trans2A + 2) / (trans2Total + 4) : p1;
+  let p3 = trans3Total >= 2 ? (trans3A + 2) / (trans3Total + 4) : p2;
+
+  // If a double formation is in progress and Order-3 has no evidence (trans3Total < 2),
+  // shrink Order-2 ping-pong bias toward neutral 0.50 so it doesn't fight the forming double
+  if (analysis.isDoubleForming && trans3Total < 2) {
+    p2 = 0.50 * p2 + 0.50 * 0.50;
+    p3 = 0.50;
+  }
   const markovProbA = (p3 * 0.45 + p2 * 0.35 + p1 * 0.20) * 100;
 
   // 2. MODEL 2: Dragon Streak Momentum & Mean Survival Curve
-  const analysis = analyzeFieldPatterns(historyList, field);
-  const streak = analysis.currentStreak;
   let dragonProbA = 50;
   let streakReason = '';
 
   if (analysis.isPingPong && analysis.pingPongCount >= 3) {
     dragonProbA = last1 === valB ? 56 : 44;
     streakReason = `${analysis.pingPongCount}-राउंड ${valA}/${valB} पिंग-पोंग अदला-बदली सक्रिय।`;
+  } else if (analysis.isDoubleForming) {
+    // A double was followed by a single of the opposite (e.g. AA -> B).
+    // In 2-2 chart mechanics, second B is expected to complete the pair (BB).
+    dragonProbA = last1 === valA ? 55 : 45;
+    streakReason = `डबल-फॉर्मेशन (${last1}) - 2-2 चक्र का दूसरा राउंड अपेक्षित।`;
+  } else if (analysis.isDoubleJump) {
+    // Both 2-2 pairs completed (e.g. AABB). Alternation back to opposite side begins.
+    dragonProbA = last1 === valB ? 54 : 46;
+    streakReason = `डबल-जंप (${valA}${valA}-${valB}${valB}) चक्र पूर्ण - रिवर्सल संभावित।`;
   } else if (streak.count >= 2) {
     if (streak.count === 2) {
       // Length 2 streaks break 50% of the time in Bernoulli processes - avoid premature continuation traps
@@ -942,9 +968,6 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
       dragonProbA = streak.type === valA ? 48 : 52;
       streakReason = `अत्यधिक ${streak.count}-राउंड ड्रैगन संतृप्ति (रिवर्सल संतुलन)।`;
     }
-  } else if (analysis.isDoubleJump) {
-    dragonProbA = last1 === valB ? 56 : 44;
-    streakReason = `डबल-जंप (${valA}${valA}-${valB}${valB}) संतुलित पैटर्न सक्रिय।`;
   } else if (analysis.isMirror) {
     dragonProbA = last1 === valB ? 55 : 45;
     streakReason = 'मिरर सिमिट्री (ABA) का निर्माण।';
@@ -982,7 +1005,11 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
       }
     }
     if (matchTotal >= 1) {
-      nGramProbA = ((matchA + 2) / (matchTotal + 4)) * 100;
+      let rawNGram = ((matchA + 2) / (matchTotal + 4)) * 100;
+      if (analysis.isDoubleForming) {
+        rawNGram = 0.5 * rawNGram + 0.5 * 50;
+      }
+      nGramProbA = rawNGram;
     }
   }
 

@@ -25,6 +25,7 @@ import {
   resetLearnedWeights
 } from './utils/engine';
 import { soundManager } from './utils/audio';
+import { INITIAL_SEED_HISTORY } from './data/seedHistory';
 
 const STORAGE_ACCUM_HISTORY = 'wingo_accumulated_history_v3';
 const STORAGE_CLOCK_OFFSET = 'wingo_server_clock_offset_v3';
@@ -46,12 +47,15 @@ function getSavedClockOffset() {
 }
 
 function getInitialHistory() {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined') return INITIAL_SEED_HISTORY || [];
   try {
     const raw = localStorage.getItem(STORAGE_ACCUM_HISTORY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length >= 20) return parsed;
+    }
   } catch {}
-  return [];
+  return INITIAL_SEED_HISTORY || [];
 }
 
 export default function App() {
