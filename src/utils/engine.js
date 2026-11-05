@@ -1063,33 +1063,51 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   const rawDelta = Math.abs(ensembleA - 50);
   const prediction = ensembleA >= 50 ? valA : valB;
 
-  // Consensus count across all 8 models
+  // True bidirectional consensus count across all 8 models (explicit vote verification)
   let votesA = 0;
-  if (crowdProbA >= 52) votesA++;
-  if (markovProbA >= 52) votesA++;
-  if (dragonProbA >= 52) votesA++;
-  if (bayesProbA >= 52) votesA++;
-  if (nGramProbA >= 52) votesA++;
-  if (omissionRevProbA >= 52) votesA++;
-  if (clusterProbA >= 52) votesA++;
-  if (fourierProbA >= 52) votesA++;
+  let votesB = 0;
+  const voteThreshold = 51.5;
 
-  const agreementCount = prediction === valA ? votesA : (8 - votesA);
+  if (crowdProbA >= voteThreshold) votesA++;
+  else if (crowdProbA <= (100 - voteThreshold)) votesB++;
+
+  if (markovProbA >= voteThreshold) votesA++;
+  else if (markovProbA <= (100 - voteThreshold)) votesB++;
+
+  if (dragonProbA >= voteThreshold) votesA++;
+  else if (dragonProbA <= (100 - voteThreshold)) votesB++;
+
+  if (bayesProbA >= voteThreshold) votesA++;
+  else if (bayesProbA <= (100 - voteThreshold)) votesB++;
+
+  if (nGramProbA >= voteThreshold) votesA++;
+  else if (nGramProbA <= (100 - voteThreshold)) votesB++;
+
+  if (omissionRevProbA >= voteThreshold) votesA++;
+  else if (omissionRevProbA <= (100 - voteThreshold)) votesB++;
+
+  if (clusterProbA >= voteThreshold) votesA++;
+  else if (clusterProbA <= (100 - voteThreshold)) votesB++;
+
+  if (fourierProbA >= voteThreshold) votesA++;
+  else if (fourierProbA <= (100 - voteThreshold)) votesB++;
+
+  const agreementCount = prediction === valA ? votesA : votesB;
 
   // Mathematically Calibrated Win Expectancy
-  let calibratedConfidence = 52 + (rawDelta * 1.2);
-  if (agreementCount >= 7) calibratedConfidence += 10;
-  else if (agreementCount >= 6) calibratedConfidence += 6;
-  else if (agreementCount <= 4) calibratedConfidence -= 4;
+  let calibratedConfidence = 51 + (rawDelta * 1.1);
+  if (agreementCount >= 6) calibratedConfidence += 4;
+  else if (agreementCount >= 5) calibratedConfidence += 2;
+  else if (agreementCount <= 3) calibratedConfidence -= 3;
 
   // Confluence Boost: When Betting Pool and Technical Trend both favor the SAME outcome!
   const isBettingAligned = (prediction === houseTendency) && crowdExposure.heavyExposurePercent >= 60;
   if (isBettingAligned) {
-    calibratedConfidence += 4;
+    calibratedConfidence += 3;
   }
 
-  // Realistic bounds: 52% to 78% (eliminates misleading 90-98% overconfidence)
-  const confidence = Math.min(78, Math.max(52, Math.round(calibratedConfidence)));
+  // Realistic bounds: 50% to 68% (eliminates false overconfidence)
+  const confidence = Math.min(68, Math.max(50, Math.round(calibratedConfidence)));
 
   // 🛡️ MISTAKE-PREVENTION SHIELDS (गलतियों से बचाने वाले 4 मुख्य सुरक्षा गार्ड्स)
   

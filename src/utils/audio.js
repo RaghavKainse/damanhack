@@ -129,8 +129,8 @@ export const soundManager = {
       let text = '';
       if (action === 'WAIT_SKIP') {
         text = this.language === 'hi' 
-          ? 'अस्थिर राउंड है, 90 प्रतिशत एक्यूरेसी के लिए यह राउंड छोड़ें।' 
-          : 'Choppy round. Skip this round to protect your accuracy.';
+          ? 'सावधान, यह राउंड छोड़ें। कोई दांव न लगाएं।' 
+          : 'Caution. Skip this round, do not bet.';
       } else {
         if (this.language === 'hi') {
           let typeHindi = prediction;
@@ -140,11 +140,11 @@ export const soundManager = {
           else if (prediction === 'EVEN') typeHindi = 'सम - EVEN';
 
           const numText = topNumber !== null && topNumber !== undefined ? `, मुख्य नंबर ${topNumber}` : '';
-          const prefix = isUltra ? 'अल्ट्रा पक्का 90 प्रतिशत सिग्नल है' : 'पक्का सिग्नल है';
+          const prefix = isUltra ? 'उच्च मॉडल सहमति पुष्ट सिग्नल है' : 'पुष्ट सिग्नल है';
           text = `${prefix} ${typeHindi}${numText}, विश्वास दर ${confidence} प्रतिशत।`;
         } else {
           const numText = topNumber !== null && topNumber !== undefined ? `, top number ${topNumber}` : '';
-          const prefix = isUltra ? 'Ultra Sniper confirmed signal is' : 'Confirmed signal is';
+          const prefix = isUltra ? 'High consensus confirmed signal is' : 'Confirmed signal is';
           text = `${prefix} ${prediction}${numText}, with ${confidence} percent confidence.`;
         }
       }

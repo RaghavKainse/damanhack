@@ -312,7 +312,7 @@ function PredictionHero({
             }}>
               <Sparkles size={14} color="var(--neon-gold)" />
               {badge === 'ULTRA_SNIPER' 
-                ? (isHi ? '🔥 90%+ अल्ट्रा पक्का' : '💎 90%+ ULTRA SIGNAL') 
+                ? (isHi ? '💎 उच्च सर्वसम्मति पुष्ट' : '💎 HIGH CONSENSUS') 
                 : (isHi ? 'पुष्टि' : 'CONFIRMED')}
             </span>
           )}
@@ -358,7 +358,7 @@ function PredictionHero({
               fontWeight: 700
             }}>
               <ShieldCheck size={14} color="var(--neon-gold)" />
-              <span>{shields?.shieldAlert || (isHi ? '⚠️ 50/50 चॉप राउंड (कम राशि रखें या छोड़ें - नीचे सबसे संभावित नंबर हैं)' : '⚠️ Chop Round: Play light or skip (Best numbers predicted below)')}</span>
+              <span>{shields?.shieldAlert || (isHi ? '⚠️ कम सहमति / चॉप राउंड (यह राउंड छोड़ें - दांव न लगाएं)' : '⚠️ Low Consensus / Chop Round (SKIP - Do Not Bet)')}</span>
             </div>
           ) : (
             <div style={{
@@ -376,7 +376,7 @@ function PredictionHero({
               fontWeight: 800
             }}>
               <Sparkles size={14} color="var(--neon-gold)" />
-              <span>{badge === 'ULTRA_SNIPER' ? (isHi ? '💎 90%+ अल्ट्रा पक्का राउंड (सर्वोच्च मॉडल सहमति)' : '💎 90%+ Ultra Sniper Bet Confirmed') : (isHi ? 'पुष्ट राउंड' : 'Confirmed Bet')}</span>
+              <span>{badge === 'ULTRA_SNIPER' ? (isHi ? '💎 उच्च मॉडल सर्वसम्मति पुष्ट राउंड' : '💎 High Consensus Bet Confirmed') : (isHi ? 'पुष्ट राउंड' : 'Confirmed Bet')}</span>
             </div>
           )}
 
@@ -388,34 +388,40 @@ function PredictionHero({
             letterSpacing: '1.5px',
             marginBottom: '4px'
           }}>
-            {isHi 
-              ? (targetType === 'bigSmall' ? '🎯 30 सेकंड बाद आएगा (बड़ा / छोटा)' : '⚡ 30 सेकंड बाद आएगा (विषम / सम)')
-              : '30-SECOND HIGH CONFIDENCE FORECAST'}
+            {isWait
+              ? (isHi ? '🛡️ सुरक्षा गार्ड सक्रिय' : '🛡️ SAFETY GUARD ACTIVE')
+              : (isHi 
+                  ? (targetType === 'bigSmall' ? '🎯 30 सेकंड बाद आएगा (बड़ा / छोटा)' : '⚡ 30 सेकंड बाद आएगा (विषम / सम)')
+                  : '30-SECOND CONFIRMED FORECAST')}
           </p>
 
           {/* Big / Small Primary Text */}
           <div style={{ margin: '4px 0' }}>
             <h2 className="font-heading pulse-badge" style={{
-              fontSize: '4.2rem',
+              fontSize: isWait ? '3.5rem' : '4.2rem',
               fontWeight: 900,
               color: isWait ? 'var(--neon-amber)' : primaryColor,
               lineHeight: 1,
               letterSpacing: '-1px',
               textShadow: `0 0 35px ${isWait ? 'var(--neon-amber)' : primaryColor}`
             }}>
-              {prediction}
+              {isWait ? '⏸️ WAIT' : prediction}
             </h2>
 
             <div style={{
-              fontSize: '1.1rem',
+              fontSize: '1.05rem',
               fontWeight: 800,
-              color: '#e2e8f0',
+              color: isWait ? 'var(--neon-amber)' : '#e2e8f0',
               marginTop: '4px'
             }}>
-              {targetType === 'bigSmall' ? (
-                isBig ? 'बड़ी संख्याएं (BIG: 5, 6, 7, 8, 9)' : 'छोटी संख्याएं (SMALL: 0, 1, 2, 3, 4)'
+              {isWait ? (
+                isHi ? '⚠️ यह राउंड छोड़ें (कमजोर सिग्नल / उच्च जोखिम)' : '⚠️ SKIP THIS ROUND (Wait for High Consensus)'
               ) : (
-                isOdd ? 'विषम संख्याएं (ODD: 1, 3, 5, 7, 9)' : 'सम संख्याएं (EVEN: 0, 2, 4, 6, 8)'
+                targetType === 'bigSmall' ? (
+                  isBig ? 'बड़ी संख्याएं (BIG: 5, 6, 7, 8, 9)' : 'छोटी संख्याएं (SMALL: 0, 1, 2, 3, 4)'
+                ) : (
+                  isOdd ? 'विषम संख्याएं (ODD: 1, 3, 5, 7, 9)' : 'सम संख्याएं (EVEN: 0, 2, 4, 6, 8)'
+                )
               )}
             </div>
           </div>
@@ -740,8 +746,10 @@ function PredictionHero({
                 <span style={{ fontSize: '0.75rem', color: '#ffb703', fontWeight: 700 }}>
                   {isHi ? 'अनुशंसित 3X बेट:' : 'Suggested 3X Bet:'}
                 </span>
-                <div className="font-mono" style={{ fontSize: '1rem', fontWeight: 800, color: '#fff' }}>
-                  Level {martingalePlan.level} (₹{martingalePlan.betAmount}) on {prediction}
+                <div className="font-mono" style={{ fontSize: '1rem', fontWeight: 800, color: isWait ? 'var(--neon-amber)' : '#fff' }}>
+                  {isWait 
+                    ? (isHi ? '⚠️ यह राउंड छोड़ें (कोई बेट न लगाएं)' : '⚠️ SKIP (No Bet Recommended)')
+                    : `Level ${martingalePlan.level} (₹${martingalePlan.betAmount}) on ${prediction}`}
                 </div>
               </div>
 
