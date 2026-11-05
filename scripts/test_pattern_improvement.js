@@ -35,3 +35,4 @@ for (let i = rounds.length - 1; i >= 1; i--) {
 console.log(`\n--- BASELINE RESULTS ON ${bets} STORE ROUNDS ---`);
 console.log(`Wins: ${wins} / ${bets} (${((wins / bets) * 100).toFixed(1)}%) | Losses: ${losses}`);
 console.log(`Max Loss Streak: ${maxLossStreak}`);
+

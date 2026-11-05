@@ -96,6 +96,19 @@ export default function App() {
   const isFetchingRef = useRef(false);
   const prevActiveIssueRef = useRef(null);
   const gameStateRef = useRef(null);
+  const lastRefreshedIssueRef = useRef('');
+
+  // Live state tracking refs to prevent stale closure traps
+  const predictionRef = useRef(prediction);
+  predictionRef.current = prediction;
+  const learnedWeightsRef = useRef(learnedWeights);
+  learnedWeightsRef.current = learnedWeights;
+  const predictionModeRef = useRef(predictionMode);
+  predictionModeRef.current = predictionMode;
+  const targetTypeRef = useRef(targetType);
+  targetTypeRef.current = targetType;
+  const handleNewResultArrivalRef = useRef(null);
+  const loadDataRef = useRef(null);
 
   // Current game configuration
   const currentGame = GAME_MODES[selectedGame] || GAME_MODES['WinGo_30S'];
@@ -141,7 +154,7 @@ export default function App() {
 
         // 24/7 Continuous Self-Training Catch-Up (Offline/Missed Rounds Experience Replay)
         try {
-          const freshWeights = replayUntrainedHistory(historyRes.list, predictionMode, targetType);
+          const freshWeights = replayUntrainedHistory(historyRes.list, predictionModeRef.current, targetTypeRef.current);
           setLearnedWeights({ ...freshWeights });
         } catch (e) {
           console.warn('Continuous self-training replay error:', e);
@@ -151,7 +164,9 @@ export default function App() {
         if (latestDraw) {
           // Check if a new result just arrived!
           if (prevIssueRef.current && prevIssueRef.current !== latestDraw.issueNumber) {
-            handleNewResultArrival(latestDraw);
+            if (handleNewResultArrivalRef.current) {
+              handleNewResultArrivalRef.current(latestDraw);
+            }
           }
           prevIssueRef.current = latestDraw.issueNumber;
         }
@@ -183,21 +198,25 @@ export default function App() {
 
   // Handle new round settlement & trigger self-learning adaptation
   const handleNewResultArrival = (newDraw) => {
+    const activePred = predictionRef.current;
+    const currentWeights = learnedWeightsRef.current;
+    const currentMode = predictionModeRef.current;
+    const currentTarget = targetTypeRef.current;
     const classified = classifyNumber(newDraw.number);
     
-    // Update online reinforcement weights and Bayesian transition matrix dynamically!
-    let freshWeights = learnedWeights;
-    if (prediction) {
-      freshWeights = updateLearningFromOutcome(prediction, newDraw);
+    // 1. Online reinforcement learning: update weights & Bayesian matrix dynamically from active prediction!
+    let freshWeights = currentWeights;
+    if (activePred) {
+      freshWeights = updateLearningFromOutcome(activePred, newDraw);
       setLearnedWeights({ ...freshWeights });
     }
 
-    // Immediately trigger deep historical re-analysis with new draw and updated weights
+    // 2. Continuous local data persistence: append confirmed result to local historical memory
     setHistoryList(currentHistory => {
       const merged = [newDraw, ...currentHistory.filter(h => h.issueNumber !== newDraw.issueNumber)].slice(0, 300);
-      const nextPred = generatePrediction(merged, predictionMode, targetType, freshWeights);
+      const nextPred = generatePrediction(merged, currentMode, currentTarget, freshWeights);
       setPrediction(nextPred);
-      const nextPerf = evaluateHistoryPerformance(merged, predictionMode, targetType);
+      const nextPerf = evaluateHistoryPerformance(merged, currentMode, currentTarget);
       setPerformance(nextPerf);
       try {
         localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(merged));
@@ -205,10 +224,10 @@ export default function App() {
       return merged;
     });
 
-    // Check if previous prediction was active (if action was WAIT_SKIP, no bet was made!)
-    if (prediction && prediction.action === 'CONFIRMED_BET') {
-      const actualTarget = targetType === 'bigSmall' ? classified.bigSmall : classified.oddEven;
-      const isWin = prediction.prediction === actualTarget;
+    // 3. Check if previous prediction was active (if action was WAIT_SKIP or NO_CLEAR_SIGNAL, 0 LOSS safe pass!)
+    if (activePred && activePred.action === 'CONFIRMED_BET') {
+      const actualTarget = currentTarget === 'bigSmall' ? classified.bigSmall : classified.oddEven;
+      const isWin = activePred.prediction === actualTarget;
       if (isWin) {
         setLossStreak(0);
         soundManager.playWin();
@@ -224,6 +243,7 @@ export default function App() {
       }
     }
   };
+  handleNewResultArrivalRef.current = handleNewResultArrival;
 
   const handleResetLearning = () => {
     const resetW = resetLearnedWeights();
@@ -250,10 +270,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [loadData]);
 
-  const lastRefreshedIssueRef = useRef('');
-  const predictionRef = useRef(prediction);
-  predictionRef.current = prediction;
-  const loadDataRef = useRef(loadData);
   loadDataRef.current = loadData;
 
   // Ultra-smooth, non-stuttering monotonic countdown tick synced to Daman UTC schedule

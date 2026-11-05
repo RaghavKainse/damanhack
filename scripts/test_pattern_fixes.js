@@ -5,3 +5,4 @@ import { generatePrediction, classifyNumber, getLearnedWeights, updateLearningFr
 const res = await fetch('https://draw.ar-lottery06.com/WinGo/WinGo_30S/GetHistoryIssuePage.json?ts=' + Date.now());
 const j = await res.json();
 console.log('Current live count:', j.data?.list?.length);
+

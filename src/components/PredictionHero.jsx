@@ -245,7 +245,7 @@ function PredictionHero({
             <span>{isHi ? '🎯 संतुलित (6/8 सहमति)' : 'Balanced (6/8)'}</span>
           </button>
 
-          {/* 3. Strict Confluence Mode */}
+          {/* 3. Zero-Loss Shield Mode */}
           <button
             onClick={() => onTogglePredictionMode('ultra_sniper')}
             style={{
@@ -265,7 +265,7 @@ function PredictionHero({
             }}
           >
             <Crown size={12} color="var(--neon-green)" />
-            <span>{isHi ? '💎 सख्त स्नाइपर' : 'Strict Sniper'}</span>
+            <span>{isHi ? '🛡️ जीरो-लॉस शील्ड (Zero-Loss)' : '🛡️ Zero-Loss Shield'}</span>
           </button>
         </div>
 

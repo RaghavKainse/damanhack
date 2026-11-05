@@ -14,3 +14,4 @@ console.log('analysis:', {
   isDoubleJump: analysis.isDoubleJump,
   isMirror: analysis.isMirror,
 });
+

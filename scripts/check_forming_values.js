@@ -33,3 +33,4 @@ for (let i = 8; i < allRounds.length; i++) {
 
   console.log(`Round #${nextTarget.issueNumber} (actual: ${actualBS}): v0=${v0}, v1=${v1}, v2=${v2} | isDoubleForming=${isDoubleForming}, isDoubleJump=${isDoubleJump}`);
 }
+

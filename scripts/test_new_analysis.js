@@ -94,3 +94,4 @@ for (let i = 8; i < allRounds.length; i++) {
   const analysis = analyzeFieldPatternsTest(historyBefore, 'bigSmall');
   console.log(`Round #${nextTarget.issueNumber} (actual: ${actualBS}): regime=${analysis.regime}, isDoubleForming=${analysis.isDoubleForming}, isDoubleJump=${analysis.isDoubleJump}, streak=${analysis.currentStreak.type}x${analysis.currentStreak.count}`);
 }
+

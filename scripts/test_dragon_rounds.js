@@ -37,3 +37,4 @@ for (let i = 8; i < allRounds.length; i++) {
 }
 
 console.log(`\nScore: ${wins} wins / ${total} total (${Math.round((wins / total) * 100)}%)`);
+
