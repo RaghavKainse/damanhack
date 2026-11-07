@@ -82,6 +82,29 @@ export function classifyNumber(num) {
 const STORAGE_KEY_WEIGHTS = 'wingo_self_learning_weights_v3';
 const STORAGE_KEY_TRANSITION = 'wingo_bayesian_transition_matrix_v3';
 
+let nodeLearnedWeights = null;
+let nodeBayesianMatrix = null;
+
+export function setNodeLearningState(weights, matrix) {
+  if (weights) {
+    nodeLearnedWeights = {
+      ...DEFAULT_LEARNED_WEIGHTS,
+      ...weights,
+      modelStats: { ...DEFAULT_LEARNED_WEIGHTS.modelStats, ...(weights.modelStats || {}) }
+    };
+  }
+  if (matrix && Array.isArray(matrix)) {
+    nodeBayesianMatrix = matrix.map(r => [...r]);
+  }
+}
+
+export function getNodeLearningState() {
+  return {
+    weights: nodeLearnedWeights ? { ...nodeLearnedWeights } : { ...DEFAULT_LEARNED_WEIGHTS },
+    matrix: nodeBayesianMatrix ? nodeBayesianMatrix.map(r => [...r]) : Array.from({ length: 10 }, () => Array(10).fill(1))
+  };
+}
+
 const DEFAULT_LEARNED_WEIGHTS = {
   crowdLiquidity: 0.25, // Informational pool monitor (damped to prevent synthetic noise distortion)
   markov2: 1.50,        // Hierarchical Higher-Order Markov Chains
@@ -113,7 +136,22 @@ const DEFAULT_LEARNED_WEIGHTS = {
 };
 
 export function getLearnedWeights() {
-  if (typeof window === 'undefined') return { ...DEFAULT_LEARNED_WEIGHTS };
+  if (typeof window === 'undefined') {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_WEIGHTS);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return {
+            ...DEFAULT_LEARNED_WEIGHTS,
+            ...parsed,
+            modelStats: { ...DEFAULT_LEARNED_WEIGHTS.modelStats, ...(parsed.modelStats || {}) }
+          };
+        }
+      } catch {}
+    }
+    return nodeLearnedWeights ? { ...nodeLearnedWeights } : { ...DEFAULT_LEARNED_WEIGHTS };
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY_WEIGHTS);
     if (raw) {
@@ -129,25 +167,44 @@ export function getLearnedWeights() {
 }
 
 export function saveLearnedWeights(weights) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    nodeLearnedWeights = { ...weights };
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_WEIGHTS, JSON.stringify(weights));
+      } catch {}
+    }
+    return;
+  }
   try {
     localStorage.setItem(STORAGE_KEY_WEIGHTS, JSON.stringify(weights));
   } catch {}
 }
 
 export function resetLearnedWeights() {
-  if (typeof window === 'undefined') return { ...DEFAULT_LEARNED_WEIGHTS };
-  try {
-    localStorage.removeItem(STORAGE_KEY_WEIGHTS);
-    localStorage.removeItem(STORAGE_KEY_TRANSITION);
-  } catch {}
+  nodeLearnedWeights = { ...DEFAULT_LEARNED_WEIGHTS };
+  nodeBayesianMatrix = Array.from({ length: 10 }, () => Array(10).fill(1));
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.removeItem(STORAGE_KEY_WEIGHTS);
+      localStorage.removeItem(STORAGE_KEY_TRANSITION);
+    } catch {}
+  }
   return { ...DEFAULT_LEARNED_WEIGHTS };
 }
 
 // Persistent 10x10 Bayesian Transition Matrix (Digit Prev -> Digit Next)
 export function getBayesianTransitionMatrix() {
   if (typeof window === 'undefined') {
-    return Array.from({ length: 10 }, () => Array(10).fill(1)); // Laplace prior = 1
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_TRANSITION);
+        if (raw) return JSON.parse(raw);
+      } catch {}
+    }
+    return nodeBayesianMatrix
+      ? nodeBayesianMatrix.map(row => [...row])
+      : Array.from({ length: 10 }, () => Array(10).fill(1));
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY_TRANSITION);
@@ -159,7 +216,17 @@ export function getBayesianTransitionMatrix() {
 }
 
 export function saveBayesianTransitionMatrix(matrix) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    if (Array.isArray(matrix)) {
+      nodeBayesianMatrix = matrix.map(row => [...row]);
+    }
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY_TRANSITION, JSON.stringify(matrix));
+      } catch {}
+    }
+    return;
+  }
   try {
     localStorage.setItem(STORAGE_KEY_TRANSITION, JSON.stringify(matrix));
   } catch {}

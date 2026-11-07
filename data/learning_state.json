@@ -1,0 +1,230 @@
+{
+  "weights": {
+    "crowdLiquidity": 0.6,
+    "markov2": 1.62,
+    "dragonTrend": 1.2,
+    "bayesianTrans": 1.34,
+    "nGram": 1.37,
+    "omissionRev": 1.38,
+    "clusterParity": 1.26,
+    "fourierCycle": 0.9,
+    "learningRounds": 240,
+    "winScore": 1050,
+    "lossScore": 870,
+    "accuracyHistory": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "recentAccuracy": 8,
+    "lastTrainedIssue": "20261107100051408",
+    "dailyRoundsTrained": 240,
+    "trainedDate": "2026-11-07",
+    "modelStats": {
+      "crowdLiquidity": {
+        "wins": 119,
+        "total": 240
+      },
+      "markov2": {
+        "wins": 134,
+        "total": 240
+      },
+      "dragonTrend": {
+        "wins": 131,
+        "total": 240
+      },
+      "bayesianTrans": {
+        "wins": 134,
+        "total": 240
+      },
+      "nGram": {
+        "wins": 138,
+        "total": 240
+      },
+      "omissionRev": {
+        "wins": 126,
+        "total": 240
+      },
+      "clusterParity": {
+        "wins": 126,
+        "total": 240
+      },
+      "fourierCycle": {
+        "wins": 142,
+        "total": 240
+      }
+    },
+    "lastUpdated": 1794051839680
+  },
+  "matrix": [
+    [
+      3,
+      4,
+      3,
+      7,
+      2,
+      5,
+      5,
+      2,
+      1,
+      6
+    ],
+    [
+      5,
+      4,
+      3,
+      3,
+      1,
+      3,
+      3,
+      4,
+      4,
+      2
+    ],
+    [
+      2,
+      3,
+      2,
+      5,
+      2,
+      2,
+      4,
+      2,
+      2,
+      3
+    ],
+    [
+      3,
+      2,
+      3,
+      4,
+      3,
+      5,
+      2,
+      3,
+      3,
+      5
+    ],
+    [
+      2,
+      1,
+      2,
+      2,
+      1,
+      2,
+      3,
+      3,
+      2,
+      5
+    ],
+    [
+      6,
+      7,
+      3,
+      2,
+      2,
+      3,
+      6,
+      4,
+      5,
+      2
+    ],
+    [
+      2,
+      3,
+      2,
+      3,
+      2,
+      5,
+      5,
+      5,
+      6,
+      4
+    ],
+    [
+      6,
+      4,
+      4,
+      2,
+      5,
+      2,
+      4,
+      2,
+      4,
+      2
+    ],
+    [
+      5,
+      1,
+      2,
+      2,
+      1,
+      9,
+      4,
+      7,
+      4,
+      3
+    ],
+    [
+      4,
+      3,
+      3,
+      3,
+      4,
+      4,
+      2,
+      3,
+      6,
+      5
+    ]
+  ],
+  "lastUpdated": 1794051840801,
+  "dateStr": "2026-11-07"
+}

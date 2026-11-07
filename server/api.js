@@ -12,6 +12,19 @@
 import http from 'http';
 import { storage } from './storage.js';
 import { generateCalibratedPrediction, runChronologicalWalkForward } from '../src/utils/statisticalEngine.js';
+import { 
+  getLearnedWeights, 
+  getBayesianTransitionMatrix, 
+  replayUntrainedHistory,
+  setNodeLearningState 
+} from '../src/utils/engine.js';
+
+// Auto-load .env in Node if available
+if (typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile();
+  } catch {}
+}
 
 export function createMetricsServer(port = 4001) {
   const server = http.createServer(async (req, res) => {
@@ -34,16 +47,78 @@ export function createMetricsServer(port = 4001) {
         const latestRound = await storage.getLatestRound();
         const registry = await storage.getModelRegistry();
         const evalReport = await storage.getLatestEvaluation();
+        const daily = await storage.getDailyProgress();
+        const weights = getLearnedWeights();
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           status: 'ONLINE',
-          storageMode: storage.isMongoConnected ? 'MongoDB' : 'ACID_WAL_Store',
+          storageMode: storage.isMongoConnected ? `MongoDB (${storage.dbName})` : 'ACID_WAL_Store',
+          isMongoConnected: storage.isMongoConnected,
           activeVersion: registry.activeVersion,
           totalVerifiedRounds: storage.walCache.rounds.length,
           latestRound,
+          dailyProgress: {
+            date: daily.date,
+            totalDrawsProcessed: daily.totalDrawsProcessed,
+            targetDailyRounds: daily.targetDailyRounds,
+            completionPercent: daily.completionPercent,
+            settledPredictions: daily.settledPredictions,
+            winCount: daily.winCount,
+            lossCount: daily.lossCount,
+            skippedCount: daily.skippedCount,
+            winRatePercent: daily.winRatePercent,
+            meanBrierScore: daily.meanBrierScore
+          },
+          learnedWeights: {
+            markov: weights.markov2,
+            bayes: weights.bayesianTrans,
+            dragon: weights.dragonTrend,
+            cluster: weights.clusterParity,
+            omission: weights.omissionRev
+          },
           lastEvaluationAt: evalReport?.evaluatedAt || null,
           uptimeSeconds: Math.floor(process.uptime())
+        }, null, 2));
+        return;
+      }
+
+      if (url.pathname === '/api/learning/day') {
+        const dateParam = url.searchParams.get('date');
+        const daily = await storage.getDailyProgress(dateParam);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(daily, null, 2));
+        return;
+      }
+
+      if (url.pathname === '/api/learning/days') {
+        const limit = parseInt(url.searchParams.get('limit') || '7', 10);
+        const rollups = await storage.getAllDailyRollups(limit);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ count: rollups.length, rollups }, null, 2));
+        return;
+      }
+
+      if (url.pathname === '/api/learning/state') {
+        const state = await storage.loadLearningState() || {
+          weights: getLearnedWeights(),
+          matrix: getBayesianTransitionMatrix(),
+          source: 'Default_Memory'
+        };
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(state, null, 2));
+        return;
+      }
+
+      if (url.pathname === '/api/learning/train-now' && req.method === 'POST') {
+        const history = await storage.getHistory(500);
+        const updatedWeights = replayUntrainedHistory(history, 'all', 'bigSmall');
+        await storage.saveLearningState(updatedWeights, getBayesianTransitionMatrix());
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          trainedRounds: history.length,
+          activeWeights: updatedWeights
         }, null, 2));
         return;
       }

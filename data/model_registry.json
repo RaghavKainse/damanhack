@@ -1,7 +1,79 @@
 {
-  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv",
-  "lastPromotionTimestamp": 1794050709182,
+  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze",
+  "lastPromotionTimestamp": 1794051935538,
   "history": [
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze",
+      "promotedAt": 1794051935546,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w"
+    },
+    {
+      "version": "v2.4.test-mw6c78z5",
+      "promotedAt": 1794051935537,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w",
+      "promotedAt": 1794051611600,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5"
+    },
+    {
+      "version": "v2.4.test-mw6c0b0q",
+      "promotedAt": 1794051611594,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5",
+      "promotedAt": 1794051363137,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c"
+    },
+    {
+      "version": "v2.4.test-mw6buzb1",
+      "promotedAt": 1794051363133,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c",
+      "promotedAt": 1794051308604,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv"
+    },
+    {
+      "version": "v2.4.test-mw6btt88",
+      "promotedAt": 1794051308600,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
     {
       "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv",
       "promotedAt": 1794050709187,

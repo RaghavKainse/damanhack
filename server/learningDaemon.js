@@ -28,7 +28,11 @@ import {
   classifyNumber,
   getLearnedWeights,
   saveLearnedWeights,
-  updateLearningFromOutcome
+  updateLearningFromOutcome,
+  replayUntrainedHistory,
+  getBayesianTransitionMatrix,
+  setNodeLearningState,
+  getNodeLearningState
 } from '../src/utils/engine.js';
 
 class LearningDaemon {
@@ -52,12 +56,31 @@ class LearningDaemon {
     console.log('🚀 Initializing 24/7 Autonomous Continuous Learning Daemon...');
     await storage.init();
 
-    // Recover verified history from persistent store
+    // 1. Recover persistent learning state (weights + 10x10 Bayesian transition matrix)
+    const savedState = await storage.loadLearningState();
+    if (savedState) {
+      setNodeLearningState(savedState.weights, savedState.matrix);
+      this.learnedWeights = getLearnedWeights();
+      console.log(`🧠 Loaded persistent learning state from ${savedState.source} (Trained rounds: ${this.learnedWeights.dailyRoundsTrained || 0})`);
+    } else {
+      console.log('ℹ️ No previous learning state found. Initializing foundational Bayesian priors.');
+    }
+
+    // 2. Recover verified history from persistent store
     const history = await storage.getHistory(300);
     console.log(`📦 Loaded ${history.length} verified historical rounds from persistent store.`);
 
+    // 3. Catch-up walk-forward training if stored history exists
+    if (history.length >= 10) {
+      console.log('🔄 Replaying and calibrating weights across verified history...');
+      const updated = replayUntrainedHistory(history, 'all', 'bigSmall');
+      this.learnedWeights = { ...updated };
+      await storage.saveLearningState(this.learnedWeights, getBayesianTransitionMatrix());
+      console.log(`✅ Foundation training complete. Active weights: Markov=${this.learnedWeights.markov2?.toFixed(2)}, Bayes=${this.learnedWeights.bayesianTrans?.toFixed(2)}, Cluster=${this.learnedWeights.clusterParity?.toFixed(2)}`);
+    }
+
     if (history.length >= 20) {
-      const initialPred = generateCalibratedPrediction(history, 'bigSmall');
+      const initialPred = generateCalibratedPrediction(history, 'bigSmall', this.learnedWeights);
       this.pendingPredictions.set(initialPred.targetIssue, initialPred);
       console.log(`🎯 Active Baseline Prediction for Issue #${initialPred.targetIssue}: ${initialPred.prediction} (${initialPred.calibratedConfidence}%) | Action: ${initialPred.action}`);
     }
@@ -240,8 +263,7 @@ class LearningDaemon {
 
       const drift = detectPageHinkleyDrift(this.recentErrors);
 
-      // Audit log settlement permanently to storage
-      await storage.savePredictionAudit({
+      const auditRecord = {
         targetIssue: issueStr,
         predicted: pred,
         actual: actualBS,
@@ -252,16 +274,22 @@ class LearningDaemon {
         brierError: Math.round(brierErr * 10000) / 10000,
         logLossError: Math.round(logLossErr * 10000) / 10000,
         driftDetected: drift.driftDetected,
-        calibratedConfidence: predObj.calibratedConfidence
-      });
+        calibratedConfidence: predObj.calibratedConfidence,
+        timestamp: Date.now()
+      };
+
+      // Audit log settlement permanently to storage & update 24/7 full-day learning rollup
+      await storage.savePredictionAudit(auditRecord);
+      await storage.updateDailyProgress(auditRecord);
 
       console.log(`🎯 Settlement [#${issueStr}]: Pred: ${pred} | Actual: ${actualBS} (${classified.number}) | ${isWin ? '✅ HIT' : '❌ MISS'} | Brier: ${brierErr.toFixed(4)} | Drift: ${drift.driftDetected ? '⚠️ DRIFT' : 'OK'}`);
 
-      // 2. Online reinforcement weight adaptation
+      // 2. Online reinforcement weight adaptation & Bayesian matrix persistence
       try {
         const freshWeights = updateLearningFromOutcome(predObj, newDraw);
         this.learnedWeights = { ...freshWeights };
         saveLearnedWeights(freshWeights);
+        await storage.saveLearningState(this.learnedWeights, getBayesianTransitionMatrix());
       } catch (e) {
         console.warn('Online learning update error:', e.message);
       }

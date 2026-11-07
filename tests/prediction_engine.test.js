@@ -55,6 +55,11 @@ import { LearningDaemon } from '../server/learningDaemon.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Test isolation: run local WAL unit tests without contaminating production database
+process.env.NODE_ENV = 'test';
+const savedMongoUri = process.env.MONGODB_URI;
+delete process.env.MONGODB_URI;
+
 // Mock browser localStorage for Node test runner
 const storageMap = {};
 globalThis.localStorage = {
@@ -531,6 +536,63 @@ async function runTestSuite() {
     assert(rollbackRes.activeVersion.includes('rollback'), 'Active version must reflect rollback');
 
     await testStorage.close();
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 15: Full-Day Continuous Learning Rollup & Learning State
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 15: Full-Day Continuous Learning Rollup & State Persistence');
+
+  await itAsync('Maintains full-day progress tracking toward 2,880 rounds with hourly breakdown', async () => {
+    const testStorage = new DualStorageAdapter();
+    testStorage.walFilePath = path.join(__dirname, '../data/test_daily_wal.json');
+    testStorage.learningStatePath = path.join(__dirname, '../data/test_daily_learning_state.json');
+    await testStorage.init();
+
+    // 1. Test saving and loading online learning state
+    const sampleWeights = { markov2: 1.62, bayesianTrans: 1.55, dailyRoundsTrained: 42 };
+    const sampleMatrix = Array.from({ length: 10 }, () => Array(10).fill(2));
+    await testStorage.saveLearningState(sampleWeights, sampleMatrix);
+
+    const loadedState = await testStorage.loadLearningState();
+    assert(loadedState !== null, 'Loaded learning state must not be null');
+    assert.strictEqual(loadedState.weights.markov2, 1.62);
+    assert.strictEqual(loadedState.matrix[0][0], 2);
+
+    // 2. Test updating full-day learning progress
+    const now = Date.now();
+    await testStorage.updateDailyProgress({
+      targetIssue: '20261107100050001',
+      action: 'CONFIRMED_BET',
+      isWin: true,
+      brierError: 0.12,
+      timestamp: now
+    });
+
+    await testStorage.updateDailyProgress({
+      targetIssue: '20261107100050002',
+      action: 'NO_CLEAR_SIGNAL',
+      isWin: false,
+      timestamp: now
+    });
+
+    const daily = await testStorage.getDailyProgress();
+    assert.strictEqual(daily.totalDrawsProcessed, 2, 'Must record 2 total draws');
+    assert.strictEqual(daily.targetDailyRounds, 2880, 'Must benchmark against 2,880 24h rounds');
+    assert.strictEqual(daily.settledPredictions, 1, 'Must record 1 settled prediction');
+    assert.strictEqual(daily.winCount, 1, 'Must record 1 win');
+    assert.strictEqual(daily.skippedCount, 1, 'Must record 1 skipped round');
+    assert.strictEqual(daily.winRatePercent, 100.0, 'Win rate on settled rounds should be 100%');
+
+    const hourStr = String(new Date(now).getUTCHours()).padStart(2, '0');
+    assert(daily.hourlyBuckets[hourStr], 'Must contain current hour bucket');
+    assert.strictEqual(daily.hourlyBuckets[hourStr].draws, 2);
+
+    await testStorage.close();
+
+    // Clean test files
+    if (fs.existsSync(testStorage.walFilePath)) fs.unlinkSync(testStorage.walFilePath);
+    if (fs.existsSync(testStorage.learningStatePath)) fs.unlinkSync(testStorage.learningStatePath);
   });
 
   console.log('\n======================================================');

@@ -25,3 +25,7 @@ dist-ssr
 
 .vercel
 data/*.tmp
+data/test_*.json
+.env
+.env.local
+.env.*
