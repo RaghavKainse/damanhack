@@ -64,7 +64,7 @@ function PredictionHero({
     shields = {}
   } = predictionData;
 
-  const isWait = action === 'NO_CLEAR_SIGNAL' || action === 'WAIT_SKIP';
+  const hasShieldAlert = Boolean(shields?.isStreakExhausted || shields?.isPingPongTrap || shields?.shieldAlert);
   const isBig = prediction === 'BIG';
   const isOdd = prediction === 'ODD';
 
@@ -99,11 +99,6 @@ function PredictionHero({
     }
   }
 
-  if (isWait) {
-    primaryGlow = '0 0 25px rgba(251, 133, 0, 0.35)';
-    primaryBorder = 'rgba(251, 133, 0, 0.5)';
-  }
-
   return (
     <div className="glass-panel" style={{
       padding: '24px 28px',
@@ -121,7 +116,7 @@ function PredictionHero({
         transform: 'translateX(-50%)',
         width: '500px',
         height: '260px',
-        background: `radial-gradient(circle, ${isWait ? 'rgba(251,133,0,0.18)' : (isBig ? 'rgba(0,245,155,0.22)' : 'rgba(79,172,254,0.22)')} 0%, transparent 70%)`,
+        background: `radial-gradient(circle, ${isBig ? 'rgba(0,245,155,0.22)' : 'rgba(79,172,254,0.22)'} 0%, transparent 70%)`,
         filter: 'blur(55px)',
         pointerEvents: 'none'
       }} />
@@ -275,49 +270,29 @@ function PredictionHero({
             #{targetPeriod ? targetPeriod.slice(-4) : '---'}
           </span>
 
-          {isWait ? (
-            <span style={{
-              background: 'rgba(251, 133, 0, 0.2)',
-              color: 'var(--neon-amber)',
-              border: '1px solid rgba(251, 133, 0, 0.6)',
-              padding: '5px 12px',
-              borderRadius: '8px',
-              fontSize: '0.76rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}>
-              <ShieldCheck size={14} color="var(--neon-gold)" />
-              {shields?.isStreakExhausted 
-                ? (isHi ? '🛡️ स्ट्रीक थकावट (SKIP)' : '🛡️ STREAK EXHAUSTION')
-                : shields?.crowdOpposesPrediction
-                ? (isHi ? '🛡️ कैसीनो ट्रैप (SKIP)' : '🛡️ CASINO TRAP')
-                : shields?.isPingPongTrap
-                ? (isHi ? '🛡️ पिंग-पोंग चॉप (SKIP)' : '🛡️ CHOP TRAP')
-                : (isHi ? '🛡️ सुरक्षा शील्ड (SKIP)' : 'SHIELD SKIP')}
-            </span>
-          ) : (
-            <span style={{
-              background: badge === 'ULTRA_SNIPER' 
-                ? 'linear-gradient(135deg, rgba(0, 245, 155, 0.25), rgba(255, 183, 3, 0.25))' 
-                : 'rgba(0, 242, 254, 0.15)',
-              color: badge === 'ULTRA_SNIPER' ? 'var(--neon-green)' : 'var(--neon-cyan)',
-              border: `1px solid ${badge === 'ULTRA_SNIPER' ? 'rgba(0, 245, 155, 0.7)' : 'rgba(0, 242, 254, 0.4)'}`,
-              padding: '5px 12px',
-              borderRadius: '8px',
-              fontSize: '0.76rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}>
-              <Sparkles size={14} color="var(--neon-gold)" />
-              {badge === 'ULTRA_SNIPER' 
-                ? (isHi ? '💎 उच्च सर्वसम्मति पुष्ट' : '💎 HIGH CONSENSUS') 
-                : (isHi ? 'पुष्टि' : 'CONFIRMED')}
-            </span>
-          )}
+          <span style={{
+            background: badge === 'ULTRA_SNIPER' 
+              ? 'linear-gradient(135deg, rgba(0, 245, 155, 0.25), rgba(255, 183, 3, 0.25))' 
+              : hasShieldAlert
+              ? 'rgba(251, 133, 0, 0.2)'
+              : 'rgba(0, 242, 254, 0.15)',
+            color: badge === 'ULTRA_SNIPER' ? 'var(--neon-green)' : (hasShieldAlert ? 'var(--neon-amber)' : 'var(--neon-cyan)'),
+            border: `1px solid ${badge === 'ULTRA_SNIPER' ? 'rgba(0, 245, 155, 0.7)' : (hasShieldAlert ? 'rgba(251, 133, 0, 0.6)' : 'rgba(0, 242, 254, 0.4)')}`,
+            padding: '5px 12px',
+            borderRadius: '8px',
+            fontSize: '0.76rem',
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}>
+            {hasShieldAlert ? <ShieldCheck size={14} color="var(--neon-gold)" /> : <Sparkles size={14} color="var(--neon-gold)" />}
+            {badge === 'ULTRA_SNIPER' 
+              ? (isHi ? '💎 उच्च सर्वसम्मति पुष्ट' : '💎 HIGH CONSENSUS') 
+              : hasShieldAlert
+              ? (isHi ? '🛡️ सुरक्षा शील्ड सक्रिय' : '🛡️ SHIELD ACTIVE')
+              : (isHi ? 'पुष्टि' : 'CONFIRMED')}
+          </span>
         </div>
 
       </div>
@@ -334,17 +309,17 @@ function PredictionHero({
         
         {/* Left Box: Active Target & Complete Number Forecast */}
         <div style={{
-          background: isWait ? 'rgba(251, 133, 0, 0.08)' : primaryBg,
-          border: `2px solid ${isWait ? 'rgba(251, 133, 0, 0.5)' : primaryBorder}`,
+          background: primaryBg,
+          border: `2px solid ${primaryBorder}`,
           borderRadius: '20px',
           padding: '22px 20px',
           textAlign: 'center',
-          boxShadow: `0 8px 30px ${isWait ? 'rgba(251,133,0,0.18)' : (isBig ? 'rgba(0,245,155,0.25)' : 'rgba(79,172,254,0.25)')}`,
+          boxShadow: `0 8px 30px ${isBig ? 'rgba(0,245,155,0.25)' : 'rgba(79,172,254,0.25)'}`,
           position: 'relative'
         }}>
           
           {/* Status Alert Banner */}
-          {isWait ? (
+          {hasShieldAlert ? (
             <div style={{
               background: 'rgba(251, 133, 0, 0.18)',
               border: '1px solid rgba(251, 133, 0, 0.45)',
@@ -360,7 +335,7 @@ function PredictionHero({
               fontWeight: 700
             }}>
               <ShieldCheck size={14} color="var(--neon-gold)" />
-              <span>{shields?.shieldAlert || (isHi ? '⚠️ कम सहमति / चॉप राउंड (यह राउंड छोड़ें - दांव न लगाएं)' : '⚠️ Low Consensus / Chop Round (SKIP - Do Not Bet)')}</span>
+              <span>{shields?.shieldAlert || (isHi ? '🛡️ सुरक्षा शील्ड: सतर्क रहकर खेलें' : '🛡️ Safety Guard Active')}</span>
             </div>
           ) : (
             <div style={{
@@ -390,65 +365,40 @@ function PredictionHero({
             letterSpacing: '1.5px',
             marginBottom: '4px'
           }}>
-            {isWait
-              ? (isHi ? '🛡️ सुरक्षा गार्ड सक्रिय' : '🛡️ SAFETY GUARD ACTIVE')
-              : (isHi 
-                  ? (targetType === 'bigSmall' ? '🎯 30 सेकंड बाद आएगा (बड़ा / छोटा)' : '⚡ 30 सेकंड बाद आएगा (विषम / सम)')
-                  : '30-SECOND CONFIRMED FORECAST')}
+            {isHi 
+              ? (targetType === 'bigSmall' ? '🎯 30 सेकंड बाद आएगा (बड़ा / छोटा)' : '⚡ 30 सेकंड बाद आएगा (विषम / सम)')
+              : '30-SECOND CONFIRMED FORECAST'}
           </p>
 
-          {/* Big / Small Primary Text */}
+          {/* Big / Small Primary Text - ALWAYS SHOWN */}
           <div style={{ margin: '4px 0' }}>
             <h2 className="font-heading pulse-badge" style={{
-              fontSize: isWait ? (action === 'NO_CLEAR_SIGNAL' ? '2.4rem' : '3.5rem') : '4.2rem',
+              fontSize: '4.2rem',
               fontWeight: 900,
-              color: isWait ? 'var(--neon-amber)' : primaryColor,
+              color: primaryColor,
               lineHeight: 1.15,
               letterSpacing: '-1px',
-              textShadow: `0 0 35px ${isWait ? 'var(--neon-amber)' : primaryColor}`
+              textShadow: `0 0 35px ${primaryColor}`
             }}>
-              {action === 'NO_CLEAR_SIGNAL' ? '⏸️ NO CLEAR SIGNAL' : (isWait ? '⏸️ WAIT' : prediction)}
+              {prediction && prediction !== 'NO CLEAR SIGNAL' ? prediction : (targetType === 'bigSmall' ? 'BIG' : 'ODD')}
             </h2>
 
             <div style={{
               fontSize: '1.05rem',
               fontWeight: 800,
-              color: isWait ? 'var(--neon-amber)' : '#e2e8f0',
+              color: '#e2e8f0',
               marginTop: '4px'
             }}>
-              {isWait ? (
-                isHi ? '⚠️ सांख्यिकीय साक्ष्य अपर्याप्त (यह राउंड छोड़ें - कोई दांव न लगाएं)' : '⚠️ INSUFFICIENT EVIDENCE (Abstain from betting this round)'
+              {targetType === 'bigSmall' ? (
+                isBig ? 'बड़ी संख्याएं (BIG: 5, 6, 7, 8, 9)' : 'छोटी संख्याएं (SMALL: 0, 1, 2, 3, 4)'
               ) : (
-                targetType === 'bigSmall' ? (
-                  isBig ? 'बड़ी संख्याएं (BIG: 5, 6, 7, 8, 9)' : 'छोटी संख्याएं (SMALL: 0, 1, 2, 3, 4)'
-                ) : (
-                  isOdd ? 'विषम संख्याएं (ODD: 1, 3, 5, 7, 9)' : 'सम संख्याएं (EVEN: 0, 2, 4, 6, 8)'
-                )
+                isOdd ? 'विषम संख्याएं (ODD: 1, 3, 5, 7, 9)' : 'सम संख्याएं (EVEN: 0, 2, 4, 6, 8)'
               )}
             </div>
           </div>
 
-          {/* 🎯 EXACT PREDICTED NUMBER + GOLDEN BASKET */}
-          {isWait ? (
-            <div style={{
-              marginTop: '14px',
-              padding: '16px 14px',
-              background: 'rgba(251, 133, 0, 0.08)',
-              border: '1px dashed rgba(251, 133, 0, 0.45)',
-              borderRadius: '14px',
-              textAlign: 'center'
-            }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--neon-amber)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <ShieldCheck size={18} color="var(--neon-gold)" />
-                {isHi ? '⚠️ कमजोर संगम: इस राउंड कोई सिंगल डिजिट या बास्केट सक्रिय नहीं है' : 'INSUFFICIENT CONFLUENCE: No Digit Forecast Active'}
-              </span>
-              <p style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '6px', lineHeight: 1.4 }}>
-                {isHi 
-                  ? 'जब 6/8+ मॉडल एकमत नहीं होते, तब सिंगल नंबर पर दांव लगाने से नुकसान का जोखिम 90% होता है। कृपया पुष्ट सिग्नल का इंतज़ार करें।'
-                  : 'Single digit betting carries high variance. Await high consensus signal before wagering.'}
-              </p>
-            </div>
-          ) : topNumber && (
+          {/* 🎯 EXACT PREDICTED NUMBER + GOLDEN BASKET - ALWAYS RENDERED */}
+          {topNumber && (
             <div style={{
               marginTop: '14px',
               padding: '12px 14px',
@@ -539,7 +489,7 @@ function PredictionHero({
               fontWeight: 700,
               color: '#f8fafc'
             }}>
-              {secondaryType}: <strong style={{ color: isWait ? 'var(--neon-amber)' : 'var(--neon-cyan)' }}>{isWait ? 'PAUSE' : secondaryPrediction}</strong>
+              {secondaryType}: <strong style={{ color: 'var(--neon-cyan)' }}>{secondaryPrediction && secondaryPrediction !== 'NO CLEAR SIGNAL' ? secondaryPrediction : (targetType === 'bigSmall' ? 'ODD' : 'BIG')}</strong>
             </span>
 
             <button
@@ -610,12 +560,10 @@ function PredictionHero({
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <TrendingUp size={16} color={isWait ? 'var(--neon-amber)' : 'var(--neon-green)'} />
-                {isWait 
-                  ? (isHi ? 'सिग्नल विश्वसनीयता (कमजोर सिग्नल / छोड़ें)' : 'Signal Reliability (Weak Signal / SKIP)')
-                  : (isHi ? `${prediction} आने की सटीक संभावना (Calibrated Confidence)` : 'Calibrated Confluence')}
+                <TrendingUp size={16} color="var(--neon-green)" />
+                {isHi ? `${prediction} आने की सटीक संभावना (Calibrated Confidence)` : 'Calibrated Confluence'}
               </span>
-              <span className="font-mono glow-text-green" style={{ fontSize: '1.45rem', fontWeight: 900, color: isWait ? 'var(--neon-amber)' : 'var(--neon-green)' }}>
+              <span className="font-mono glow-text-green" style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--neon-green)' }}>
                 {confidence}%
               </span>
             </div>
@@ -769,10 +717,8 @@ function PredictionHero({
                 <span style={{ fontSize: '0.75rem', color: '#ffb703', fontWeight: 700 }}>
                   {isHi ? 'अनुशंसित 3X बेट:' : 'Suggested 3X Bet:'}
                 </span>
-                <div className="font-mono" style={{ fontSize: '1rem', fontWeight: 800, color: isWait ? 'var(--neon-amber)' : '#fff' }}>
-                  {isWait 
-                    ? (isHi ? '⚠️ यह राउंड छोड़ें (कोई बेट न लगाएं)' : '⚠️ SKIP (No Bet Recommended)')
-                    : `Level ${martingalePlan.level} (₹${martingalePlan.betAmount}) on ${prediction}`}
+                <div className="font-mono" style={{ fontSize: '1rem', fontWeight: 800, color: '#fff' }}>
+                  {`Level ${martingalePlan.level} (₹${martingalePlan.betAmount}) on ${prediction || (targetType === 'bigSmall' ? 'BIG' : 'ODD')}`}
                 </div>
               </div>
 

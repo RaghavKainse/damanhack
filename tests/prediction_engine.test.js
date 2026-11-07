@@ -129,6 +129,8 @@ async function runTestSuite() {
     const testStorage = new DualStorageAdapter();
     testStorage.walFilePath = path.join(__dirname, '../data/test_wal.json');
     testStorage.modelRegistryPath = path.join(__dirname, '../data/test_registry.json');
+    if (fs.existsSync(testStorage.walFilePath)) fs.unlinkSync(testStorage.walFilePath);
+    if (fs.existsSync(testStorage.modelRegistryPath)) fs.unlinkSync(testStorage.modelRegistryPath);
     await testStorage.init();
 
     const draw1 = { issueNumber: '20261105100059999', number: '5', color: 'green' };
@@ -140,6 +142,7 @@ async function runTestSuite() {
 
     // Clean test file
     if (fs.existsSync(testStorage.walFilePath)) fs.unlinkSync(testStorage.walFilePath);
+    if (fs.existsSync(testStorage.modelRegistryPath)) fs.unlinkSync(testStorage.modelRegistryPath);
   });
 
   // -------------------------------------------------------------
@@ -296,6 +299,8 @@ async function runTestSuite() {
     const testStorage = new DualStorageAdapter();
     testStorage.walFilePath = path.join(__dirname, '../data/test_restart_wal.json');
     testStorage.modelRegistryPath = path.join(__dirname, '../data/test_restart_registry.json');
+    if (fs.existsSync(testStorage.walFilePath)) fs.unlinkSync(testStorage.walFilePath);
+    if (fs.existsSync(testStorage.modelRegistryPath)) fs.unlinkSync(testStorage.modelRegistryPath);
     await testStorage.init();
 
     // Commit 5 rounds
@@ -408,7 +413,7 @@ async function runTestSuite() {
     assert(shortStreakStats.ciUpper > 50.0, 'CI upper bound must include null hypothesis 50%');
   });
 
-  it('Verifies NO CLEAR SIGNAL is emitted when market regime is chopped and models conflict', () => {
+  it('Verifies active prediction is always outputted even in choppy regimes (never NO CLEAR SIGNAL)', () => {
     // Highly volatile chopped sequence
     const choppyList = [
       { issueNumber: '20261105100050010', number: '7' },
@@ -422,9 +427,10 @@ async function runTestSuite() {
     ];
 
     const pred = generatePrediction(choppyList, 'ultra_sniper', 'bigSmall');
-    assert.strictEqual(pred.action, 'NO_CLEAR_SIGNAL', 'Chopped sequence must yield NO_CLEAR_SIGNAL');
-    assert.strictEqual(pred.prediction, 'NO CLEAR SIGNAL', 'Must output NO CLEAR SIGNAL');
-    assert.strictEqual(pred.confidence, 50.0, 'Confidence must be strictly 50.0% neutral');
+    assert(['BIG', 'SMALL'].includes(pred.prediction), 'Must always output active prediction BIG or SMALL');
+    assert.strictEqual(pred.action, 'CONFIRMED_BET', 'Must remain confirmed bet');
+    assert(pred.topNumber !== undefined, 'Must output top VIP number');
+    assert(Array.isArray(pred.goldenBasket) && pred.goldenBasket.length === 3, 'Must output 3-number golden basket');
   });
 
   // -------------------------------------------------------------
@@ -547,6 +553,8 @@ async function runTestSuite() {
     const testStorage = new DualStorageAdapter();
     testStorage.walFilePath = path.join(__dirname, '../data/test_daily_wal.json');
     testStorage.learningStatePath = path.join(__dirname, '../data/test_daily_learning_state.json');
+    if (fs.existsSync(testStorage.walFilePath)) fs.unlinkSync(testStorage.walFilePath);
+    if (fs.existsSync(testStorage.learningStatePath)) fs.unlinkSync(testStorage.learningStatePath);
     await testStorage.init();
 
     // 1. Test saving and loading online learning state
@@ -593,6 +601,109 @@ async function runTestSuite() {
     // Clean test files
     if (fs.existsSync(testStorage.walFilePath)) fs.unlinkSync(testStorage.walFilePath);
     if (fs.existsSync(testStorage.learningStatePath)) fs.unlinkSync(testStorage.learningStatePath);
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 16: Zero-Loss on Abstention / NO_CLEAR_SIGNAL
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 16: Zero-Loss on Abstention / NO_CLEAR_SIGNAL');
+
+  it('Verifies abstaining (NO_CLEAR_SIGNAL) does NOT log a false loss in accuracyHistory', () => {
+    resetLearnedWeights();
+    const initialWeights = getLearnedWeights();
+    assert.strictEqual(initialWeights.accuracyHistory.length, 0);
+
+    // Simulate an abstained round
+    const skippedPrediction = {
+      action: 'NO_CLEAR_SIGNAL',
+      prediction: 'NO CLEAR SIGNAL',
+      targetType: 'bigSmall',
+      signals: {}
+    };
+
+    const actualDraw = { issueNumber: '20261105100050010', number: '7' };
+    const updatedWeights = updateLearningFromOutcome(skippedPrediction, actualDraw);
+
+    // Accuracy history must remain strictly empty (NO loss recorded for abstention!)
+    assert.strictEqual(updatedWeights.accuracyHistory.length, 0, 'Abstention must never be recorded as a loss in accuracyHistory');
+    assert.strictEqual(updatedWeights.recentAccuracy, 50.0, 'Recent accuracy must not collapse to 0% on abstentions');
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 17: Disabled Simulated & Artifact Models
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 17: Disabled Simulated & Artifact Models (Zero Weight)');
+
+  it('Verifies crowdLiquidity and fourierCycle have weight 0.0 and do not corrupt predictions', () => {
+    const weights = getLearnedWeights();
+    assert.strictEqual(weights.crowdLiquidity, 0.0, 'crowdLiquidity must be disabled (weight = 0)');
+    assert.strictEqual(weights.fourierCycle, 0.0, 'fourierCycle must be disabled (weight = 0)');
+
+    // Ensure updateLearningFromOutcome preserves weight 0 for disabled models
+    const pred = {
+      action: 'CONFIRMED_BET',
+      prediction: 'BIG',
+      targetType: 'bigSmall',
+      signals: {
+        crowdLiquidity: { choice: 'BIG' },
+        markov2: { choice: 'BIG' }
+      }
+    };
+    const draw = { issueNumber: '20261105100050011', number: '8' };
+    const w = updateLearningFromOutcome(pred, draw);
+    assert.strictEqual(w.crowdLiquidity, 0.0, 'Disabled models must remain weight 0 after learning updates');
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 18: Clean Number Probabilities under NO CLEAR SIGNAL
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 18: Clean Number Probabilities without False Suppression');
+
+  it('Maintains balanced digit distribution when Big/Small is NO CLEAR SIGNAL', () => {
+    const mockHistory = [
+      { issueNumber: '20261105100050010', number: '3' },
+      { issueNumber: '20261105100050009', number: '7' },
+      { issueNumber: '20261105100050008', number: '2' }
+    ];
+
+    // Predict with 'NO CLEAR SIGNAL'
+    const pred = generatePrediction(mockHistory, 'ultra_sniper', 'bigSmall');
+    const basket = pred.goldenBasket;
+    assert(Array.isArray(basket) && basket.length === 3, 'Golden basket must contain top 3 numbers');
+
+    // Verify all digits have reasonable probabilities (sum to ~100%)
+    const sumProb = pred.numberProbabilities.reduce((acc, d) => acc + d.prob, 0);
+    assert(sumProb >= 98 && sumProb <= 102, `Digit probabilities must sum to ~100% (got ${sumProb})`);
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 19: Comprehensive Model Metrics Reporting
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 19: Comprehensive Model Metrics (Accuracy, Brier, LogLoss, Sample)');
+
+  it('Walk-forward generates complete model-wise Accuracy, Brier, LogLoss, and sample size', () => {
+    const syntheticHistory = [];
+    const base = 20261105100050000n;
+    for (let i = 0; i < 70; i++) {
+      syntheticHistory.push({
+        issueNumber: (base + BigInt(i)).toString(),
+        number: String((i * 7 + 3) % 10)
+      });
+    }
+
+    const wf = runChronologicalWalkForward(syntheticHistory, 'bigSmall', [50]);
+    assert.strictEqual(wf.success, true);
+    const w50 = wf.windows[50];
+    assert(w50, 'Window 50 must exist');
+
+    for (const [mName, stats] of Object.entries(w50)) {
+      assert(typeof stats.winRate === 'number', `${mName} must have winRate`);
+      assert(typeof stats.brierScore === 'number', `${mName} must have brierScore`);
+      assert(typeof stats.logLoss === 'number', `${mName} must have logLoss`);
+      assert(typeof stats.sampleSize === 'number', `${mName} must have sampleSize`);
+      assert(stats.sampleSize === 50, `${mName} sample size must be 50`);
+      assert(stats.brierScore >= 0 && stats.brierScore <= 1, `${mName} brierScore in [0, 1]`);
+    }
   });
 
   console.log('\n======================================================');

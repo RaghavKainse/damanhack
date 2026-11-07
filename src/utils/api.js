@@ -112,13 +112,13 @@ export async function fetchLiveHistory(gameCode = 'WinGo_30S') {
     }
   }
 
-  // Simulation Fallback if offline
+  // Never pass simulated data as real live draw data
   return {
     success: false,
-    source: 'Simulation Backup',
-    list: generateSimulatedList(30),
-    totalPage: 1,
-    totalCount: 30,
+    source: 'Offline / Network Disconnected',
+    list: [],
+    totalPage: 0,
+    totalCount: 0,
     serviceTime: Date.now()
   };
 }

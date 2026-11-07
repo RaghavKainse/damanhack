@@ -26,9 +26,10 @@ async function diagnoseLiveAccuracy() {
     const pred = generatePrediction(past, 'ultra_sniper', 'bigSmall');
     const isWin = pred.prediction === actual.bigSmall;
 
-    if (pred.action === 'WAIT_SKIP') {
+    const isSkip = pred.action === 'WAIT_SKIP' || pred.action === 'NO_CLEAR_SIGNAL' || pred.prediction === 'NO CLEAR SIGNAL';
+    if (isSkip) {
       skipped++;
-      console.log(`Round #${list[i].issueNumber.slice(-4)} | Actual: ${actual.bigSmall} (${actual.number}) | Pred: ${pred.prediction} | ACTION: [WAIT_SKIP] (Skipped)`);
+      console.log(`Round #${list[i].issueNumber.slice(-4)} | Actual: ${actual.bigSmall} (${actual.number}) | Pred: ${pred.prediction} | ACTION: [SKIP / NO_CLEAR_SIGNAL] (Abstained)`);
     } else {
       confirmedBets++;
       if (isWin) confirmedWins++;

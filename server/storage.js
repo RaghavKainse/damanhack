@@ -246,9 +246,18 @@ export class DualStorageAdapter {
       }
     }
 
-    // 3. Commit to WAL cache & flush
+    // 3. Commit to WAL cache & maintain strict monotonic descending sort by issueNumber
     this.walCache.seenIssues.add(record.issueNumber);
-    this.walCache.rounds.unshift(record); // Newest first
+    this.walCache.rounds.push(record);
+    this.walCache.rounds.sort((a, b) => {
+      try {
+        const aBig = BigInt(a.issueNumber);
+        const bBig = BigInt(b.issueNumber);
+        return aBig > bBig ? -1 : (aBig < bBig ? 1 : 0);
+      } catch {
+        return b.issueNumber.localeCompare(a.issueNumber);
+      }
+    });
     this._flushWalCache();
 
     return true;
@@ -604,7 +613,7 @@ export class DualStorageAdapter {
     }
     daily.hourlyBuckets[hourStr].draws = (daily.hourlyBuckets[hourStr].draws || 0) + 1;
 
-    if (auditRecord.action === 'NO_CLEAR_SIGNAL' || auditRecord.action === 'WAIT_SKIP') {
+    if (auditRecord.action === 'NO_CLEAR_SIGNAL' || auditRecord.action === 'WAIT_SKIP' || auditRecord.predicted === 'NO CLEAR SIGNAL') {
       daily.skippedCount = (daily.skippedCount || 0) + 1;
       daily.hourlyBuckets[hourStr].skips = (daily.hourlyBuckets[hourStr].skips || 0) + 1;
     } else {

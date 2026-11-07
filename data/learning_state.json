@@ -8,7 +8,7 @@
     "omissionRev": 1.44,
     "clusterParity": 1.4,
     "fourierCycle": 1.01,
-    "learningRounds": 517,
+    "learningRounds": 530,
     "winScore": 2146,
     "lossScore": 1766,
     "accuracyHistory": [
@@ -16,21 +16,21 @@
       0,
       0,
       0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
       1,
       1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       0,
       0,
       0,
@@ -64,8 +64,8 @@
       0
     ],
     "recentAccuracy": 4,
-    "lastTrainedIssue": "20261107100051445",
-    "dailyRoundsTrained": 517,
+    "lastTrainedIssue": "20261107100051458",
+    "dailyRoundsTrained": 530,
     "trainedDate": "2026-11-07",
     "modelStats": {
       "crowdLiquidity": {
@@ -101,7 +101,7 @@
         "total": 489
       }
     },
-    "lastUpdated": 1794052950111
+    "lastUpdated": 1794053341876
   },
   "matrix": [
     [
@@ -225,6 +225,6 @@
       11
     ]
   ],
-  "lastUpdated": 1794052950111,
+  "lastUpdated": 1794053341876,
   "dateStr": "2026-11-07"
 }

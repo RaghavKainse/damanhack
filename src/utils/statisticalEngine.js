@@ -715,11 +715,11 @@ export function generateCalibratedPrediction(historyList, field = 'bigSmall', cu
 
   const defaultWeights = {
     HistoricalFrequency: 1.0,
-    RollingWindow: 1.1,
-    BayesianBetaBinomial: 1.25,
-    MarkovTransition: 1.25,
-    ExponentiallyWeighted: 1.1,
-    StatisticalBaseline: 0.8
+    RollingWindow: 0.8,
+    BayesianBetaBinomial: 1.35,
+    MarkovTransition: 1.35,
+    ExponentiallyWeighted: 0.8,
+    StatisticalBaseline: 0.0 // Baseline is a benchmark control; does not vote in predictive ensemble
   };
   const weights = customWeights || defaultWeights;
 
@@ -731,41 +731,44 @@ export function generateCalibratedPrediction(historyList, field = 'bigSmall', cu
   const mBase = modelStatisticalBaseline(historyList, field);
 
   const subModels = [
-    { key: 'HistoricalFrequency', res: mHist, weight: weights.HistoricalFrequency || 1.0 },
-    { key: 'RollingWindow', res: mRoll, weight: weights.RollingWindow || 1.1 },
-    { key: 'BayesianBetaBinomial', res: mBayes, weight: weights.BayesianBetaBinomial || 1.25 },
-    { key: 'MarkovTransition', res: mMarkov, weight: weights.MarkovTransition || 1.25 },
-    { key: 'ExponentiallyWeighted', res: mEWMA, weight: weights.ExponentiallyWeighted || 1.1 },
-    { key: 'StatisticalBaseline', res: mBase, weight: weights.StatisticalBaseline || 0.8 }
+    { key: 'HistoricalFrequency', res: mHist, weight: weights.HistoricalFrequency !== undefined ? weights.HistoricalFrequency : 1.0 },
+    { key: 'RollingWindow', res: mRoll, weight: weights.RollingWindow !== undefined ? weights.RollingWindow : 0.8 },
+    { key: 'BayesianBetaBinomial', res: mBayes, weight: weights.BayesianBetaBinomial !== undefined ? weights.BayesianBetaBinomial : 1.35 },
+    { key: 'MarkovTransition', res: mMarkov, weight: weights.MarkovTransition !== undefined ? weights.MarkovTransition : 1.35 },
+    { key: 'ExponentiallyWeighted', res: mEWMA, weight: weights.ExponentiallyWeighted !== undefined ? weights.ExponentiallyWeighted : 0.8 },
+    { key: 'StatisticalBaseline', res: mBase, weight: weights.StatisticalBaseline !== undefined ? weights.StatisticalBaseline : 0.0 }
   ];
+
+  const activeSubModels = subModels.filter(sm => sm.weight > 0);
+  const numActive = activeSubModels.length || 5;
 
   let weightedSumA = 0;
   let totalW = 0;
   let votesA = 0;
 
-  for (const sm of subModels) {
+  for (const sm of activeSubModels) {
     weightedSumA += sm.res.probA * sm.weight;
     totalW += sm.weight;
     if (sm.res.choice === valA) votesA++;
   }
 
-  const ensembleProbA = weightedSumA / totalW;
+  const ensembleProbA = totalW > 0 ? (weightedSumA / totalW) : 0.50;
   const ensembleProbB = 1 - ensembleProbA;
   const rawDelta = Math.abs(ensembleProbA - 0.5);
   const entropy = calculateShannonEntropy(ensembleProbA);
 
   const prediction = ensembleProbA >= 0.5 ? valA : valB;
-  const agreementCount = prediction === valA ? votesA : (6 - votesA);
+  const agreementCount = prediction === valA ? votesA : (numActive - votesA);
 
   // Evidence Level & Gating Rule:
-  // If raw delta < 2.5% (prob between 47.5% and 52.5%), entropy > 0.985, or agreement <= 3/6, signal NO_CLEAR_SIGNAL
+  // If raw delta < 2.0% (prob between 48.0% and 52.0%), entropy > 0.985, or consensus split, signal NO_CLEAR_SIGNAL
   let evidenceLevel = 'INSUFFICIENT';
   let action = 'NO_CLEAR_SIGNAL';
 
-  if (rawDelta >= 0.040 && agreementCount >= 5 && entropy <= 0.970) {
+  if (rawDelta >= 0.035 && agreementCount >= Math.ceil(numActive * 0.7) && entropy <= 0.975) {
     evidenceLevel = 'HIGH';
     action = 'CONFIRMED_BET';
-  } else if (rawDelta >= 0.025 && agreementCount >= 4 && entropy <= 0.985) {
+  } else if (rawDelta >= 0.020 && agreementCount >= Math.ceil(numActive * 0.6) && entropy <= 0.985) {
     evidenceLevel = 'MODERATE';
     action = 'CONFIRMED_BET';
   } else {

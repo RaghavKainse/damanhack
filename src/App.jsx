@@ -152,17 +152,9 @@ export default function App() {
         setIsLive(historyRes.success);
         setDataSource(historyRes.source);
 
-        // 24/7 Continuous Self-Training Catch-Up (Offline/Missed Rounds Experience Replay)
-        try {
-          const freshWeights = replayUntrainedHistory(historyRes.list, predictionModeRef.current, targetTypeRef.current);
-          setLearnedWeights({ ...freshWeights });
-        } catch (e) {
-          console.warn('Continuous self-training replay error:', e);
-        }
-
         const latestDraw = historyRes.list[0];
         if (latestDraw) {
-          // Check if a new result just arrived!
+          // Settle active prediction FIRST before updating historical cache
           if (prevIssueRef.current && prevIssueRef.current !== latestDraw.issueNumber) {
             if (handleNewResultArrivalRef.current) {
               handleNewResultArrivalRef.current(latestDraw);
@@ -182,6 +174,15 @@ export default function App() {
             }
             if (combined.length >= 300) break;
           }
+
+          // 24/7 Continuous Self-Training Catch-Up (Offline/Missed Rounds Experience Replay on accumulated history)
+          try {
+            const freshWeights = replayUntrainedHistory(combined, predictionModeRef.current, targetTypeRef.current);
+            setLearnedWeights({ ...freshWeights });
+          } catch (e) {
+            console.warn('Continuous self-training replay error:', e);
+          }
+
           try {
             localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(combined.slice(0, 300)));
           } catch {}

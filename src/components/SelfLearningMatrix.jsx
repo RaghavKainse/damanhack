@@ -27,12 +27,12 @@ function SelfLearningMatrix({
   const models = [
     { key: 'markov2', name: isHi ? '2nd-ऑर्डर मार्कोव चेन' : '2nd-Order Markov', weight: markov2, color: '#00f2fe' },
     { key: 'bayesianTrans', name: isHi ? '10x10 बायेसियन मैट्रिक्स' : 'Bayesian 10x10 Matrix', weight: bayesianTrans, color: '#ffb703' },
-    { key: 'clusterParity', name: isHi ? 'मल्टी-हॉरिजॉन क्लस्टर' : 'Multi-Horizon Cluster', weight: clusterParity, color: '#06d6a0' },
-    { key: 'omissionRev', name: isHi ? 'ओमिशन रिवर्शन (Z-Score)' : 'Omission Reversion', weight: omissionRev, color: '#ff3366' },
-    { key: 'nGram', name: isHi ? 'एन-ग्राम पैटर्न मैचर' : 'N-Gram Pattern', weight: nGram, color: '#4facfe' },
     { key: 'dragonTrend', name: isHi ? 'नियंत्रित ड्रैगन ट्रेंड' : 'Damped Dragon Trend', weight: dragonTrend, color: '#00f59b' },
-    { key: 'fourierCycle', name: isHi ? 'हार्मोनिक चक्र वेव' : 'Fourier Harmonic', weight: fourierCycle, color: '#9d4edd' },
-    { key: 'crowdLiquidity', name: isHi ? 'पूल मॉनिटर (कम वेट)' : 'Pool Monitor (Low Weight)', weight: crowdLiquidity, color: '#64748b' }
+    { key: 'nGram', name: isHi ? 'एन-ग्राम पैटर्न मैचर' : 'N-Gram Pattern', weight: nGram, color: '#4facfe' },
+    { key: 'omissionRev', name: isHi ? 'ओमिशन रिवर्शन (Z-Score)' : 'Omission Reversion', weight: omissionRev, color: '#ff3366' },
+    { key: 'clusterParity', name: isHi ? 'मल्टी-हॉरिजॉन क्लस्टर' : 'Multi-Horizon Cluster', weight: clusterParity, color: '#06d6a0' },
+    { key: 'fourierCycle', name: isHi ? 'हार्मोनिक वेव (निष्क्रिय)' : 'Fourier Harmonic (Disabled)', weight: fourierCycle, color: '#64748b' },
+    { key: 'crowdLiquidity', name: isHi ? 'पूल मॉनिटर (निष्क्रिय)' : 'Pool Monitor (Disabled)', weight: crowdLiquidity, color: '#64748b' }
   ];
 
   // Regime Hindi labels
@@ -223,8 +223,8 @@ function SelfLearningMatrix({
                 <span style={{ fontSize: '0.74rem', color: '#cbd5e1', fontWeight: 600 }}>
                   {m.name}
                 </span>
-                <span className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 800, color: m.color }}>
-                  {m.weight.toFixed(2)}x
+                <span className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 800, color: m.weight === 0 ? '#64748b' : m.color }}>
+                  {m.weight === 0 ? 'OFF' : `${m.weight.toFixed(2)}x`}
                 </span>
               </div>
 

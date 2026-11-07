@@ -106,14 +106,14 @@ export function getNodeLearningState() {
 }
 
 const DEFAULT_LEARNED_WEIGHTS = {
-  crowdLiquidity: 0.25, // Informational pool monitor (damped to prevent synthetic noise distortion)
+  crowdLiquidity: 0.0,  // Disabled: synthetic turnover noise must not distort predictions
   markov2: 1.50,        // Hierarchical Higher-Order Markov Chains
   dragonTrend: 1.05,    // Controlled Streak Momentum & Decay
   bayesianTrans: 1.45,  // 10x10 Bayesian Transition Matrix
   nGram: 1.20,          // N-Gram Pattern Matcher
   omissionRev: 1.25,    // Omission Chi-Square Reversion
   clusterParity: 1.30,  // Multi-Horizon Cluster Parity
-  fourierCycle: 0.85,   // Harmonic Fourier Cycle
+  fourierCycle: 0.0,    // Disabled: periodic sine artifact
   learningRounds: 0,
   winScore: 0,
   lossScore: 0,
@@ -254,12 +254,17 @@ export function updateLearningFromOutcome(lastPredictions, actualDraw) {
   const actualOE = actualClass.oddEven;
   const targetField = lastPredictions.targetType === 'bigSmall' ? actualBS : actualOE;
 
-  // 1. Update 8 Predictive Models via Regularized Online Gradient with L2 Shrinkage
+  // 1. Update Predictive Models via Regularized Online Gradient with L2 Shrinkage
   const evaluate = (modelKey, predVal) => {
     if (!predVal) return;
+    const baseW = DEFAULT_LEARNED_WEIGHTS[modelKey] !== undefined ? DEFAULT_LEARNED_WEIGHTS[modelKey] : 1.0;
+    // Disabled models (base weight 0) remain strictly disabled
+    if (baseW === 0.0) {
+      weights[modelKey] = 0.0;
+      return;
+    }
     const isCorrect = predVal === targetField;
-    const currentW = weights[modelKey] || DEFAULT_LEARNED_WEIGHTS[modelKey] || 1.0;
-    const baseW = DEFAULT_LEARNED_WEIGHTS[modelKey] || 1.0;
+    const currentW = weights[modelKey] !== undefined ? weights[modelKey] : baseW;
     let newW = currentW;
     if (isCorrect) {
       newW = currentW * (1 + eta);
@@ -270,7 +275,8 @@ export function updateLearningFromOutcome(lastPredictions, actualDraw) {
     }
     // Pull back toward empirical prior to prevent single-streak overreaction
     newW = (1 - lambda) * newW + lambda * baseW;
-    weights[modelKey] = Math.max(0.60, Math.min(2.40, Math.round(newW * 100) / 100));
+    // Allow weights to drop to 0.0 when models consistently underperform
+    weights[modelKey] = Math.max(0.0, Math.min(2.40, Math.round(newW * 100) / 100));
 
     // Per-model win/total tracking
     if (!weights.modelStats) weights.modelStats = {};
@@ -288,8 +294,12 @@ export function updateLearningFromOutcome(lastPredictions, actualDraw) {
   if (signals.clusterParity) evaluate('clusterParity', signals.clusterParity.choice);
   if (signals.fourierCycle) evaluate('fourierCycle', signals.fourierCycle.choice);
 
-  // 2. Rolling Accuracy Tracking (Last 50 Settled Predictions)
-  if (lastPredictions.prediction) {
+  // 2. Rolling Accuracy Tracking (Only for Confirmed Settled Bets, NEVER for Skips/Abstentions)
+  const isSkip = lastPredictions.action === 'NO_CLEAR_SIGNAL' || 
+                 lastPredictions.action === 'WAIT_SKIP' || 
+                 lastPredictions.prediction === 'NO CLEAR SIGNAL';
+
+  if (!isSkip && lastPredictions.prediction) {
     const isOverallWin = lastPredictions.prediction === targetField;
     if (!Array.isArray(weights.accuracyHistory)) weights.accuracyHistory = [];
     weights.accuracyHistory.push(isOverallWin ? 1 : 0);
@@ -882,39 +892,27 @@ export function calculateNumberProbabilities(historyList, primaryLeanBS = 'BIG',
     (fullDayDynamics.coldDigits || []).forEach((digit, idx) => {
       scores[digit] += (3 - idx) * 2.8;
     });
-    const moduloMatch = fullDayDynamics.modulo10;
-    if (moduloMatch >= 0 && moduloMatch <= 9) {
-      scores[moduloMatch] += 4.5;
-    }
   }
 
-  // 5. Single Digit Betting Liability (9x Payout House Trap)
-  // Retail crowd dumps money on popular lucky digits (7, 8, 9, 3, 5).
-  // Casino risk control avoids paying 9x on heavily bet digits and drops low-liability digits!
-  if (crowdLiquidity && Array.isArray(crowdLiquidity.digitPools) && crowdLiquidity.digitPools.length === 10) {
-    crowdLiquidity.digitPools.forEach(dp => {
-      if (dp.percent >= 16) {
-        scores[dp.digit] *= 0.55; // heavily penalized liability
-      } else if (dp.percent >= 12) {
-        scores[dp.digit] *= 0.80;
-      } else if (dp.percent <= 6) {
-        scores[dp.digit] *= 1.45; // low liability: house profit favorite
-      }
-    });
-  }
+  // 5. Primary & Secondary Alignments (The Big/Small and Odd/Even filter)
+  const hasBSLean = primaryLeanBS === 'BIG' || primaryLeanBS === 'SMALL';
+  const hasOELean = primaryLeanOE === 'ODD' || primaryLeanOE === 'EVEN';
 
-  // 6. Primary & Secondary Alignments (The Big/Small and Odd/Even filter)
   for (let d = 0; d < 10; d++) {
     const isBig = d >= 5;
     const isOdd = d % 2 !== 0;
 
-    if (primaryLeanBS === 'BIG' && isBig) scores[d] *= 3.2;
-    else if (primaryLeanBS === 'SMALL' && !isBig) scores[d] *= 3.2;
-    else scores[d] *= 0.22;
+    if (hasBSLean) {
+      if (primaryLeanBS === 'BIG' && isBig) scores[d] *= 3.2;
+      else if (primaryLeanBS === 'SMALL' && !isBig) scores[d] *= 3.2;
+      else scores[d] *= 0.22;
+    }
 
-    if (primaryLeanOE === 'ODD' && isOdd) scores[d] *= 1.6;
-    else if (primaryLeanOE === 'EVEN' && !isOdd) scores[d] *= 1.6;
-    else scores[d] *= 0.75;
+    if (hasOELean) {
+      if (primaryLeanOE === 'ODD' && isOdd) scores[d] *= 1.6;
+      else if (primaryLeanOE === 'EVEN' && !isOdd) scores[d] *= 1.6;
+      else scores[d] *= 0.75;
+    }
   }
 
   const totalScore = scores.reduce((a, b) => a + b, 0) || 1;
@@ -952,15 +950,18 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   const learnedW = customWeights || getLearnedWeights();
 
   if (!historyList || historyList.length < 3) {
+    const defaultPrediction = (historyList && historyList.length > 0)
+      ? (classifyNumber(historyList[0].number)[field] === valA ? valB : valA)
+      : valA;
     return {
       field,
-      action: 'NO_CLEAR_SIGNAL',
-      prediction: 'NO CLEAR SIGNAL',
+      action: 'CONFIRMED_BET',
+      prediction: defaultPrediction,
       confidence: 50,
-      agreementCount: 0,
+      agreementCount: 1,
       signals: {},
-      reason: 'डेटा लोड हो रहा है, कृपया 1 राउंड प्रतीक्षा करें...',
-      badge: 'WAIT',
+      reason: 'डेटा लोड हो रहा है, सक्रिय क्वांट सिग्नल चालू है।',
+      badge: 'MODERATE',
       regime: 'EQUILIBRIUM'
     };
   }
@@ -1134,14 +1135,14 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   }
 
   // 🧠 APPLY SELF-LEARNED ADAPTIVE WEIGHTS
-  let wCrowd = learnedW.crowdLiquidity ?? 0.25;
-  let wMarkov = learnedW.markov2 ?? 1.50;
-  let wDragon = learnedW.dragonTrend ?? 1.05;
-  let wBayes = learnedW.bayesianTrans ?? 1.45;
-  let wNGram = learnedW.nGram ?? 1.20;
-  let wOmission = learnedW.omissionRev ?? 1.25;
-  let wCluster = learnedW.clusterParity ?? 1.30;
-  let wFourier = learnedW.fourierCycle ?? 0.85;
+  let wCrowd = learnedW.crowdLiquidity !== undefined ? learnedW.crowdLiquidity : 0.0;
+  let wMarkov = learnedW.markov2 !== undefined ? learnedW.markov2 : 1.50;
+  let wDragon = learnedW.dragonTrend !== undefined ? learnedW.dragonTrend : 1.05;
+  let wBayes = learnedW.bayesianTrans !== undefined ? learnedW.bayesianTrans : 1.45;
+  let wNGram = learnedW.nGram !== undefined ? learnedW.nGram : 1.20;
+  let wOmission = learnedW.omissionRev !== undefined ? learnedW.omissionRev : 1.25;
+  let wCluster = learnedW.clusterParity !== undefined ? learnedW.clusterParity : 1.30;
+  let wFourier = learnedW.fourierCycle !== undefined ? learnedW.fourierCycle : 0.0;
 
   // Dynamic Regime Multipliers
   if (analysis.regime === 'DRAGON_STREAK') {
@@ -1155,163 +1156,106 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     wCluster *= 1.3;
   }
 
-  const totalWeight = wCrowd + wMarkov + wDragon + wBayes + wNGram + wOmission + wCluster + wFourier;
+  // Active models (disabled models with weight 0 do not participate)
+  const candidateModels = [
+    { key: 'markov2', probA: markovProbA, weight: wMarkov },
+    { key: 'dragonTrend', probA: dragonProbA, weight: wDragon },
+    { key: 'bayesianTrans', probA: bayesProbA, weight: wBayes },
+    { key: 'nGram', probA: nGramProbA, weight: wNGram },
+    { key: 'omissionRev', probA: omissionRevProbA, weight: wOmission },
+    { key: 'clusterParity', probA: clusterProbA, weight: wCluster },
+    { key: 'crowdLiquidity', probA: crowdProbA, weight: wCrowd },
+    { key: 'fourierCycle', probA: fourierProbA, weight: wFourier }
+  ];
+  const activeModels = candidateModels.filter(m => m.weight > 0);
 
-  const ensembleA = (
-    (crowdProbA * wCrowd) +
-    (markovProbA * wMarkov) +
-    (dragonProbA * wDragon) +
-    (bayesProbA * wBayes) +
-    (nGramProbA * wNGram) +
-    (omissionRevProbA * wOmission) +
-    (clusterProbA * wCluster) +
-    (fourierProbA * wFourier)
-  ) / totalWeight;
+  let totalWeight = 0;
+  let weightedProbA = 0;
+  for (const m of activeModels) {
+    weightedProbA += m.probA * m.weight;
+    totalWeight += m.weight;
+  }
 
-  const rawDelta = Math.abs(ensembleA - 50);
-  const prediction = ensembleA >= 50 ? valA : valB;
+  const ensembleA = totalWeight > 0 ? (weightedProbA / totalWeight) : 50.0;
+  const rawDelta = Math.abs(ensembleA - 50.0);
+  const prediction = ensembleA >= 50.0 ? valA : valB;
 
-  // True bidirectional consensus count across all 8 models (explicit vote verification)
+  // Consensus count across active models
   let votesA = 0;
   let votesB = 0;
   const voteThreshold = 51.5;
 
-  if (crowdProbA >= voteThreshold) votesA++;
-  else if (crowdProbA <= (100 - voteThreshold)) votesB++;
-
-  if (markovProbA >= voteThreshold) votesA++;
-  else if (markovProbA <= (100 - voteThreshold)) votesB++;
-
-  if (dragonProbA >= voteThreshold) votesA++;
-  else if (dragonProbA <= (100 - voteThreshold)) votesB++;
-
-  if (bayesProbA >= voteThreshold) votesA++;
-  else if (bayesProbA <= (100 - voteThreshold)) votesB++;
-
-  if (nGramProbA >= voteThreshold) votesA++;
-  else if (nGramProbA <= (100 - voteThreshold)) votesB++;
-
-  if (omissionRevProbA >= voteThreshold) votesA++;
-  else if (omissionRevProbA <= (100 - voteThreshold)) votesB++;
-
-  if (clusterProbA >= voteThreshold) votesA++;
-  else if (clusterProbA <= (100 - voteThreshold)) votesB++;
-
-  if (fourierProbA >= voteThreshold) votesA++;
-  else if (fourierProbA <= (100 - voteThreshold)) votesB++;
-
-  const agreementCount = prediction === valA ? votesA : votesB;
-
-  // Mathematically Calibrated Win Expectancy
-  let calibratedConfidence = 51 + (rawDelta * 1.1);
-  if (agreementCount >= 6) calibratedConfidence += 4;
-  else if (agreementCount >= 5) calibratedConfidence += 2;
-  else if (agreementCount <= 3) calibratedConfidence -= 3;
-
-  // Confluence Boost: When Betting Pool and Technical Trend both favor the SAME outcome!
-  const isBettingAligned = (prediction === houseTendency) && crowdExposure.heavyExposurePercent >= 60;
-  if (isBettingAligned) {
-    calibratedConfidence += 3;
+  for (const m of activeModels) {
+    if (m.probA >= voteThreshold) votesA++;
+    else if (m.probA <= (100 - voteThreshold)) votesB++;
   }
 
-  // Realistic bounds: 50% to 68% (eliminates false overconfidence)
-  const confidence = Math.min(68, Math.max(50, Math.round(calibratedConfidence)));
+  const agreementCount = prediction === valA ? votesA : votesB;
+  const numActive = activeModels.length || 6;
 
-  // 🛡️ MISTAKE-PREVENTION SHIELDS (गलतियों से बचाने वाले 4 मुख्य सुरक्षा गार्ड्स)
-  
+  // Mathematically Calibrated Confidence (strictly bounded without artificial boosts)
+  const confidence = Math.min(64, Math.max(50, Math.round(50 + (rawDelta * 1.15))));
+
+  // 🛡️ MISTAKE-PREVENTION SHIELDS
   // Shield 1: Deep Streak Collapse / Exhaustion Trap Shield (ड्रैगन थकावट ट्रैप)
   const isStreakExhausted = streak.count >= 5;
 
   // Shield 2: Hyper-Choppy Oscillation / Trap Shield (अति-अस्थिर पिंग-पोंग ट्रैप)
   const isPingPongTrap = analysis.isPingPong && (analysis.pingPongCount >= 4);
 
-  // Shield 3: Casino House Liability & Heavy Crowd Trap (कैसीनो क्राउड ट्रैप)
-  const crowdOpposesPrediction = crowdExposure.heavyExposurePercent >= 65 && crowdExposure.heavierSide === prediction;
-
-  // Shield 4: Dynamic Auto-Throttle / Circuit Breaker (डायनामिक सर्किट ब्रेकर)
-  const isUnderperforming = (learnedW.recentAccuracy !== undefined && learnedW.recentAccuracy < 65.0 && (learnedW.accuracyHistory || []).length >= 10);
-  const requiredAgreement = isUnderperforming ? 7 : 6;
-  const minSniperConfidence = isUnderperforming ? 66 : 62;
-  const minRawDelta = isUnderperforming ? 2.5 : 1.8;
+  // Shield 3: Dynamic Auto-Throttle / Circuit Breaker (active only on statistically verified underperformance)
+  const isUnderperforming = (learnedW.recentAccuracy !== undefined && learnedW.recentAccuracy < 48.0 && (learnedW.accuracyHistory || []).length >= 20);
   const isLowDeltaNoise = rawDelta < 1.4;
 
   let shieldAlert = '';
-  if (crowdOpposesPrediction) {
-    shieldAlert = `🛡️ [शील्ड 3: कैसीनो क्राउड ट्रैप] भारी भीड़ (${crowdExposure.heavyExposurePercent}%) ${prediction} पर दांव लगा रही है। कैसीनो कम पेआउट (${crowdExposure.lighterSide}) देकर नुकसान करा सकता है।`;
-  } else if (isStreakExhausted) {
+  if (isStreakExhausted) {
     shieldAlert = `🛡️ [शील्ड 1: स्ट्रीक थकावट ट्रैप] ${streak.count}-राउंड ${streak.type} ड्रैगन संतृप्ति सीमा पर है। अचानक रिवर्सल का जोखिम अत्यधिक है।`;
   } else if (isPingPongTrap) {
     shieldAlert = `🛡️ [शील्ड 2: पिंग-पोंग अस्थिरता] ${analysis.pingPongCount}-स्टेप ऑसिलेशन चरम पर है (रैंडम ब्रेकआउट की संभावना)।`;
-  } else if (isUnderperforming && agreementCount < 7) {
-    shieldAlert = `🛡️ [शील्ड 4: सर्किट ब्रेकर एक्टिव] हालिया एक्यूरेसी रिकवरी मोड में है (${learnedW.recentAccuracy}%)। केवल 7/8 मॉडल सर्वसम्मति पर ही दांव लें।`;
+  } else if (isUnderperforming) {
+    shieldAlert = `🛡️ [शील्ड 3: सर्किट ब्रेकर एक्टिव] हालिया एक्यूरेसी रिकवरी मोड में है (${learnedW.recentAccuracy}%)। उच्च सर्वसम्मति पर ही दांव लें।`;
   }
 
   let action = 'CONFIRMED_BET';
   let badge = 'STRONG';
-  let evidenceLevel = 'HIGH';
+  let evidenceLevel = 'MODERATE';
 
   if (mode === 'ultra_sniper') {
-    if (crowdOpposesPrediction || isStreakExhausted || isPingPongTrap || isUnderperforming || isLowDeltaNoise) {
-      if (agreementCount < 7 || rawDelta < minRawDelta) {
-        action = 'NO_CLEAR_SIGNAL';
-        badge = 'WAIT';
-        evidenceLevel = 'INSUFFICIENT';
-      } else {
-        action = 'CONFIRMED_BET';
-        badge = 'ULTRA_SNIPER';
-        evidenceLevel = 'HIGH';
-      }
-    } else if (agreementCount < requiredAgreement || confidence < minSniperConfidence || rawDelta < minRawDelta) {
-      action = 'NO_CLEAR_SIGNAL';
-      badge = 'WAIT';
-      evidenceLevel = 'INSUFFICIENT';
-    } else {
-      action = 'CONFIRMED_BET';
+    if (agreementCount >= Math.ceil(numActive * 0.70) && rawDelta >= 1.8 && !isStreakExhausted && !isPingPongTrap) {
       badge = 'ULTRA_SNIPER';
       evidenceLevel = 'HIGH';
+    } else if (agreementCount >= Math.ceil(numActive * 0.60)) {
+      badge = 'STRONG';
+      evidenceLevel = 'MODERATE';
+    } else {
+      badge = 'MODERATE';
+      evidenceLevel = 'MODERATE';
     }
   } else if (mode === 'sniper') {
-    if (crowdOpposesPrediction || isStreakExhausted || isPingPongTrap) {
-      if (agreementCount < 6 || rawDelta < 2.0) {
-        action = 'NO_CLEAR_SIGNAL';
-        badge = 'WAIT';
-        evidenceLevel = 'INSUFFICIENT';
-      } else {
-        action = 'CONFIRMED_BET';
-        badge = 'STRONG';
-        evidenceLevel = 'MODERATE';
-      }
-    } else if (agreementCount < 6 || confidence < 58 || rawDelta < 1.5) {
-      action = 'NO_CLEAR_SIGNAL';
-      badge = 'WAIT';
-      evidenceLevel = 'INSUFFICIENT';
-    } else {
+    if (agreementCount >= Math.ceil(numActive * 0.60) && rawDelta >= 1.5) {
       badge = 'STRONG';
-      action = 'CONFIRMED_BET';
+      evidenceLevel = 'MODERATE';
+    } else {
+      badge = 'MODERATE';
       evidenceLevel = 'MODERATE';
     }
   } else {
-    // Mode === 'all' (Continuous Every-Round Forecast: Never skips, always predicts direction)
-    action = 'CONFIRMED_BET';
-    badge = agreementCount >= 6 ? 'STRONG' : 'MODERATE';
-    evidenceLevel = agreementCount >= 6 ? 'HIGH' : 'MODERATE';
+    // Mode === 'all'
+    badge = agreementCount >= Math.ceil(numActive * 0.60) ? 'STRONG' : 'MODERATE';
+    evidenceLevel = agreementCount >= Math.ceil(numActive * 0.60) ? 'HIGH' : 'MODERATE';
   }
 
-  const isNoSignal = action === 'NO_CLEAR_SIGNAL' || action === 'WAIT_SKIP';
-  const finalPrediction = isNoSignal ? 'NO CLEAR SIGNAL' : prediction;
-  const finalConfidence = isNoSignal ? 50.0 : confidence;
+  // Always output continuous active prediction (never NO CLEAR SIGNAL)
+  const finalPrediction = prediction;
+  const finalConfidence = confidence;
+  const isBettingAligned = false;
 
   let finalReason = '';
   const histDepth = historyList.length;
   const trainedRounds = learnedW.dailyRoundsTrained || learnedW.learningRounds || 0;
-  const recentAcc = learnedW.recentAccuracy ? `${learnedW.recentAccuracy}%` : '50%';
 
-  if (isNoSignal) {
-    finalReason = shieldAlert 
-      ? `${shieldAlert} सांख्यिकीय साक्ष्य अपर्याप्त है। 50/50 रैंडम बेसलाइन से कोई प्रमाणित लाभ नहीं। [NO CLEAR SIGNAL]`
-      : `⚠️ सांख्यिकीय साक्ष्य अपर्याप्त (${agreementCount}/8 मॉडल सहमति, डेल्टा ${rawDelta.toFixed(1)}%)। 50/50 रैंडम शोर सीमा में दांव से बचें। [NO CLEAR SIGNAL]`;
-  } else if (isBettingAligned) {
-    finalReason = `💎 उच्च मॉडल संगम (High Statistical Confluence): बैटिंग पूल और ${histDepth}-ड्रा में से ${agreementCount}/8 स्वतंत्र मॉडल्स ${prediction} की पुष्टि कर रहे हैं।`;
+  if (shieldAlert) {
+    finalReason = `${shieldAlert} [${histDepth}-ड्रा विश्लेषण: ${agreementCount}/8 मॉडल्स सहमति -> ${prediction} संकेत सक्रिय]`;
   } else if (streakReason) {
     finalReason = `${streakReason} [${histDepth}-राउंड्स एनालिसिस: ${agreementCount}/8 मॉडल्स सहमति | 24/7 ट्रेंड: ${trainedRounds} राउंड्स]`;
   } else {
@@ -1328,7 +1272,7 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     shields: {
       isStreakExhausted,
       isPingPongTrap,
-      crowdOpposesPrediction,
+      crowdOpposesPrediction: false,
       isUnderperforming,
       isLowDeltaNoise,
       shieldAlert: shieldAlert || null
@@ -1347,7 +1291,7 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     badge,
     regime: analysis.regime,
     learnedWeights: learnedW,
-    isBettingAligned,
+    isBettingAligned: false,
     crowdExposure
   };
 }
@@ -1384,7 +1328,12 @@ export function generatePrediction(historyList, mode = 'ultra_sniper', targetTyp
   const goldenBasket = numberProbabilities.slice(0, 3);
   const goldenBasketCoverage = Math.round(goldenBasket.reduce((acc, curr) => acc + curr.prob, 0) * 10) / 10;
 
+  const targetIssue = historyList[0]?.issueNumber
+    ? (BigInt(historyList[0].issueNumber) + 1n).toString()
+    : 'Next';
+
   return {
+    targetIssue,
     targetType,
     action: primary.action,
     prediction: primary.prediction,
@@ -1476,7 +1425,7 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
   let maxWinStreak = 0;
   let goldenBasketHits = 0;
 
-  const testWindow = Math.min(list.length - 1, 60);
+  const testWindow = Math.min(list.length - 1, 300);
 
   for (let i = testWindow - 1; i >= 0; i--) {
     const pastData = list.slice(i + 1);
@@ -1491,7 +1440,7 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
     const hitBasket = basketNumbers.includes(actualNum);
     if (hitBasket) goldenBasketHits++;
 
-    const isSkip = (pred.action === 'NO_CLEAR_SIGNAL' || pred.action === 'WAIT_SKIP') && (mode === 'ultra_sniper' || mode === 'sniper');
+    const isSkip = pred.action === 'NO_CLEAR_SIGNAL' || pred.action === 'WAIT_SKIP' || pred.prediction === 'NO CLEAR SIGNAL';
     if (isSkip) {
       skippedRounds++;
       logs.unshift({

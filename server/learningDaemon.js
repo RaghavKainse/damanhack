@@ -247,8 +247,9 @@ class LearningDaemon {
 
       const pred = predObj.prediction;
       const probA = predObj.probabilities?.BIG ?? 0.50;
+      const isSkip = predObj.action === 'NO_CLEAR_SIGNAL' || predObj.action === 'WAIT_SKIP' || pred === 'NO CLEAR SIGNAL';
       const actualBinary = actualBS === 'BIG' ? 1.0 : 0.0;
-      const isWin = pred === actualBS;
+      const isWin = isSkip ? null : (pred === actualBS);
 
       // Squared prediction error & Log Loss
       const brierErr = Math.pow(probA - actualBinary, 2);
@@ -257,9 +258,11 @@ class LearningDaemon {
       const logLossErr = -(actualBinary * Math.log(boundedP) + (1 - actualBinary) * Math.log(1 - boundedP));
 
       this.recentErrors.push(brierErr);
-      this.recentOutcomes.push(isWin ? 1 : 0);
+      if (!isSkip) {
+        this.recentOutcomes.push(isWin ? 1 : 0);
+        if (this.recentOutcomes.length > 100) this.recentOutcomes.shift();
+      }
       if (this.recentErrors.length > 100) this.recentErrors.shift();
-      if (this.recentOutcomes.length > 100) this.recentOutcomes.shift();
 
       const drift = detectPageHinkleyDrift(this.recentErrors);
 
@@ -282,7 +285,8 @@ class LearningDaemon {
       await storage.savePredictionAudit(auditRecord);
       await storage.updateDailyProgress(auditRecord);
 
-      console.log(`🎯 Settlement [#${issueStr}]: Pred: ${pred} | Actual: ${actualBS} (${classified.number}) | ${isWin ? '✅ HIT' : '❌ MISS'} | Brier: ${brierErr.toFixed(4)} | Drift: ${drift.driftDetected ? '⚠️ DRIFT' : 'OK'}`);
+      const hitStr = isSkip ? '➖ SKIP' : (isWin ? '✅ HIT' : '❌ MISS');
+      console.log(`🎯 Settlement [#${issueStr}]: Action: [${predObj.action}] | Pred: ${pred} | Actual: ${actualBS} (${classified.number}) | ${hitStr} | Brier: ${brierErr.toFixed(4)} | Drift: ${drift.driftDetected ? '⚠️ DRIFT' : 'OK'}`);
 
       // 2. Online reinforcement weight adaptation & Bayesian matrix persistence
       try {

@@ -68,18 +68,21 @@ export default async function handler(req, res) {
       for (const raw of chrono) {
         const v = validateDraw(raw);
         if (!v.valid) continue;
+        // Zero data leakage: generate prediction strictly using past history BEFORE committing new round
+        const priorHistory = await storage.getHistory(50);
+        const currentWeights = getLearnedWeights();
+        const pred = generateCalibratedPrediction(priorHistory, 'bigSmall', currentWeights);
+
         const isNew = await storage.saveRound(raw);
         if (isNew) {
           newlyCommitted++;
           // Settle & online learn
-          const history = await storage.getHistory(50);
-          const currentWeights = getLearnedWeights();
-          const pred = generateCalibratedPrediction(history, 'bigSmall', currentWeights);
           const updatedWeights = updateLearningFromOutcome(pred, raw);
           saveLearnedWeights(updatedWeights);
 
           const classified = classifyNumber(raw.number);
-          const isWin = pred.prediction === classified.bigSmall;
+          const isSkip = pred.action === 'NO_CLEAR_SIGNAL' || pred.action === 'WAIT_SKIP' || pred.prediction === 'NO CLEAR SIGNAL';
+          const isWin = isSkip ? null : (pred.prediction === classified.bigSmall);
           const probBig = pred.probabilities?.BIG ?? 0.50;
           const actualBinary = classified.bigSmall === 'BIG' ? 1.0 : 0.0;
           const brier = Math.pow(probBig - actualBinary, 2);
@@ -144,3 +147,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
+

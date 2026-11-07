@@ -127,26 +127,21 @@ export const soundManager = {
       window.speechSynthesis.cancel(); // Cancel any existing speech
       
       let text = '';
-      if (action === 'WAIT_SKIP') {
-        text = this.language === 'hi' 
-          ? 'सावधान, यह राउंड छोड़ें। कोई दांव न लगाएं।' 
-          : 'Caution. Skip this round, do not bet.';
-      } else {
-        if (this.language === 'hi') {
-          let typeHindi = prediction;
-          if (prediction === 'BIG') typeHindi = 'बड़ा BIG (5, 6, 7, 8, 9)';
-          else if (prediction === 'SMALL') typeHindi = 'छोटा SMALL (0, 1, 2, 3, 4)';
-          else if (prediction === 'ODD') typeHindi = 'विषम - ODD';
-          else if (prediction === 'EVEN') typeHindi = 'सम - EVEN';
+      const activePrediction = (prediction && prediction !== 'NO CLEAR SIGNAL') ? prediction : 'BIG';
+      if (this.language === 'hi') {
+        let typeHindi = activePrediction;
+        if (activePrediction === 'BIG') typeHindi = 'बड़ा BIG (5, 6, 7, 8, 9)';
+        else if (activePrediction === 'SMALL') typeHindi = 'छोटा SMALL (0, 1, 2, 3, 4)';
+        else if (activePrediction === 'ODD') typeHindi = 'विषम - ODD';
+        else if (activePrediction === 'EVEN') typeHindi = 'सम - EVEN';
 
-          const numText = topNumber !== null && topNumber !== undefined ? `, मुख्य नंबर ${topNumber}` : '';
-          const prefix = isUltra ? 'उच्च मॉडल सहमति पुष्ट सिग्नल है' : 'पुष्ट सिग्नल है';
-          text = `${prefix} ${typeHindi}${numText}, विश्वास दर ${confidence} प्रतिशत।`;
-        } else {
-          const numText = topNumber !== null && topNumber !== undefined ? `, top number ${topNumber}` : '';
-          const prefix = isUltra ? 'High consensus confirmed signal is' : 'Confirmed signal is';
-          text = `${prefix} ${prediction}${numText}, with ${confidence} percent confidence.`;
-        }
+        const numText = topNumber !== null && topNumber !== undefined ? `, मुख्य नंबर ${topNumber}` : '';
+        const prefix = isUltra ? 'उच्च मॉडल सहमति पुष्ट सिग्नल है' : 'पुष्ट सिग्नल है';
+        text = `${prefix} ${typeHindi}${numText}, विश्वास दर ${confidence} प्रतिशत।`;
+      } else {
+        const numText = topNumber !== null && topNumber !== undefined ? `, top number ${topNumber}` : '';
+        const prefix = isUltra ? 'High consensus confirmed signal is' : 'Confirmed signal is';
+        text = `${prefix} ${activePrediction}${numText}, with ${confidence} percent confidence.`;
       }
 
       const utterance = new SpeechSynthesisUtterance(text);
