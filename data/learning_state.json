@@ -1,29 +1,20 @@
 {
   "weights": {
     "crowdLiquidity": 0.6,
-    "markov2": 1.62,
-    "dragonTrend": 1.2,
-    "bayesianTrans": 1.34,
-    "nGram": 1.37,
-    "omissionRev": 1.38,
-    "clusterParity": 1.26,
-    "fourierCycle": 0.9,
-    "learningRounds": 240,
-    "winScore": 1050,
-    "lossScore": 870,
+    "markov2": 1.53,
+    "dragonTrend": 1.14,
+    "bayesianTrans": 1.43,
+    "nGram": 1.25,
+    "omissionRev": 1.44,
+    "clusterParity": 1.4,
+    "fourierCycle": 1.01,
+    "learningRounds": 517,
+    "winScore": 2146,
+    "lossScore": 1766,
     "accuracyHistory": [
       0,
       0,
       0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
       0,
       0,
       0,
@@ -39,6 +30,15 @@
       0,
       0,
       1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       0,
       0,
       0,
@@ -63,168 +63,168 @@
       0,
       0
     ],
-    "recentAccuracy": 8,
-    "lastTrainedIssue": "20261107100051408",
-    "dailyRoundsTrained": 240,
+    "recentAccuracy": 4,
+    "lastTrainedIssue": "20261107100051445",
+    "dailyRoundsTrained": 517,
     "trainedDate": "2026-11-07",
     "modelStats": {
       "crowdLiquidity": {
-        "wins": 119,
-        "total": 240
+        "wins": 242,
+        "total": 489
       },
       "markov2": {
-        "wins": 134,
-        "total": 240
+        "wins": 272,
+        "total": 489
       },
       "dragonTrend": {
-        "wins": 131,
-        "total": 240
+        "wins": 266,
+        "total": 489
       },
       "bayesianTrans": {
-        "wins": 134,
-        "total": 240
+        "wins": 279,
+        "total": 489
       },
       "nGram": {
-        "wins": 138,
-        "total": 240
+        "wins": 280,
+        "total": 489
       },
       "omissionRev": {
-        "wins": 126,
-        "total": 240
+        "wins": 258,
+        "total": 489
       },
       "clusterParity": {
-        "wins": 126,
-        "total": 240
+        "wins": 258,
+        "total": 489
       },
       "fourierCycle": {
-        "wins": 142,
-        "total": 240
+        "wins": 291,
+        "total": 489
       }
     },
-    "lastUpdated": 1794051839680
+    "lastUpdated": 1794052950111
   },
   "matrix": [
     [
-      3,
-      4,
-      3,
+      5,
       7,
-      2,
       5,
-      5,
-      2,
-      1,
-      6
-    ],
-    [
-      5,
-      4,
+      13,
       3,
+      9,
+      9,
       3,
       1,
-      3,
-      3,
-      4,
-      4,
-      2
+      11
     ],
     [
-      2,
-      3,
-      2,
-      5,
-      2,
-      2,
-      4,
-      2,
-      2,
-      3
-    ],
-    [
-      3,
-      2,
-      3,
-      4,
-      3,
-      5,
-      2,
-      3,
-      3,
-      5
-    ],
-    [
-      2,
-      1,
-      2,
-      2,
-      1,
-      2,
-      3,
-      3,
-      2,
-      5
-    ],
-    [
-      6,
+      9,
       7,
-      3,
-      2,
-      2,
-      3,
-      6,
-      4,
-      5,
-      2
-    ],
-    [
-      2,
-      3,
-      2,
-      3,
-      2,
       5,
       5,
+      1,
       5,
-      6,
+      5,
+      7,
+      7,
       4
     ],
     [
-      6,
-      4,
-      4,
-      2,
+      3,
       5,
-      2,
-      4,
-      2,
-      4,
-      2
+      3,
+      9,
+      3,
+      3,
+      7,
+      3,
+      3,
+      5
     ],
     [
       5,
-      1,
-      2,
-      2,
-      1,
-      9,
-      4,
+      3,
+      5,
       7,
-      4,
+      5,
+      10,
+      3,
+      5,
+      5,
+      9
+    ],
+    [
+      3,
+      1,
+      3,
+      3,
+      1,
+      3,
+      5,
+      5,
+      3,
+      9
+    ],
+    [
+      11,
+      13,
+      5,
+      3,
+      3,
+      5,
+      11,
+      8,
+      9,
       3
     ],
     [
-      4,
       3,
-      3,
-      3,
-      4,
-      4,
-      2,
+      5,
       3,
       6,
+      3,
+      9,
+      9,
+      9,
+      11,
+      7
+    ],
+    [
+      11,
+      7,
+      7,
+      3,
+      9,
+      3,
+      7,
+      3,
+      7,
+      4
+    ],
+    [
+      9,
+      1,
+      3,
+      3,
+      1,
+      17,
+      7,
+      13,
+      7,
       5
+    ],
+    [
+      7,
+      7,
+      5,
+      5,
+      7,
+      7,
+      3,
+      5,
+      11,
+      11
     ]
   ],
-  "lastUpdated": 1794051840801,
+  "lastUpdated": 1794052950111,
   "dateStr": "2026-11-07"
 }

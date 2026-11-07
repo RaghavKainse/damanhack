@@ -1,7 +1,27 @@
 {
-  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze",
-  "lastPromotionTimestamp": 1794051935538,
+  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf",
+  "lastPromotionTimestamp": 1794052409073,
   "history": [
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf",
+      "promotedAt": 1794052711779,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Circuit breaker triggered: Brier=0.2533, WinRate=45%",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze"
+    },
+    {
+      "version": "v2.4.hecw-historicalfrequency",
+      "promotedAt": 1794052409073,
+      "model": "HistoricalFrequency",
+      "accuracy100": 61,
+      "brierScore": 0.2405,
+      "logLoss": 0.6741,
+      "pValue": 0.0357,
+      "status": "ACTIVE_PRODUCTION"
+    },
     {
       "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze",
       "promotedAt": 1794051935546,

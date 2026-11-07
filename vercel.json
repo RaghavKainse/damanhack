@@ -5,7 +5,7 @@
       "destination": "https://draw.ar-lottery06.com/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
