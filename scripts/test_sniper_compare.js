@@ -41,3 +41,4 @@ for (let i = 8; i < allRounds.length; i++) {
 }
 
 console.log(`\nResults: ${wins} wins / ${bets} bets (${bets > 0 ? ((wins / bets) * 100).toFixed(1) : 0}%) | ${skips} rounds safely skipped`);
+

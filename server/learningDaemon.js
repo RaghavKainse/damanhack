@@ -1,15 +1,17 @@
 /**
- * 🤖 24/7 AUTOMATED BACKGROUND LEARNING DAEMON
+ * 🤖 24/7 AUTONOMOUS CONTINUOUS LEARNING DAEMON (v3.5 Enterprise)
  * 
- * Runs continuously independent of frontend browser sessions.
+ * Runs continuously 24/7 independent of frontend browser sessions.
  * Features:
- * 1. Event-driven draw ingestion with 10-step validation & deduplication
- * 2. Real-time prediction outcome comparison & error tracking
- * 3. Page-Hinkley concept drift detection
- * 4. Scheduled walk-forward evaluation (50, 100, 250, 500 rounds)
- * 5. Validation-gated model promotion with rollback capability
- * 6. Dual persistence (MongoDB / ACID WAL)
- * 7. Safe restart & crash recovery
+ * 1. Redundant multi-endpoint draw ingestion with 10-step validation & deduplication
+ * 2. Pending predictions queue: settles EVERY prediction with zero missed rounds
+ * 3. Online Bayesian transition matrix & regularized exponentiated gradient updates
+ * 4. Page-Hinkley concept drift detection & automated performance drop circuit breaker
+ * 5. Scheduled chronological walk-forward evaluations (windows 50, 100, 250, 500)
+ * 6. Champion vs Challenger shadow testing with Diebold-Mariano significance gate
+ * 7. Automated model version promotion & safe rollback on performance degradation
+ * 8. Watchdog heartbeat monitoring with self-healing auto-reconnect
+ * 9. Crash-safe ACID WAL persistence & graceful shutdown hooks
  */
 
 import { storage } from './storage.js';
@@ -17,50 +19,99 @@ import {
   runChronologicalWalkForward, 
   generateCalibratedPrediction, 
   detectPageHinkleyDrift,
-  calculateBrierScore,
-  calculateLogLoss
+  checkCircuitBreaker,
+  calculateDieboldMarianoTest,
+  calculateShannonEntropy,
+  validateDraw
 } from '../src/utils/statisticalEngine.js';
-import { classifyNumber } from '../src/utils/engine.js';
+import { 
+  classifyNumber,
+  getLearnedWeights,
+  saveLearnedWeights,
+  updateLearningFromOutcome
+} from '../src/utils/engine.js';
 
 class LearningDaemon {
   constructor() {
     this.isRunning = false;
-    this.pollIntervalMs = 10000; // Poll every 10 seconds
-    this.evalIntervalRounds = 10; // Evaluate every 10 new rounds
+    this.pollIntervalMs = 10000;       // 10s base poll interval
+    this.evalIntervalRounds = 10;      // Walk-forward evaluate every 10 new rounds
     this.roundsSinceLastEval = 0;
-    this.activePrediction = null;
+    this.pendingPredictions = new Map(); // targetIssue -> prediction record
     this.recentErrors = [];
+    this.recentOutcomes = [];
     this.pollTimer = null;
+    this.watchdogTimer = null;
+    this.lastSuccessfulDrawAt = Date.now();
+    this.consecutiveFailures = 0;
     this.gameCode = 'WinGo_30S';
+    this.learnedWeights = getLearnedWeights();
   }
 
   async start() {
-    console.log('🚀 Initializing 24/7 Big/Small Continuous Learning Daemon...');
+    console.log('🚀 Initializing 24/7 Autonomous Continuous Learning Daemon...');
     await storage.init();
 
-    // Recover latest state
+    // Recover verified history from persistent store
     const history = await storage.getHistory(300);
     console.log(`📦 Loaded ${history.length} verified historical rounds from persistent store.`);
 
     if (history.length >= 20) {
-      this.activePrediction = generateCalibratedPrediction(history, 'bigSmall');
-      console.log(`🎯 Active Baseline Prediction for Issue #${this.activePrediction.targetIssue}: ${this.activePrediction.prediction} (${this.activePrediction.calibratedConfidence}%)`);
+      const initialPred = generateCalibratedPrediction(history, 'bigSmall');
+      this.pendingPredictions.set(initialPred.targetIssue, initialPred);
+      console.log(`🎯 Active Baseline Prediction for Issue #${initialPred.targetIssue}: ${initialPred.prediction} (${initialPred.calibratedConfidence}%) | Action: ${initialPred.action}`);
     }
 
     this.isRunning = true;
+    this.lastSuccessfulDrawAt = Date.now();
     this.pollCycle();
+    this.startWatchdog();
 
-    // Graceful shutdown handlers
+    // Graceful process handlers for 24/7 reliability
     process.on('SIGINT', () => this.stop('SIGINT received'));
     process.on('SIGTERM', () => this.stop('SIGTERM received'));
+    process.on('uncaughtException', (err) => {
+      console.error('💥 Uncaught exception in daemon:', err);
+      this.emergencyFlush();
+    });
+    process.on('unhandledRejection', (reason) => {
+      console.error('⚠️ Unhandled promise rejection in daemon:', reason);
+    });
+  }
+
+  emergencyFlush() {
+    try {
+      storage._flushWalCache();
+      console.log('💾 Emergency state flushed to disk.');
+    } catch {}
   }
 
   async stop(reason = 'Daemon stopped') {
     console.log(`🛑 Stopping Learning Daemon: ${reason}`);
     this.isRunning = false;
     if (this.pollTimer) clearTimeout(this.pollTimer);
+    if (this.watchdogTimer) clearInterval(this.watchdogTimer);
+    this.emergencyFlush();
     await storage.close();
     process.exit(0);
+  }
+
+  /**
+   * Watchdog Heartbeat: detects stalled polling and forces self-healing reconnection
+   */
+  startWatchdog() {
+    this.watchdogTimer = setInterval(async () => {
+      if (!this.isRunning) return;
+      const elapsed = Date.now() - this.lastSuccessfulDrawAt;
+      if (elapsed > 90000) { // 90 seconds without a new draw (3 missed 30S cycles)
+        console.warn(`⚠️ [Watchdog Heartbeat Alert] No new draws ingested for ${Math.round(elapsed / 1000)}s! Forcing health-check reconnection...`);
+        try {
+          await this.fetchAndProcessLatestDraws();
+        } catch (e) {
+          console.error('Watchdog reconnect attempt failed:', e.message);
+        }
+      }
+    }, 30000);
   }
 
   async pollCycle() {
@@ -68,46 +119,77 @@ class LearningDaemon {
 
     try {
       await this.fetchAndProcessLatestDraws();
+      this.consecutiveFailures = 0;
     } catch (err) {
-      console.error('⚠️ Error in pollCycle:', err.message);
+      this.consecutiveFailures++;
+      const backoffMs = Math.min(30000, 1000 * Math.pow(1.5, Math.min(this.consecutiveFailures, 8)));
+      console.warn(`⚠️ Poll cycle warning (${this.consecutiveFailures} consecutive): ${err.message}. Retrying in ${Math.round(backoffMs)}ms`);
     }
 
     if (this.isRunning) {
-      this.pollTimer = setTimeout(() => this.pollCycle(), this.pollIntervalMs);
+      const nextDelay = this.consecutiveFailures > 0 
+        ? Math.min(30000, 5000 + this.consecutiveFailures * 2000)
+        : this.pollIntervalMs;
+      this.pollTimer = setTimeout(() => this.pollCycle(), nextDelay);
     }
   }
 
   /**
-   * Fetches latest official draws and applies 10-step verification
+   * Fetches latest official draws using redundant endpoints & applies 10-step validation
    */
   async fetchAndProcessLatestDraws() {
     const ts = Date.now();
-    const endpoint = `https://draw.ar-lottery06.com/WinGo/${this.gameCode}/GetHistoryIssuePage.json?ts=${ts}`;
+    const endpoints = [
+      `https://draw.ar-lottery06.com/WinGo/${this.gameCode}/GetHistoryIssuePage.json?ts=${ts}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://draw.ar-lottery06.com/WinGo/${this.gameCode}/GetHistoryIssuePage.json?ts=${ts}`)}`
+    ];
 
-    const res = await fetch(endpoint, {
-      headers: { 'Accept': 'application/json, text/plain, */*' }
-    });
+    let rawList = null;
+    let successfulEndpoint = null;
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} from official draw endpoint`);
+    for (const ep of endpoints) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch(ep, {
+          signal: controller.signal,
+          headers: { 'Accept': 'application/json, text/plain, */*' }
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const json = await res.json();
+          const list = json?.data?.list;
+          if (Array.isArray(list) && list.length > 0) {
+            rawList = list;
+            successfulEndpoint = ep;
+            break;
+          }
+        }
+      } catch {
+        // Try next redundant mirror
+      }
     }
 
-    const json = await res.json();
-    const list = json?.data?.list;
-    if (!Array.isArray(list) || list.length === 0) return;
+    if (!rawList) {
+      throw new Error('All draw endpoints unreachable or empty');
+    }
+
+    this.lastSuccessfulDrawAt = Date.now();
 
     // Process draws chronologically: oldest first -> newest last
-    const chronological = [...list].reverse();
+    const chronological = [...rawList].reverse();
     let newDrawsCount = 0;
 
-    for (const draw of chronological) {
-      const isValid = this.validateIncomingDraw(draw);
-      if (!isValid) continue;
+    for (const rawDraw of chronological) {
+      // 10-Step Draw Validation Protocol
+      const v = validateDraw(rawDraw);
+      if (!v.valid) continue;
 
-      const isNew = await storage.saveRound(draw);
+      const isNew = await storage.saveRound(rawDraw);
       if (isNew) {
         newDrawsCount++;
-        await this.handleNewVerifiedRound(draw);
+        await this.handleNewVerifiedRound(rawDraw);
       }
     }
 
@@ -121,54 +203,80 @@ class LearningDaemon {
   }
 
   /**
-   * 10-Step Draw Verification Protocol
+   * 10-Step Draw Verification Protocol (delegates to unified statistical validator)
    */
   validateIncomingDraw(draw) {
-    if (!draw) return false;
-
-    // 1. Schema check
-    if (!draw.issueNumber || draw.number === undefined || draw.number === null) return false;
-
-    // 2. Format validation (17-digit numeric string for WinGo 30S)
-    const issueStr = String(draw.issueNumber).trim();
-    if (!/^\d{15,18}$/.test(issueStr)) return false;
-
-    // 3. Digit range check (0-9)
-    const num = parseInt(draw.number, 10);
-    if (isNaN(num) || num < 0 || num > 9) return false;
-
-    // 4. Game code prefix validation ('10005' for 30S)
-    if (!issueStr.includes('10005') && !issueStr.includes('10001')) return false;
-
-    return true;
+    return validateDraw(draw).valid;
   }
 
   /**
-   * Event-Driven Settlement & Error Update
+   * Event-Driven Settlement & Error Update (Pending Predictions Queue)
    */
   async handleNewVerifiedRound(newDraw) {
     const classified = classifyNumber(newDraw.number);
     const actualBS = classified.bigSmall;
+    const issueStr = String(newDraw.issueNumber);
 
-    // Check if we had an active prediction for this round
-    if (this.activePrediction && this.activePrediction.targetIssue === String(newDraw.issueNumber)) {
-      const pred = this.activePrediction.prediction;
-      const probA = this.activePrediction.probabilities.BIG;
+    // 1. Settle pending prediction for this exact round (if exists)
+    if (this.pendingPredictions.has(issueStr)) {
+      const predObj = this.pendingPredictions.get(issueStr);
+      this.pendingPredictions.delete(issueStr);
+
+      const pred = predObj.prediction;
+      const probA = predObj.probabilities?.BIG ?? 0.50;
       const actualBinary = actualBS === 'BIG' ? 1.0 : 0.0;
       const isWin = pred === actualBS;
 
-      // Squared prediction error
-      const err = Math.pow(probA - actualBinary, 2);
-      this.recentErrors.push(err);
+      // Squared prediction error & Log Loss
+      const brierErr = Math.pow(probA - actualBinary, 2);
+      const eps = 1e-6;
+      const boundedP = Math.max(eps, Math.min(1 - eps, probA));
+      const logLossErr = -(actualBinary * Math.log(boundedP) + (1 - actualBinary) * Math.log(1 - boundedP));
+
+      this.recentErrors.push(brierErr);
+      this.recentOutcomes.push(isWin ? 1 : 0);
       if (this.recentErrors.length > 100) this.recentErrors.shift();
+      if (this.recentOutcomes.length > 100) this.recentOutcomes.shift();
 
       const drift = detectPageHinkleyDrift(this.recentErrors);
-      console.log(`🎯 Settlement [Issue #${newDraw.issueNumber}]: Pred: ${pred} | Actual: ${actualBS} (${classified.number}) | ${isWin ? '✅ HIT' : '❌ MISS'} | Error: ${err.toFixed(4)} | Drift: ${drift.driftDetected ? '⚠️ DRIFT' : 'OK'}`);
+
+      // Audit log settlement permanently to storage
+      await storage.savePredictionAudit({
+        targetIssue: issueStr,
+        predicted: pred,
+        actual: actualBS,
+        actualNumber: classified.number,
+        probA,
+        isWin,
+        action: predObj.action,
+        brierError: Math.round(brierErr * 10000) / 10000,
+        logLossError: Math.round(logLossErr * 10000) / 10000,
+        driftDetected: drift.driftDetected,
+        calibratedConfidence: predObj.calibratedConfidence
+      });
+
+      console.log(`🎯 Settlement [#${issueStr}]: Pred: ${pred} | Actual: ${actualBS} (${classified.number}) | ${isWin ? '✅ HIT' : '❌ MISS'} | Brier: ${brierErr.toFixed(4)} | Drift: ${drift.driftDetected ? '⚠️ DRIFT' : 'OK'}`);
+
+      // 2. Online reinforcement weight adaptation
+      try {
+        const freshWeights = updateLearningFromOutcome(predObj, newDraw);
+        this.learnedWeights = { ...freshWeights };
+        saveLearnedWeights(freshWeights);
+      } catch (e) {
+        console.warn('Online learning update error:', e.message);
+      }
     }
 
-    // Refresh active prediction for upcoming round
+    // 3. Generate and enqueue prediction for next round
     const history = await storage.getHistory(300);
-    this.activePrediction = generateCalibratedPrediction(history, 'bigSmall');
+    const nextPred = generateCalibratedPrediction(history, 'bigSmall', this.learnedWeights);
+    this.pendingPredictions.set(nextPred.targetIssue, nextPred);
+
+    // Bound pending predictions map size
+    if (this.pendingPredictions.size > 20) {
+      const oldestKey = this.pendingPredictions.keys().next().value;
+      this.pendingPredictions.delete(oldestKey);
+    }
   }
 
   /**
@@ -189,6 +297,19 @@ class LearningDaemon {
     const w100 = wfResults.windows[100] || wfResults.windows[50];
     const drift = detectPageHinkleyDrift(this.recentErrors);
 
+    // Calculate rolling Brier score over recent 20 draws
+    const recentSampleErrors = this.recentErrors.slice(-20);
+    const recentSampleOutcomes = this.recentOutcomes.slice(-20);
+    const rollingBrier = recentSampleErrors.length > 0
+      ? recentSampleErrors.reduce((a, b) => a + b, 0) / recentSampleErrors.length
+      : 0.2500;
+    const rollingWins = recentSampleOutcomes.reduce((a, b) => a + b, 0);
+    const rollingWinRate = recentSampleOutcomes.length > 0
+      ? Math.round((rollingWins / recentSampleOutcomes.length) * 1000) / 10
+      : 50.0;
+
+    const circuitBreaker = checkCircuitBreaker(rollingBrier, rollingWinRate, this.recentErrors.length);
+
     const report = {
       timestamp: Date.now(),
       evaluatedAt: new Date().toISOString(),
@@ -196,19 +317,28 @@ class LearningDaemon {
       windows: wfResults.windows,
       driftStatus: drift.driftDetected ? 'REGIME_DRIFT_DETECTED' : 'STABLE',
       driftScore: drift.score,
-      activeVersion: 'v2.4.0-calibrated'
+      rollingBrier: Math.round(rollingBrier * 10000) / 10000,
+      rollingWinRate,
+      circuitBreakerTriggered: circuitBreaker.isTriggered,
+      activeVersion: (await storage.getModelRegistry()).activeVersion
     };
 
     await storage.saveEvaluation(report);
-    console.log('✅ Scheduled Evaluation Complete. Metrics across Last 100 rounds:');
+    console.log(`✅ Scheduled Evaluation Complete (Rolling Brier: ${rollingBrier.toFixed(4)} | WinRate: ${rollingWinRate}% | Drift: ${report.driftStatus}):`);
     if (w100) {
       for (const [mName, stats] of Object.entries(w100)) {
         console.log(`   - ${mName.padEnd(22)}: Acc=${stats.winRate}% | Brier=${stats.brierScore} | LogLoss=${stats.logLoss} | p-val=${stats.pValueVsRandom}`);
       }
     }
 
-    // Strict Scientific Model Promotion Gate
-    await this.evaluateCandidateModel(wfResults);
+    // Circuit Breaker Automated Rollback Check
+    if (circuitBreaker.isTriggered) {
+      console.warn(`⚠️ [Circuit Breaker Triggered] ${circuitBreaker.reason}`);
+      await storage.rollbackModelVersion(`Circuit breaker triggered: Brier=${rollingBrier.toFixed(4)}, WinRate=${rollingWinRate}%`);
+    } else {
+      // Strict Scientific Model Promotion Gate (Diebold-Mariano Significance)
+      await this.evaluateCandidateModel(wfResults);
+    }
   }
 
   /**

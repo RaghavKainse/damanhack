@@ -23,7 +23,12 @@ export {
   calculateBinomialSignificance,
   detectPageHinkleyDrift,
   runChronologicalWalkForward,
-  generateCalibratedPrediction
+  generateCalibratedPrediction,
+  validateDraw,
+  detectOverfitting,
+  calculateShannonEntropy,
+  checkCircuitBreaker,
+  calculateDieboldMarianoTest
 } from './statisticalEngine.js';
 
 import {
@@ -31,7 +36,12 @@ import {
   calculateLogLoss,
   calculateConfusionMatrix,
   calculateCalibration,
-  calculateBinomialSignificance
+  calculateBinomialSignificance,
+  validateDraw,
+  detectOverfitting,
+  calculateShannonEntropy,
+  checkCircuitBreaker,
+  calculateDieboldMarianoTest
 } from './statisticalEngine.js';
 
 // Core classification rules for WinGo

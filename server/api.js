@@ -82,6 +82,49 @@ export function createMetricsServer(port = 4001) {
         return;
       }
 
+      if (url.pathname === '/api/learning/audits') {
+        const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+        const audits = await storage.getPredictionAudits(limit);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ count: audits.length, audits }, null, 2));
+        return;
+      }
+
+      if (url.pathname === '/api/learning/diagnostics') {
+        const history = await storage.getHistory(300);
+        const audits = await storage.getPredictionAudits(50);
+        const brierScores = audits.map(a => a.brierError ?? 0.2500);
+        const wins = audits.filter(a => a.isWin).length;
+        const total = audits.length;
+        const rollingWinRate = total > 0 ? Math.round((wins / total) * 1000) / 10 : 50.0;
+        const rollingBrier = total > 0 ? brierScores.reduce((a, b) => a + b, 0) / total : 0.2500;
+
+        const pred = generateCalibratedPrediction(history, 'bigSmall');
+        const wf = history.length >= 50 ? runChronologicalWalkForward(history, 'bigSmall', [50, 100]) : null;
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          status: 'DIAGNOSTICS_OK',
+          timestamp: Date.now(),
+          entropy: pred.entropy,
+          evidenceLevel: pred.evidenceLevel,
+          action: pred.action,
+          rollingBrier: Math.round(rollingBrier * 10000) / 10000,
+          rollingWinRate,
+          evaluatedDraws: total,
+          driftStatus: audits[0]?.driftDetected ? 'REGIME_DRIFT_ACTIVE' : 'STABLE',
+          walkForwardReady: !!wf
+        }, null, 2));
+        return;
+      }
+
+      if (url.pathname === '/api/learning/rollback' && req.method === 'POST') {
+        const result = await storage.rollbackModelVersion('Manual rollback requested via API');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result, null, 2));
+        return;
+      }
+
       // Default 404
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Endpoint not found' }));

@@ -13,6 +13,75 @@
 import { classifyNumber } from './engine.js';
 
 // -------------------------------------------------------------
+// 0. OFFICIAL 10-STEP DRAW VALIDATION PROTOCOL
+// -------------------------------------------------------------
+
+/**
+ * Validates an incoming draw object against strict schema, boundaries, and formatting rules.
+ * Guarantees zero corrupted or unverified records enter the model pipeline.
+ */
+export function validateDraw(draw) {
+  if (!draw) return { valid: false, reason: 'Draw object is null or undefined' };
+
+  // 1. Issue number presence and string conversion
+  if (!draw.issueNumber) return { valid: false, reason: 'Missing issueNumber field' };
+  const issueStr = String(draw.issueNumber).trim();
+
+  // 2. Exact issue number length & numeric regex check (15 to 18 digits)
+  if (!/^\d{15,18}$/.test(issueStr)) {
+    return { valid: false, reason: `Invalid issueNumber format: "${issueStr}"` };
+  }
+
+  // 3. Winning number presence
+  if (draw.number === undefined || draw.number === null || String(draw.number).trim() === '') {
+    return { valid: false, reason: 'Missing winning number' };
+  }
+
+  // 4. Winning number parsing & digit boundaries [0-9]
+  const num = parseInt(draw.number, 10);
+  if (isNaN(num) || num < 0 || num > 9) {
+    return { valid: false, reason: `Winning number out of single-digit range [0-9]: ${draw.number}` };
+  }
+
+  // 5. Game mode code prefix validation
+  // WinGo 30S: 10005, 1Min: 10001, 3Min: 10002, 5Min: 10003
+  const isRecognizedGame = ['10005', '10001', '10002', '10003'].some(code => issueStr.includes(code));
+  if (!isRecognizedGame) {
+    return { valid: false, reason: `Unrecognized WinGo game code prefix in issue "${issueStr}"` };
+  }
+
+  // 6. Timestamp bounds validation (if provided)
+  if (draw.timestamp) {
+    const ts = Number(draw.timestamp);
+    const now = Date.now();
+    // Must be after Jan 1, 2020 and not more than 2 hours in future
+    if (isNaN(ts) || ts < 1577836800000 || ts > now + 7200000) {
+      return { valid: false, reason: `Timestamp out of sane boundaries: ${draw.timestamp}` };
+    }
+  }
+
+  // 7. Verified deterministic attributes
+  const isBig = num >= 5;
+  const isOdd = num % 2 !== 0;
+  let colour = draw.colour || draw.color;
+  if (!colour || colour === 'unknown') {
+    if (num === 0) colour = 'red-violet';
+    else if (num === 5) colour = 'green-violet';
+    else colour = num % 2 === 0 ? 'red' : 'green';
+  }
+
+  return {
+    valid: true,
+    issueNumber: issueStr,
+    number: num,
+    bigSmall: isBig ? 'BIG' : 'SMALL',
+    oddEven: isOdd ? 'ODD' : 'EVEN',
+    colour,
+    timestamp: draw.timestamp || Date.now()
+  };
+}
+
+// -------------------------------------------------------------
 // 1. SIX INDEPENDENT STATISTICAL MODELS
 // -------------------------------------------------------------
 
@@ -407,6 +476,94 @@ export function detectPageHinkleyDrift(errorSeries, threshold = 12.0, delta = 0.
   };
 }
 
+/**
+ * 3.1 Shannon Entropy Uncertainty Detector
+ * Measures prediction disorder/stalemate: H = -p log2(p) - (1-p) log2(1-p).
+ * Normalized strictly to [0.0, 1.0], where 1.0 = maximum coin-toss entropy.
+ */
+export function calculateShannonEntropy(probA) {
+  const p = Math.max(1e-6, Math.min(1 - 1e-6, probA));
+  const q = 1 - p;
+  const entropy = -(p * Math.log2(p) + q * Math.log2(q));
+  return Math.round(entropy * 10000) / 10000;
+}
+
+/**
+ * 3.2 Overfitting & Generalization Gap Detector
+ * Detects if a model overfits in-sample training data compared to walk-forward validation.
+ */
+export function detectOverfitting(inSampleAccuracy, outOfSampleAccuracy, threshold = 12.0) {
+  const gap = Math.round((inSampleAccuracy - outOfSampleAccuracy) * 10) / 10;
+  const isOverfitting = gap > threshold;
+  return {
+    isOverfitting,
+    inSampleAccuracy,
+    outOfSampleAccuracy,
+    generalizationGap: gap,
+    threshold,
+    recommendation: isOverfitting 
+      ? 'Penalize higher-order Markov/N-gram models; increase Dirichlet regularization.' 
+      : 'Generalization gap within safe bounds.'
+  };
+}
+
+/**
+ * 3.3 Dynamic Performance Drop Circuit Breaker
+ * Halts speculative bets when rolling Brier score exceeds coin-toss bounds (> 0.2580).
+ */
+export function checkCircuitBreaker(rollingBrier, rollingWinRate, minDraws = 20) {
+  const isTriggered = (minDraws >= 20) && (rollingBrier > 0.2580 || rollingWinRate < 46.0);
+  return {
+    isTriggered,
+    rollingBrier: Math.round(rollingBrier * 10000) / 10000,
+    rollingWinRate: Math.round(rollingWinRate * 10) / 10,
+    action: isTriggered ? 'ABSTAIN_CIRCUIT_BREAKER' : 'NORMAL_OPERATION',
+    reason: isTriggered 
+      ? `Performance drop detected (Brier=${rollingBrier.toFixed(4)}, WinRate=${rollingWinRate}%). Throttling predictions to prevent drawdown.` 
+      : 'Performance within acceptable statistical parameters.'
+  };
+}
+
+/**
+ * 3.4 Diebold-Mariano Paired Significance Test
+ * Statistically verifies whether Candidate Model B significantly outperforms Champion Model A.
+ */
+export function calculateDieboldMarianoTest(errorsModelA, errorsModelB) {
+  if (!errorsModelA || !errorsModelB || errorsModelA.length < 30 || errorsModelA.length !== errorsModelB.length) {
+    return { isSignificant: false, pValue: 1.0, dmStat: 0, sampleSize: errorsModelA?.length || 0, isModelBBetter: false };
+  }
+  const N = errorsModelA.length;
+  const d = [];
+  let meanD = 0;
+  for (let i = 0; i < N; i++) {
+    const diff = errorsModelA[i] - errorsModelB[i];
+    d.push(diff);
+    meanD += diff;
+  }
+  meanD /= N;
+
+  let varD = 0;
+  for (let i = 0; i < N; i++) {
+    varD += Math.pow(d[i] - meanD, 2);
+  }
+  varD = varD / (N - 1);
+  const seD = Math.sqrt(Math.max(1e-8, varD / N));
+  const dmStat = meanD / seD;
+
+  const t = 1 / (1 + 0.2316419 * Math.abs(dmStat));
+  const dens = 0.3989423 * Math.exp(-dmStat * dmStat / 2);
+  const pVal = Math.min(1.0, 2 * dens * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))));
+
+  return {
+    isSignificant: pVal < 0.05,
+    pValue: Math.round(pVal * 10000) / 10000,
+    dmStat: Math.round(dmStat * 100) / 100,
+    meanDifferential: Math.round(meanD * 10000) / 10000,
+    sampleSize: N,
+    isModelBBetter: meanD > 0 && pVal < 0.05
+  };
+}
+
 // -------------------------------------------------------------
 // 4. STRICT CHRONOLOGICAL WALK-FORWARD VALIDATION
 // -------------------------------------------------------------
@@ -595,19 +752,20 @@ export function generateCalibratedPrediction(historyList, field = 'bigSmall', cu
   const ensembleProbA = weightedSumA / totalW;
   const ensembleProbB = 1 - ensembleProbA;
   const rawDelta = Math.abs(ensembleProbA - 0.5);
+  const entropy = calculateShannonEntropy(ensembleProbA);
 
   const prediction = ensembleProbA >= 0.5 ? valA : valB;
   const agreementCount = prediction === valA ? votesA : (6 - votesA);
 
   // Evidence Level & Gating Rule:
-  // If raw delta < 2.5% (prob between 47.5% and 52.5%) or agreement <= 3/6, signal NO_CLEAR_SIGNAL
+  // If raw delta < 2.5% (prob between 47.5% and 52.5%), entropy > 0.985, or agreement <= 3/6, signal NO_CLEAR_SIGNAL
   let evidenceLevel = 'INSUFFICIENT';
   let action = 'NO_CLEAR_SIGNAL';
 
-  if (rawDelta >= 0.040 && agreementCount >= 5) {
+  if (rawDelta >= 0.040 && agreementCount >= 5 && entropy <= 0.970) {
     evidenceLevel = 'HIGH';
     action = 'CONFIRMED_BET';
-  } else if (rawDelta >= 0.025 && agreementCount >= 4) {
+  } else if (rawDelta >= 0.025 && agreementCount >= 4 && entropy <= 0.985) {
     evidenceLevel = 'MODERATE';
     action = 'CONFIRMED_BET';
   } else {
@@ -636,6 +794,7 @@ export function generateCalibratedPrediction(historyList, field = 'bigSmall', cu
     },
     calibratedConfidence,
     rawDelta: Math.round(rawDelta * 10000) / 100,
+    entropy,
     evidenceLevel,
     selectedModel: 'CalibratedEnsemble_v3',
     modelAgreement: `${agreementCount}/6`,

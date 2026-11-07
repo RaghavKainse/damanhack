@@ -12,6 +12,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { validateDraw } from '../src/utils/statisticalEngine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +28,7 @@ export class DualStorageAdapter {
     this.walCache = {
       rounds: [],
       evaluations: [],
+      predictionAudits: [],
       seenIssues: new Set()
     };
   }
@@ -53,6 +55,7 @@ export class DualStorageAdapter {
         await this.db.collection('draw_rounds').createIndex({ issueNumber: 1 }, { unique: true });
         await this.db.collection('evaluations').createIndex({ timestamp: -1 });
         await this.db.collection('model_registry').createIndex({ version: 1 }, { unique: true });
+        await this.db.collection('prediction_audits').createIndex({ targetIssue: 1 });
 
         this.isMongoConnected = true;
         console.log('✅ Connected to MongoDB cluster successfully.');
@@ -77,42 +80,52 @@ export class DualStorageAdapter {
         const data = JSON.parse(raw);
         this.walCache.rounds = Array.isArray(data.rounds) ? data.rounds : [];
         this.walCache.evaluations = Array.isArray(data.evaluations) ? data.evaluations : [];
-        this.walCache.seenIssues = new Set(this.walCache.rounds.map(r => r.issueNumber));
+        this.walCache.predictionAudits = Array.isArray(data.predictionAudits) ? data.predictionAudits : [];
+        this.walCache.seenIssues = new Set(this.walCache.rounds.map(r => String(r.issueNumber)));
       } catch (e) {
         console.error('Failed to parse WAL store, initializing clean:', e);
         this.walCache.rounds = [];
         this.walCache.evaluations = [];
+        this.walCache.predictionAudits = [];
         this.walCache.seenIssues = new Set();
       }
     }
   }
 
+  /**
+   * Atomic file flush: writes to .tmp file then renames to avoid partial-write corruptions on crash.
+   */
   _flushWalCache() {
     try {
       const payload = JSON.stringify({
         lastUpdated: Date.now(),
         roundsCount: this.walCache.rounds.length,
-        rounds: this.walCache.rounds.slice(-5000), // Retain up to 5,000 draws
-        evaluations: this.walCache.evaluations.slice(-200)
+        rounds: this.walCache.rounds.slice(0, 5000), // Retain newest 5,000 draws
+        evaluations: this.walCache.evaluations.slice(0, 200),
+        predictionAudits: (this.walCache.predictionAudits || []).slice(0, 500)
       }, null, 2);
 
-      fs.writeFileSync(this.walFilePath, payload, 'utf8');
+      const tmpPath = `${this.walFilePath}.tmp`;
+      fs.writeFileSync(tmpPath, payload, 'utf8');
+      fs.renameSync(tmpPath, this.walFilePath);
     } catch (err) {
       console.error('Error flushing WAL to disk:', err.message);
     }
   }
 
   /**
-   * Commits a verified draw round with strict deduplication
+   * Commits a verified draw round with strict deduplication & 10-step validation
    */
   async saveRound(roundData) {
-    if (!roundData || !roundData.issueNumber) return false;
+    if (!roundData) return false;
+    const v = validateDraw(roundData);
+    if (!v.valid) return false;
 
     const record = {
-      issueNumber: String(roundData.issueNumber),
-      number: String(roundData.number),
-      color: roundData.color || 'unknown',
-      timestamp: roundData.timestamp || Date.now(),
+      issueNumber: String(v.issueNumber),
+      number: String(v.number),
+      color: v.colour || 'unknown',
+      timestamp: v.timestamp || Date.now(),
       created_at: new Date()
     };
 
@@ -261,7 +274,50 @@ export class DualStorageAdapter {
   }
 
   /**
-   * Promotes and saves a new model version
+   * Persists a prediction settlement audit record
+   */
+  async savePredictionAudit(auditRecord) {
+    const record = {
+      ...auditRecord,
+      timestamp: auditRecord.timestamp || Date.now(),
+      created_at: new Date()
+    };
+
+    if (this.isMongoConnected && this.db) {
+      try {
+        await this.db.collection('prediction_audits').insertOne(record);
+      } catch (err) {
+        console.warn('MongoDB savePredictionAudit error:', err.message);
+      }
+    }
+
+    if (!Array.isArray(this.walCache.predictionAudits)) {
+      this.walCache.predictionAudits = [];
+    }
+    this.walCache.predictionAudits.unshift(record);
+    this._flushWalCache();
+    return true;
+  }
+
+  /**
+   * Retrieves recent prediction audits
+   */
+  async getPredictionAudits(limit = 100) {
+    if (this.isMongoConnected && this.db) {
+      try {
+        return await this.db.collection('prediction_audits')
+          .find({})
+          .sort({ timestamp: -1 })
+          .limit(limit)
+          .toArray();
+      } catch {}
+    }
+
+    return (this.walCache.predictionAudits || []).slice(0, limit);
+  }
+
+  /**
+   * Promotes and saves a new model version (with atomic file write)
    */
   async saveModelVersion(versionRecord) {
     const registry = await this.getModelRegistry();
@@ -279,8 +335,46 @@ export class DualStorageAdapter {
       } catch {}
     }
 
-    fs.writeFileSync(this.modelRegistryPath, JSON.stringify(registry, null, 2), 'utf8');
+    const tmpPath = `${this.modelRegistryPath}.tmp`;
+    fs.writeFileSync(tmpPath, JSON.stringify(registry, null, 2), 'utf8');
+    fs.renameSync(tmpPath, this.modelRegistryPath);
     return registry;
+  }
+
+  /**
+   * Safe rollback to prior stable model version upon performance drop
+   */
+  async rollbackModelVersion(reason = 'Performance drop rollback triggered') {
+    const registry = await this.getModelRegistry();
+    if (!registry.history || registry.history.length <= 1) {
+      return { success: false, reason: 'No prior model version available for rollback' };
+    }
+
+    const previous = registry.history[1];
+    const rollbackRecord = {
+      version: `${previous.version}-rollback-${Date.now().toString(36).slice(-4)}`,
+      promotedAt: Date.now(),
+      model: previous.model || 'CalibratedBaseline',
+      brierScore: previous.brierScore,
+      accuracy100: previous.accuracy100,
+      status: 'ROLLBACK_ACTIVE',
+      reason,
+      restoredFrom: previous.version
+    };
+
+    registry.activeVersion = rollbackRecord.version;
+    registry.history.unshift(rollbackRecord);
+
+    const tmpPath = `${this.modelRegistryPath}.tmp`;
+    fs.writeFileSync(tmpPath, JSON.stringify(registry, null, 2), 'utf8');
+    fs.renameSync(tmpPath, this.modelRegistryPath);
+
+    return { 
+      success: true, 
+      activeVersion: rollbackRecord.version, 
+      restoredFrom: previous.version,
+      reason 
+    };
   }
 
   async close() {

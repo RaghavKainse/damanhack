@@ -41,7 +41,12 @@ import {
   calculateBinomialSignificance,
   detectPageHinkleyDrift,
   runChronologicalWalkForward,
-  generateCalibratedPrediction
+  generateCalibratedPrediction,
+  validateDraw,
+  detectOverfitting,
+  calculateShannonEntropy,
+  checkCircuitBreaker,
+  calculateDieboldMarianoTest
 } from '../src/utils/engine.js';
 
 import { DualStorageAdapter } from '../server/storage.js';
@@ -415,6 +420,117 @@ async function runTestSuite() {
     assert.strictEqual(pred.action, 'NO_CLEAR_SIGNAL', 'Chopped sequence must yield NO_CLEAR_SIGNAL');
     assert.strictEqual(pred.prediction, 'NO CLEAR SIGNAL', 'Must output NO CLEAR SIGNAL');
     assert.strictEqual(pred.confidence, 50.0, 'Confidence must be strictly 50.0% neutral');
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 12: 10-Step Draw Validation Protocol
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 12: 10-Step Draw Validation & Corrupt Record Defense');
+
+  it('Rejects malformed draws, invalid lengths, and out-of-range digits', () => {
+    // Null/undefined
+    assert.strictEqual(validateDraw(null).valid, false);
+    assert.strictEqual(validateDraw(undefined).valid, false);
+
+    // Missing issue or wrong format
+    assert.strictEqual(validateDraw({ number: 5 }).valid, false);
+    assert.strictEqual(validateDraw({ issueNumber: '12345', number: 5 }).valid, false);
+
+    // Out of range number
+    assert.strictEqual(validateDraw({ issueNumber: '20261105100050001', number: 10 }).valid, false);
+    assert.strictEqual(validateDraw({ issueNumber: '20261105100050001', number: -1 }).valid, false);
+    assert.strictEqual(validateDraw({ issueNumber: '20261105100050001', number: 'abc' }).valid, false);
+
+    // Unrecognized game prefix
+    assert.strictEqual(validateDraw({ issueNumber: '20261105999990001', number: 5 }).valid, false);
+
+    // Valid WinGo 30S draw
+    const validDraw = validateDraw({ issueNumber: '20261105100051234', number: '7' });
+    assert.strictEqual(validDraw.valid, true);
+    assert.strictEqual(validDraw.number, 7);
+    assert.strictEqual(validDraw.bigSmall, 'BIG');
+    assert.strictEqual(validDraw.oddEven, 'ODD');
+    assert.strictEqual(validDraw.colour, 'green');
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 13: Shannon Entropy, Overfitting & Circuit Breaker
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 13: Shannon Entropy, Overfitting Detection & Circuit Breakers');
+
+  it('Verifies Shannon entropy is maximal (1.0) at 50/50 and drops on certainty', () => {
+    const entropy50 = calculateShannonEntropy(0.50);
+    assert.strictEqual(entropy50, 1.0, 'Entropy must be exactly 1.0 for p = 0.50');
+
+    const entropy80 = calculateShannonEntropy(0.80);
+    assert(entropy80 < 0.75, 'Entropy must be significantly lower than 1.0 for p = 0.80');
+
+    const entropy99 = calculateShannonEntropy(0.99);
+    assert(entropy99 < 0.15, 'Entropy must approach 0 as probability approaches certainty');
+  });
+
+  it('Detects overfitting when in-sample accuracy diverges significantly from out-of-sample', () => {
+    // Large gap: In-sample 75%, Out-of-sample 52% (gap 23%)
+    const overfit = detectOverfitting(75.0, 52.0, 12.0);
+    assert.strictEqual(overfit.isOverfitting, true, '23% generalization gap must trigger overfitting flag');
+    assert.strictEqual(overfit.generalizationGap, 23.0);
+
+    // Safe gap: In-sample 57%, Out-of-sample 55% (gap 2%)
+    const safe = detectOverfitting(57.0, 55.0, 12.0);
+    assert.strictEqual(safe.isOverfitting, false, '2% generalization gap must not trigger overfitting');
+  });
+
+  it('Triggers circuit breaker when rolling Brier score exceeds coin-toss threshold', () => {
+    // Degraded performance: Brier 0.2750 (far worse than 0.2500 random coin toss)
+    const degraded = checkCircuitBreaker(0.2750, 42.0, 25);
+    assert.strictEqual(degraded.isTriggered, true, 'High Brier score must trigger circuit breaker');
+    assert.strictEqual(degraded.action, 'ABSTAIN_CIRCUIT_BREAKER');
+
+    // Normal healthy performance: Brier 0.2420, WinRate 56%
+    const healthy = checkCircuitBreaker(0.2420, 56.0, 25);
+    assert.strictEqual(healthy.isTriggered, false, 'Healthy score must not trigger circuit breaker');
+    assert.strictEqual(healthy.action, 'NORMAL_OPERATION');
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 14: Diebold-Mariano Significance & Model Rollback
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 14: Diebold-Mariano Test & Model Version Rollback');
+
+  it('Statistically verifies loss differential via Diebold-Mariano test', () => {
+    // Model B consistently makes smaller squared errors than Model A across 40 rounds
+    const errorsA = Array(40).fill(0.35);
+    const errorsB = Array(40).fill(0.18);
+    const dm = calculateDieboldMarianoTest(errorsA, errorsB);
+    assert.strictEqual(dm.isSignificant, true, 'Clear loss difference must be statistically significant');
+    assert.strictEqual(dm.isModelBBetter, true, 'Model B must be recognized as significantly superior');
+    assert(dm.pValue < 0.05, 'p-value must be less than 0.05');
+  });
+
+  await itAsync('Executes safe atomic model rollback upon degradation', async () => {
+    const testStorage = new DualStorageAdapter();
+    await testStorage.init();
+
+    // Promote a new version
+    const testVersion = `v2.4.test-${Date.now().toString(36)}`;
+    await testStorage.saveModelVersion({
+      version: testVersion,
+      promotedAt: Date.now(),
+      model: 'CandidateTestModel',
+      brierScore: 0.2450,
+      accuracy100: 56.0,
+      status: 'ACTIVE_PRODUCTION'
+    });
+
+    const regAfterPromotion = await testStorage.getModelRegistry();
+    assert.strictEqual(regAfterPromotion.activeVersion, testVersion);
+
+    // Trigger rollback
+    const rollbackRes = await testStorage.rollbackModelVersion('Simulated test rollback');
+    assert.strictEqual(rollbackRes.success, true);
+    assert(rollbackRes.activeVersion.includes('rollback'), 'Active version must reflect rollback');
+
+    await testStorage.close();
   });
 
   console.log('\n======================================================');

@@ -1,0 +1,76 @@
+{
+  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv",
+  "lastPromotionTimestamp": 1794050709182,
+  "history": [
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv",
+      "promotedAt": 1794050709187,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688"
+    },
+    {
+      "version": "v2.4.test-mw6bgypo",
+      "promotedAt": 1794050709180,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688",
+      "promotedAt": 1794050625608,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09"
+    },
+    {
+      "version": "v2.4.test-mw6bf681",
+      "promotedAt": 1794050625601,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09",
+      "promotedAt": 1794050591625,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated"
+    },
+    {
+      "version": "v2.4.test-mw6beg04",
+      "promotedAt": 1794050591620,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated",
+      "promotedAt": 1794050591620,
+      "brierScore": 0.2488,
+      "logLoss": 0.6908,
+      "accuracy100": 54,
+      "status": "ACTIVE_PRODUCTION",
+      "weights": {
+        "HistoricalFrequency": 1,
+        "RollingWindow": 1.1,
+        "BayesianBetaBinomial": 1.25,
+        "MarkovTransition": 1.25,
+        "ExponentiallyWeighted": 1.1,
+        "StatisticalBaseline": 0.8
+      }
+    }
+  ]
+}

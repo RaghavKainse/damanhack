@@ -1,3 +1,5 @@
+import { validateDraw } from './statisticalEngine.js';
+
 /**
  * Real-time Data Connector for WinGo Draw Server (Daman / AR-Lottery)
  * Connects directly to the official draw backend:
@@ -81,14 +83,28 @@ export async function fetchLiveHistory(gameCode = 'WinGo_30S') {
       if (res.ok) {
         const json = await res.json();
         if (json.data && Array.isArray(json.data.list) && json.data.list.length > 0) {
-          return {
-            success: true,
-            source: endpoint.startsWith('/draw-api') ? 'Daman Live CDN' : 'Direct Server',
-            list: json.data.list,
-            totalPage: json.data.totalPage,
-            totalCount: json.data.totalCount,
-            serviceTime: json.serviceTime || Date.now()
-          };
+          const validatedList = json.data.list
+            .filter(item => validateDraw(item).valid)
+            .map(item => {
+              const v = validateDraw(item);
+              return {
+                issueNumber: v.issueNumber,
+                number: String(v.number),
+                colour: v.colour,
+                timestamp: v.timestamp
+              };
+            });
+
+          if (validatedList.length > 0) {
+            return {
+              success: true,
+              source: endpoint.startsWith('/draw-api') ? 'Daman Live CDN' : 'Direct Server',
+              list: validatedList,
+              totalPage: json.data.totalPage,
+              totalCount: json.data.totalCount,
+              serviceTime: json.serviceTime || Date.now()
+            };
+          }
         }
       }
     } catch {

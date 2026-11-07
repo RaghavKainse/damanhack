@@ -1,7 +1,84 @@
 {
-  "lastUpdated": 1793877294431,
-  "roundsCount": 221,
+  "lastUpdated": 1794050681124,
+  "roundsCount": 232,
   "rounds": [
+    {
+      "issueNumber": "20261107100051369",
+      "number": "3",
+      "color": "green",
+      "timestamp": 1794050678648,
+      "created_at": "2026-11-07T11:24:38.648Z"
+    },
+    {
+      "issueNumber": "20261107100051368",
+      "number": "3",
+      "color": "green",
+      "timestamp": 1794050647296,
+      "created_at": "2026-11-07T11:24:07.296Z"
+    },
+    {
+      "issueNumber": "20261107100051367",
+      "number": "1",
+      "color": "green",
+      "timestamp": 1794050647290,
+      "created_at": "2026-11-07T11:24:07.290Z"
+    },
+    {
+      "issueNumber": "20261107100051366",
+      "number": "9",
+      "color": "green",
+      "timestamp": 1794050647285,
+      "created_at": "2026-11-07T11:24:07.285Z"
+    },
+    {
+      "issueNumber": "20261107100051365",
+      "number": "1",
+      "color": "green",
+      "timestamp": 1794050647280,
+      "created_at": "2026-11-07T11:24:07.280Z"
+    },
+    {
+      "issueNumber": "20261107100051364",
+      "number": "1",
+      "color": "green",
+      "timestamp": 1794050647274,
+      "created_at": "2026-11-07T11:24:07.274Z"
+    },
+    {
+      "issueNumber": "20261107100051363",
+      "number": "5",
+      "color": "green,violet",
+      "timestamp": 1794050647266,
+      "created_at": "2026-11-07T11:24:07.266Z"
+    },
+    {
+      "issueNumber": "20261107100051362",
+      "number": "9",
+      "color": "green",
+      "timestamp": 1794050647260,
+      "created_at": "2026-11-07T11:24:07.260Z"
+    },
+    {
+      "issueNumber": "20261107100051361",
+      "number": "4",
+      "color": "red",
+      "timestamp": 1794050647253,
+      "created_at": "2026-11-07T11:24:07.253Z"
+    },
+    {
+      "issueNumber": "20261107100051360",
+      "number": "0",
+      "color": "red,violet",
+      "timestamp": 1794050647245,
+      "created_at": "2026-11-07T11:24:07.245Z"
+    },
+    {
+      "issueNumber": "20261107100051359",
+      "number": "1",
+      "color": "green",
+      "timestamp": 1794050647241,
+      "created_at": "2026-11-07T11:24:07.241Z"
+    },
     {
       "issueNumber": "20261105100051340",
       "number": "8",
@@ -1550,5 +1627,468 @@
       "created_at": "2026-11-05T10:36:17.508Z"
     }
   ],
-  "evaluations": []
+  "evaluations": [
+    {
+      "timestamp": 1794050647323,
+      "evaluatedAt": "2026-11-07T11:24:07.323Z",
+      "totalVerifiedDraws": 231,
+      "windows": {
+        "50": {
+          "HistoricalFrequency": {
+            "sampleSize": 50,
+            "winRate": 58,
+            "totalWins": 29,
+            "brierScore": 0.2449,
+            "logLoss": 0.6829,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.006,
+            "pValueVsRandom": 0.3222,
+            "isSignificant": false
+          },
+          "RollingWindow": {
+            "sampleSize": 50,
+            "winRate": 58,
+            "totalWins": 29,
+            "brierScore": 0.2568,
+            "logLoss": 0.7098,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.16,
+            "pValueVsRandom": 0.3222,
+            "isSignificant": false
+          },
+          "BayesianBetaBinomial": {
+            "sampleSize": 50,
+            "winRate": 58,
+            "totalWins": 29,
+            "brierScore": 0.2449,
+            "logLoss": 0.683,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.0119,
+            "pValueVsRandom": 0.3222,
+            "isSignificant": false
+          },
+          "MarkovTransition": {
+            "sampleSize": 50,
+            "winRate": 56,
+            "totalWins": 28,
+            "brierScore": 0.2459,
+            "logLoss": 0.6853,
+            "bigAccuracy": 86.2,
+            "smallAccuracy": 14.3,
+            "ece": 0.0409,
+            "pValueVsRandom": 0.4795,
+            "isSignificant": false
+          },
+          "ExponentiallyWeighted": {
+            "sampleSize": 50,
+            "winRate": 58,
+            "totalWins": 29,
+            "brierScore": 0.2504,
+            "logLoss": 0.6952,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.1184,
+            "pValueVsRandom": 0.3222,
+            "isSignificant": false
+          },
+          "StatisticalBaseline": {
+            "sampleSize": 50,
+            "winRate": 58,
+            "totalWins": 29,
+            "brierScore": 0.25,
+            "logLoss": 0.6931,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.08,
+            "pValueVsRandom": 0.3222,
+            "isSignificant": false
+          }
+        },
+        "100": {
+          "HistoricalFrequency": {
+            "sampleSize": 100,
+            "winRate": 57,
+            "totalWins": 57,
+            "brierScore": 0.2465,
+            "logLoss": 0.6861,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.0004,
+            "pValueVsRandom": 0.1936,
+            "isSignificant": false
+          },
+          "RollingWindow": {
+            "sampleSize": 100,
+            "winRate": 51,
+            "totalWins": 51,
+            "brierScore": 0.2588,
+            "logLoss": 0.7123,
+            "bigAccuracy": 78.9,
+            "smallAccuracy": 14,
+            "ece": 0.0774,
+            "pValueVsRandom": 0.9203,
+            "isSignificant": false
+          },
+          "BayesianBetaBinomial": {
+            "sampleSize": 100,
+            "winRate": 57,
+            "totalWins": 57,
+            "brierScore": 0.2464,
+            "logLoss": 0.6859,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.0068,
+            "pValueVsRandom": 0.1936,
+            "isSignificant": false
+          },
+          "MarkovTransition": {
+            "sampleSize": 100,
+            "winRate": 57,
+            "totalWins": 57,
+            "brierScore": 0.2448,
+            "logLoss": 0.6828,
+            "bigAccuracy": 84.2,
+            "smallAccuracy": 20.9,
+            "ece": 0.0154,
+            "pValueVsRandom": 0.1936,
+            "isSignificant": false
+          },
+          "ExponentiallyWeighted": {
+            "sampleSize": 100,
+            "winRate": 52,
+            "totalWins": 52,
+            "brierScore": 0.2535,
+            "logLoss": 0.7008,
+            "bigAccuracy": 77.2,
+            "smallAccuracy": 18.6,
+            "ece": 0.0563,
+            "pValueVsRandom": 0.7642,
+            "isSignificant": false
+          },
+          "StatisticalBaseline": {
+            "sampleSize": 100,
+            "winRate": 57,
+            "totalWins": 57,
+            "brierScore": 0.25,
+            "logLoss": 0.6931,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.07,
+            "pValueVsRandom": 0.1936,
+            "isSignificant": false
+          }
+        },
+        "250": {
+          "HistoricalFrequency": {
+            "sampleSize": 211,
+            "winRate": 56.9,
+            "totalWins": 120,
+            "brierScore": 0.248,
+            "logLoss": 0.6894,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.0267,
+            "pValueVsRandom": 0.0539,
+            "isSignificant": false
+          },
+          "RollingWindow": {
+            "sampleSize": 211,
+            "winRate": 51.7,
+            "totalWins": 109,
+            "brierScore": 0.2532,
+            "logLoss": 0.7009,
+            "bigAccuracy": 74.2,
+            "smallAccuracy": 22,
+            "ece": 0.0743,
+            "pValueVsRandom": 0.6796,
+            "isSignificant": false
+          },
+          "BayesianBetaBinomial": {
+            "sampleSize": 211,
+            "winRate": 56.9,
+            "totalWins": 120,
+            "brierScore": 0.2474,
+            "logLoss": 0.6881,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.0111,
+            "pValueVsRandom": 0.0539,
+            "isSignificant": false
+          },
+          "MarkovTransition": {
+            "sampleSize": 211,
+            "winRate": 55.9,
+            "totalWins": 118,
+            "brierScore": 0.2488,
+            "logLoss": 0.6916,
+            "bigAccuracy": 90,
+            "smallAccuracy": 11,
+            "ece": 0.0338,
+            "pValueVsRandom": 0.0985,
+            "isSignificant": false
+          },
+          "ExponentiallyWeighted": {
+            "sampleSize": 211,
+            "winRate": 53.1,
+            "totalWins": 112,
+            "brierScore": 0.2522,
+            "logLoss": 0.6982,
+            "bigAccuracy": 82.5,
+            "smallAccuracy": 14.3,
+            "ece": 0.054,
+            "pValueVsRandom": 0.4087,
+            "isSignificant": false
+          },
+          "StatisticalBaseline": {
+            "sampleSize": 211,
+            "winRate": 56.9,
+            "totalWins": 120,
+            "brierScore": 0.25,
+            "logLoss": 0.6931,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.0687,
+            "pValueVsRandom": 0.0539,
+            "isSignificant": false
+          }
+        },
+        "500": {
+          "HistoricalFrequency": {
+            "sampleSize": 211,
+            "winRate": 56.9,
+            "totalWins": 120,
+            "brierScore": 0.248,
+            "logLoss": 0.6894,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.0267,
+            "pValueVsRandom": 0.0539,
+            "isSignificant": false
+          },
+          "RollingWindow": {
+            "sampleSize": 211,
+            "winRate": 51.7,
+            "totalWins": 109,
+            "brierScore": 0.2532,
+            "logLoss": 0.7009,
+            "bigAccuracy": 74.2,
+            "smallAccuracy": 22,
+            "ece": 0.0743,
+            "pValueVsRandom": 0.6796,
+            "isSignificant": false
+          },
+          "BayesianBetaBinomial": {
+            "sampleSize": 211,
+            "winRate": 56.9,
+            "totalWins": 120,
+            "brierScore": 0.2474,
+            "logLoss": 0.6881,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.0111,
+            "pValueVsRandom": 0.0539,
+            "isSignificant": false
+          },
+          "MarkovTransition": {
+            "sampleSize": 211,
+            "winRate": 55.9,
+            "totalWins": 118,
+            "brierScore": 0.2488,
+            "logLoss": 0.6916,
+            "bigAccuracy": 90,
+            "smallAccuracy": 11,
+            "ece": 0.0338,
+            "pValueVsRandom": 0.0985,
+            "isSignificant": false
+          },
+          "ExponentiallyWeighted": {
+            "sampleSize": 211,
+            "winRate": 53.1,
+            "totalWins": 112,
+            "brierScore": 0.2522,
+            "logLoss": 0.6982,
+            "bigAccuracy": 82.5,
+            "smallAccuracy": 14.3,
+            "ece": 0.054,
+            "pValueVsRandom": 0.4087,
+            "isSignificant": false
+          },
+          "StatisticalBaseline": {
+            "sampleSize": 211,
+            "winRate": 56.9,
+            "totalWins": 120,
+            "brierScore": 0.25,
+            "logLoss": 0.6931,
+            "bigAccuracy": 100,
+            "smallAccuracy": 0,
+            "ece": 0.0687,
+            "pValueVsRandom": 0.0539,
+            "isSignificant": false
+          }
+        }
+      },
+      "driftStatus": "STABLE",
+      "driftScore": 0,
+      "rollingBrier": 0.25,
+      "rollingWinRate": 111.1,
+      "circuitBreakerTriggered": false,
+      "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688",
+      "date": "2026-11-07T11:24:07.324Z"
+    }
+  ],
+  "predictionAudits": [
+    {
+      "targetIssue": "20261107100051369",
+      "predicted": "NO CLEAR SIGNAL",
+      "actual": "SMALL",
+      "actualNumber": 3,
+      "probA": 0.569,
+      "isWin": false,
+      "action": "NO_CLEAR_SIGNAL",
+      "brierError": 0.3238,
+      "logLossError": 0.8416,
+      "driftDetected": false,
+      "calibratedConfidence": 50,
+      "timestamp": 1794050678652,
+      "created_at": "2026-11-07T11:24:38.652Z"
+    },
+    {
+      "targetIssue": "20261107100051368",
+      "predicted": "NO CLEAR SIGNAL",
+      "actual": "SMALL",
+      "actualNumber": 3,
+      "probA": 0.557,
+      "isWin": false,
+      "action": "NO_CLEAR_SIGNAL",
+      "brierError": 0.3102,
+      "logLossError": 0.8142,
+      "driftDetected": false,
+      "calibratedConfidence": 50,
+      "timestamp": 1794050647300,
+      "created_at": "2026-11-07T11:24:07.300Z"
+    },
+    {
+      "targetIssue": "20261107100051367",
+      "predicted": "BIG",
+      "actual": "SMALL",
+      "actualNumber": 1,
+      "probA": 0.588,
+      "isWin": false,
+      "action": "CONFIRMED_BET",
+      "brierError": 0.3457,
+      "logLossError": 0.8867,
+      "driftDetected": false,
+      "calibratedConfidence": 57.1,
+      "timestamp": 1794050647294,
+      "created_at": "2026-11-07T11:24:07.294Z"
+    },
+    {
+      "targetIssue": "20261107100051366",
+      "predicted": "BIG",
+      "actual": "BIG",
+      "actualNumber": 9,
+      "probA": 0.575,
+      "isWin": true,
+      "action": "CONFIRMED_BET",
+      "brierError": 0.1806,
+      "logLossError": 0.5534,
+      "driftDetected": false,
+      "calibratedConfidence": 56,
+      "timestamp": 1794050647287,
+      "created_at": "2026-11-07T11:24:07.287Z"
+    },
+    {
+      "targetIssue": "20261107100051365",
+      "predicted": "NO CLEAR SIGNAL",
+      "actual": "SMALL",
+      "actualNumber": 1,
+      "probA": 0.565,
+      "isWin": false,
+      "action": "NO_CLEAR_SIGNAL",
+      "brierError": 0.3192,
+      "logLossError": 0.8324,
+      "driftDetected": false,
+      "calibratedConfidence": 50,
+      "timestamp": 1794050647282,
+      "created_at": "2026-11-07T11:24:07.282Z"
+    },
+    {
+      "targetIssue": "20261107100051364",
+      "predicted": "BIG",
+      "actual": "SMALL",
+      "actualNumber": 1,
+      "probA": 0.585,
+      "isWin": false,
+      "action": "CONFIRMED_BET",
+      "brierError": 0.3422,
+      "logLossError": 0.8795,
+      "driftDetected": false,
+      "calibratedConfidence": 56.8,
+      "timestamp": 1794050647276,
+      "created_at": "2026-11-07T11:24:07.276Z"
+    },
+    {
+      "targetIssue": "20261107100051363",
+      "predicted": "BIG",
+      "actual": "BIG",
+      "actualNumber": 5,
+      "probA": 0.592,
+      "isWin": true,
+      "action": "CONFIRMED_BET",
+      "brierError": 0.1665,
+      "logLossError": 0.5242,
+      "driftDetected": false,
+      "calibratedConfidence": 57.4,
+      "timestamp": 1794050647270,
+      "created_at": "2026-11-07T11:24:07.270Z"
+    },
+    {
+      "targetIssue": "20261107100051362",
+      "predicted": "BIG",
+      "actual": "BIG",
+      "actualNumber": 9,
+      "probA": 0.585,
+      "isWin": true,
+      "action": "CONFIRMED_BET",
+      "brierError": 0.1722,
+      "logLossError": 0.5361,
+      "driftDetected": false,
+      "calibratedConfidence": 56.8,
+      "timestamp": 1794050647262,
+      "created_at": "2026-11-07T11:24:07.262Z"
+    },
+    {
+      "targetIssue": "20261107100051361",
+      "predicted": "BIG",
+      "actual": "SMALL",
+      "actualNumber": 4,
+      "probA": 0.593,
+      "isWin": false,
+      "action": "CONFIRMED_BET",
+      "brierError": 0.3516,
+      "logLossError": 0.8989,
+      "driftDetected": false,
+      "calibratedConfidence": 57.5,
+      "timestamp": 1794050647256,
+      "created_at": "2026-11-07T11:24:07.256Z"
+    },
+    {
+      "targetIssue": "20261107100051360",
+      "predicted": "BIG",
+      "actual": "SMALL",
+      "actualNumber": 0,
+      "probA": 0.584,
+      "isWin": false,
+      "action": "CONFIRMED_BET",
+      "brierError": 0.3411,
+      "logLossError": 0.8771,
+      "driftDetected": false,
+      "calibratedConfidence": 56.7,
+      "timestamp": 1794050647248,
+      "created_at": "2026-11-07T11:24:07.248Z"
+    }
+  ]
 }
