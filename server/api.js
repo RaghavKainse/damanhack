@@ -83,6 +83,15 @@ export function createMetricsServer(port = 4001) {
         return;
       }
 
+      if (url.pathname === '/api/learning/history' || url.pathname === '/api/history') {
+        const limit = Math.min(10000, Math.max(10, parseInt(url.searchParams.get('limit') || '5000', 10)));
+        const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
+        const history = await storage.getHistory(limit, offset);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, count: history.length, limit, offset, list: history }));
+        return;
+      }
+
       if (url.pathname === '/api/learning/day') {
         const dateParam = url.searchParams.get('date');
         const daily = await storage.getDailyProgress(dateParam);
