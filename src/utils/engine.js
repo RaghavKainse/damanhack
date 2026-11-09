@@ -444,7 +444,7 @@ export function analyzeFieldPatterns(list, field = 'bigSmall') {
       break;
     }
   }
-  const isPingPong = pingPongCount >= 3;
+  const isPingPong = pingPongCount >= 4;
 
   // 3. Double Jump (B-B-S-S-B-B)
   let isDoubleJump = false;
@@ -453,17 +453,18 @@ export function analyzeFieldPatterns(list, field = 'bigSmall') {
     if (v0 === v1 && v2 === v3 && v0 !== v2) isDoubleJump = true;
   }
 
-  // 3b. Double Forming (B-B-S or S-S-B: previous was a completed pair, current is single)
+  // 3b. Double Forming (True A-A-B: previous was strictly a completed pair of 2, current is single)
   let isDoubleForming = false;
-  if (values.length >= 3) {
-    const v0 = values[0], v1 = values[1], v2 = values[2];
-    if (v1 === v2 && v0 !== v1) isDoubleForming = true;
+  if (values.length >= 4) {
+    const v0 = values[0], v1 = values[1], v2 = values[2], v3 = values[3];
+    if (v1 === v2 && v0 !== v1 && v3 !== v2) isDoubleForming = true;
   }
 
   // 4. Mirror Symmetry (B-S-S-B or S-B-B-S)
   let isMirror = false;
-  if (values.length >= 3) {
-    if (values[0] === values[2] && values[0] !== values[1]) isMirror = true;
+  if (values.length >= 4) {
+    const v0 = values[0], v1 = values[1], v2 = values[2], v3 = values[3];
+    if (v0 === v3 && v1 === v2 && v0 !== v1) isMirror = true;
   }
 
   // 5. Ratio over sample of 50
@@ -735,26 +736,36 @@ export function analyzeFullDayDynamics(historyList, currentIssueNumber) {
   const drawIndex = parseInt(issueStr.slice(-4), 10) || 1;
   const totalDailyDraws = 2880;
   const progressPercent = Math.min(100, Math.round((drawIndex / totalDailyDraws) * 1000) / 10);
+  const todayDateStr = issueStr ? issueStr.slice(0, 8) : '';
 
-  // Session definition
+  // Filter draws belonging strictly to today's date if available
+  const todayOnlyDraws = (historyList || []).filter(h => h.issueNumber && (!todayDateStr || h.issueNumber.slice(0, 8) === todayDateStr));
+  const activeDayDraws = todayOnlyDraws.length >= 20 ? todayOnlyDraws : (historyList || []);
+
+  // 1. Session definition & Circadian Regime
+  let sessionKey = 'MORNING_ASIA';
   let sessionName = 'प्रभात सत्र (Early Morning Asia Session)';
-  let sessionDesc = 'स्थिर तरंगे और नियमित पैटर्न';
+  let sessionDesc = 'स्थिर तरंगे और ड्रैगन मोमेंटम';
   if (drawIndex <= 720) {
+    sessionKey = 'MORNING_ASIA';
     sessionName = 'प्रभात सत्र (Early Morning Asia Volume)';
-    sessionDesc = 'ड्रैगन मोमेंटम के लिए अनुकूल';
+    sessionDesc = 'ड्रैगन मोमेंटम और ट्रेंडिंग चक्र के लिए अनुकूल';
   } else if (drawIndex <= 1500) {
+    sessionKey = 'MIDDAY_EUROPE';
     sessionName = 'दोपहर सत्र (Midday European Session)';
-    sessionDesc = 'मीन-रिवर्शन संतुलन चक्र';
+    sessionDesc = 'मीन-रिवर्शन संतुलन व क्लस्टर पैरिटी चक्र';
   } else if (drawIndex <= 2300) {
+    sessionKey = 'EVENING_PEAK';
     sessionName = 'शाम का पीक सत्र (Evening Indian Peak Volume)';
-    sessionDesc = 'उच्च वॉल्यूम मोमेंटम व ड्रैगन लड़ी';
+    sessionDesc = 'उच्च वॉल्यूम मोमेंटम व लंबी ड्रैगन लड़ी';
   } else {
+    sessionKey = 'LATE_NIGHT_OSC';
     sessionName = 'देर रात ऑसिलेशन सत्र (Late Night High Chop)';
-    sessionDesc = 'ऑसिलेशन शोर (अल्ट्रा स्नाइपर सक्रिय)';
+    sessionDesc = 'ऑसिलेशन शोर (अल्ट्रा स्नाइपर सतर्कता सक्रिय)';
   }
 
-  // Sample full statistics across all accumulated draws
-  const allNumbers = (historyList || []).map(h => parseInt(h.number, 10)).filter(n => !isNaN(n));
+  // 2. Sample full statistics across all accumulated draws of the day
+  const allNumbers = activeDayDraws.map(h => parseInt(h.number, 10)).filter(n => !isNaN(n));
   const counts = Array(10).fill(0);
   allNumbers.forEach(n => { if (n >= 0 && n <= 9) counts[n]++; });
 
@@ -771,11 +782,56 @@ export function analyzeFullDayDynamics(historyList, currentIssueNumber) {
   const oddPercent = Math.round((oddCount / totalEvaluated) * 100);
   const evenPercent = 100 - oddPercent;
 
-  // Day hot & cold numbers
-  const sortedDigits = Array.from({ length: 10 }, (_, i) => ({ number: i, count: counts[i] }))
-    .sort((a, b) => b.count - a.count);
+  // 3. Intraday Cumulative Z-Scores (Law of Large Numbers Convergence)
+  const expMean = totalEvaluated * 0.50;
+  const stdDev = Math.sqrt(totalEvaluated * 0.25) || 1.0;
+  const dayZScoreBS = Math.round(((bigCount - expMean) / stdDev) * 100) / 100;
+  const dayZScoreOE = Math.round(((oddCount - expMean) / stdDev) * 100) / 100;
+
+  // 4. Day hot, cold & overdue Poisson rebound digits
+  const expectedPerDigit = totalEvaluated / 10;
+  const stdDevPerDigit = Math.sqrt(totalEvaluated * 0.09) || 1.0;
+  const sortedDigits = Array.from({ length: 10 }, (_, i) => {
+    const cnt = counts[i];
+    const z = (cnt - expectedPerDigit) / stdDevPerDigit;
+    return { number: i, count: cnt, zScore: Math.round(z * 100) / 100 };
+  }).sort((a, b) => b.count - a.count);
+
   const hotDigits = sortedDigits.slice(0, 3).map(d => d.number);
   const coldDigits = sortedDigits.slice(-3).map(d => d.number);
+  const overdueDigits = sortedDigits.filter(d => d.zScore <= -1.4).map(d => d.number);
+
+  // 5. Intraday Double Forming completion rate
+  let doubleFormingAttempts = 0;
+  let doubleFormingSuccesses = 0;
+  const chronological = [...activeDayDraws].reverse().map(h => parseInt(h.number, 10) >= 5 ? 'BIG' : 'SMALL');
+  for (let i = 0; i < chronological.length - 3; i++) {
+    const v3 = chronological[i];
+    const v2 = chronological[i + 1];
+    const v1 = chronological[i + 2];
+    const v0 = chronological[i + 3];
+    if (v3 !== v2 && v2 === v1 && v1 !== v0) {
+      doubleFormingAttempts++;
+      if (i + 4 < chronological.length && chronological[i + 4] === v0) {
+        doubleFormingSuccesses++;
+      }
+    }
+  }
+  const doubleFormingRate = doubleFormingAttempts >= 5
+    ? Math.round((doubleFormingSuccesses / doubleFormingAttempts) * 100)
+    : 60;
+
+  // 6. Longest Streak of the Day
+  let longestStreakDay = 0;
+  let curRun = 1;
+  for (let i = 1; i < chronological.length; i++) {
+    if (chronological[i] === chronological[i - 1]) {
+      curRun++;
+      if (curRun > longestStreakDay) longestStreakDay = curRun;
+    } else {
+      curRun = 1;
+    }
+  }
 
   // Daily modulo cycle resonance (PRNG index % 10, % 30)
   const modulo10 = drawIndex % 10;
@@ -785,14 +841,20 @@ export function analyzeFullDayDynamics(historyList, currentIssueNumber) {
     drawIndex,
     totalDailyDraws,
     progressPercent,
+    sessionKey,
     sessionName,
     sessionDesc,
     bigPercent,
     smallPercent,
     oddPercent,
     evenPercent,
+    dayZScoreBS,
+    dayZScoreOE,
     hotDigits,
     coldDigits,
+    overdueDigits,
+    doubleFormingRate,
+    longestStreakDay,
     modulo10,
     modulo30,
     totalRoundsAnalyzed: totalEvaluated
@@ -1003,54 +1065,49 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     }
   }
 
-  const p1 = (trans1A + 2) / (trans1Total + 4);
-  let p2 = trans2Total >= 2 ? (trans2A + 2) / (trans2Total + 4) : p1;
-  let p3 = trans3Total >= 2 ? (trans3A + 2) / (trans3Total + 4) : p2;
+  const countAInChron = chronological.filter(c => c === valA).length;
+  const baseRateA = chronological.length > 0 ? (countAInChron / chronological.length) : 0.50;
+
+  const delta1 = trans1Total >= 4 ? ((trans1A / trans1Total) - baseRateA) : 0;
+  const delta2 = trans2Total >= 2 ? ((trans2A / trans2Total) - baseRateA) : delta1;
+  const delta3 = trans3Total >= 2 ? ((trans3A / trans3Total) - baseRateA) : delta2;
+
+  let markovDelta = delta3 * 0.45 + delta2 * 0.35 + delta1 * 0.20;
 
   // If a double formation is in progress and Order-3 has no evidence (trans3Total < 2),
   // shrink Order-2 ping-pong bias toward neutral 0.50 so it doesn't fight the forming double
   if (analysis.isDoubleForming && trans3Total < 2) {
-    p2 = 0.50 * p2 + 0.50 * 0.50;
-    p3 = 0.50;
+    markovDelta = 0.50 * markovDelta;
   }
-  const markovProbA = (p3 * 0.45 + p2 * 0.35 + p1 * 0.20) * 100;
+  const markovProbA = Math.max(38, Math.min(62, (0.50 + markovDelta * 0.45) * 100));
 
   // 2. MODEL 2: Dragon Streak Momentum & Mean Survival Curve
   let dragonProbA = 50;
   let streakReason = '';
 
-  if (analysis.isPingPong && analysis.pingPongCount >= 3) {
+  if (analysis.isPingPong && analysis.pingPongCount >= 4) {
     dragonProbA = last1 === valB ? 56 : 44;
-    streakReason = `${analysis.pingPongCount}-राउंड ${valA}/${valB} पिंग-पोंग अदला-बदली सक्रिय।`;
+    streakReason = `${analysis.pingPongCount}-स्टेप पिंग-पोंग ऑसिलेशन (अल्टरनेशन ट्रेंड)।`;
   } else if (analysis.isDoubleForming) {
-    // A double was followed by a single of the opposite (e.g. AA -> B).
-    // In 2-2 chart mechanics, second B is expected to complete the pair (BB).
-    dragonProbA = last1 === valA ? 55 : 45;
+    dragonProbA = last1 === valA ? 58 : 42;
     streakReason = `डबल-फॉर्मेशन (${last1}) - 2-2 चक्र का दूसरा राउंड अपेक्षित।`;
   } else if (analysis.isDoubleJump) {
-    // Both 2-2 pairs completed (e.g. AABB). Alternation back to opposite side begins.
     dragonProbA = last1 === valB ? 54 : 46;
     streakReason = `डबल-जंप (${valA}${valA}-${valB}${valB}) चक्र पूर्ण - रिवर्सल संभावित।`;
   } else if (streak.count >= 2) {
     if (streak.count === 2) {
-      // Length 2 streaks break 50% of the time in Bernoulli processes - avoid premature continuation traps
-      dragonProbA = 50;
-      streakReason = `2-राउंड डबल (${streak.type}) - तटस्थ संतुलन क्षेत्र (ब्रेकआउट या निरंतरता समान)।`;
-    } else if (streak.count <= 4) {
-      dragonProbA = streak.type === valA ? 54 : 46;
-      streakReason = `सक्रिय ${streak.count}-राउंड ${streak.type} ड्रैगन मोमेंटम (ट्रेंड निरंतरता)।`;
-    } else if (streak.count <= 6) {
       dragonProbA = streak.type === valA ? 52 : 48;
-      streakReason = `${streak.count}-राउंड ड्रैगन संतुलन क्षेत्र।`;
+      streakReason = `2-राउंड ${streak.type} निरंतरता।`;
+    } else if (streak.count <= 4) {
+      dragonProbA = streak.type === valA ? 56 : 44;
+      streakReason = `सक्रिय ${streak.count}-राउंड ${streak.type} ड्रैगन मोमेंटम।`;
     } else {
-      dragonProbA = streak.type === valA ? 48 : 52;
-      streakReason = `अत्यधिक ${streak.count}-राउंड ड्रैगन संतृप्ति (रिवर्सल संतुलन)।`;
+      // 5+ Strong active dragon momentum: RIDE THE DRAGON! NEVER BET AGAINST AN ACTIVE DRAGON!
+      dragonProbA = streak.type === valA ? 58 : 42;
+      streakReason = `अत्यधिक मजबूत ${streak.count}-राउंड ${streak.type} ड्रैगन मोमेंटम (ट्रेंड राइडिंग)।`;
     }
-  } else if (analysis.isMirror) {
-    dragonProbA = last1 === valB ? 55 : 45;
-    streakReason = 'मिरर सिमिट्री (ABA) का निर्माण।';
   } else {
-    dragonProbA = last1 === valA ? 49 : 51;
+    dragonProbA = 50;
     streakReason = 'सामान्य ऑसिलेशन चक्र।';
   }
 
@@ -1082,28 +1139,29 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
         if (chronological[i + 2] === valA) matchA++;
       }
     }
-    if (matchTotal >= 1) {
-      let rawNGram = ((matchA + 2) / (matchTotal + 4)) * 100;
+    if (matchTotal >= 2) {
+      const nGramDelta = (matchA / matchTotal) - baseRateA;
+      let rawNGram = (0.50 + nGramDelta * 0.40) * 100;
       if (analysis.isDoubleForming) {
         rawNGram = 0.5 * rawNGram + 0.5 * 50;
       }
-      nGramProbA = rawNGram;
+      nGramProbA = Math.max(40, Math.min(60, rawNGram));
     }
   }
 
   // 5. MODEL 5: Omission Chi-Square Reversion (Statistical Z-Score - Fixed Sample Adaptive)
   const winLen = Math.max(items.length, 1);
-  const evalLen = Math.min(winLen, 25);
+  const evalLen = Math.min(winLen, 50);
   const windowSample = items.slice(0, evalLen);
   const countAInWindow = windowSample.filter(i => i[field] === valA).length;
   const expectedMean = evalLen * 0.5;
   const stdDev = Math.sqrt(evalLen * 0.25) || 1.0;
   const zScore = (countAInWindow - expectedMean) / stdDev;
   let omissionRevProbA = 50;
-  if (zScore > 1.0) {
-    omissionRevProbA = 50 - Math.min(10, zScore * 4.5);
-  } else if (zScore < -1.0) {
-    omissionRevProbA = 50 + Math.min(10, Math.abs(zScore) * 4.5);
+  if (zScore > 2.0) {
+    omissionRevProbA = 50 - Math.min(4, (zScore - 2.0) * 1.5);
+  } else if (zScore < -2.0) {
+    omissionRevProbA = 50 + Math.min(4, (Math.abs(zScore) - 2.0) * 1.5);
   }
 
   // 6. MODEL 6: Multi-Horizon Spectrum (10 vs 30 vs Macro Historical Balance)
@@ -1111,9 +1169,12 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   const win30 = items.slice(0, Math.min(items.length, 30));
   const count10A = win10.filter(x => x[field] === valA).length;
   const count30A = win30.filter(x => x[field] === valA).length;
-  const ratio10 = (count10A / win10.length) * 100;
-  const ratio30 = (count30A / win30.length) * 100;
-  const clusterProbA = (ratio10 * 0.55 + ratio30 * 0.45);
+  const ratio10 = count10A / win10.length;
+  const ratio30 = count30A / win30.length;
+  const dev10 = ratio10 - 0.50;
+  const dev30 = ratio30 - 0.50;
+  const clusterDelta = dev10 * 0.20 + dev30 * 0.12;
+  const clusterProbA = Math.max(42, Math.min(58, (0.50 + clusterDelta) * 100));
 
   // 7. MODEL 7: Modulo Fourier Harmonics (Phase Wave)
   const currentPeriodNum = parseInt((historyList[0]?.issueNumber || '0').slice(-3), 10);

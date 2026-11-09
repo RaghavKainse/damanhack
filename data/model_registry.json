@@ -1,7 +1,43 @@
 {
-  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp",
-  "lastPromotionTimestamp": 1794064992461,
+  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs",
+  "lastPromotionTimestamp": 1794236205370,
   "history": [
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs",
+      "promotedAt": 1794236205376,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p"
+    },
+    {
+      "version": "v2.4.test-mw9dwshk",
+      "promotedAt": 1794236205368,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p",
+      "promotedAt": 1794236103997,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp"
+    },
+    {
+      "version": "v2.4.test-mw9dum9g",
+      "promotedAt": 1794236103988,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
     {
       "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp",
       "promotedAt": 1794064992469,

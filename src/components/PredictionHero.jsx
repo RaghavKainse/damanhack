@@ -618,7 +618,7 @@ function PredictionHero({
                 <Coins size={11} /> {isHi ? 'बैटिंग पूल' : 'Betting Pool'}
               </div>
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
-                {signals?.crowdLiquidity?.choice}: {signals?.crowdLiquidity?.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals?.crowdLiquidity?.a : signals?.crowdLiquidity?.b}%
+                {signals?.crowdLiquidity?.choice ? `${signals.crowdLiquidity.choice}: ${signals.crowdLiquidity.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.crowdLiquidity.a : signals.crowdLiquidity.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
               <span style={{ fontSize: '0.62rem', color: '#ffb703' }}>wt: {signals?.crowdLiquidity?.weight ?? 1.55}x</span>
             </div>
@@ -629,7 +629,7 @@ function PredictionHero({
                 <Cpu size={11} /> {isHi ? '2nd मार्कोव' : 'Markov 2'}
               </div>
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
-                {signals?.markov2?.choice}: {signals?.markov2?.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals?.markov2?.a : signals?.markov2?.b}%
+                {signals?.markov2?.choice ? `${signals.markov2.choice}: ${signals.markov2.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.markov2.a : signals.markov2.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
               <span style={{ fontSize: '0.62rem', color: 'var(--neon-cyan)' }}>wt: {signals?.markov2?.weight ?? 1.35}x</span>
             </div>
@@ -640,7 +640,7 @@ function PredictionHero({
                 <Layers size={11} /> {isHi ? 'ड्रैगन' : 'Dragon'}
               </div>
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
-                {signals?.dragonTrend?.choice}: {signals?.dragonTrend?.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals?.dragonTrend?.a : signals?.dragonTrend?.b}%
+                {signals?.dragonTrend?.choice ? `${signals.dragonTrend.choice}: ${signals.dragonTrend.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.dragonTrend.a : signals.dragonTrend.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
               <span style={{ fontSize: '0.62rem', color: 'var(--neon-green)' }}>wt: {signals?.dragonTrend?.weight ?? 1.45}x</span>
             </div>
@@ -651,7 +651,7 @@ function PredictionHero({
                 <Database size={11} /> {isHi ? 'बायेसियन' : 'Bayesian'}
               </div>
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
-                {signals?.bayesianTrans?.choice}: {signals?.bayesianTrans?.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals?.bayesianTrans?.a : signals?.bayesianTrans?.b}%
+                {signals?.bayesianTrans?.choice ? `${signals.bayesianTrans.choice}: ${signals.bayesianTrans.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.bayesianTrans.a : signals.bayesianTrans.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
               <span style={{ fontSize: '0.62rem', color: '#ffb703' }}>wt: {signals?.bayesianTrans?.weight ?? 1.3}x</span>
             </div>
@@ -662,7 +662,7 @@ function PredictionHero({
                 <BarChart3 size={11} /> {isHi ? 'एन-ग्राम' : 'N-Gram'}
               </div>
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
-                {signals?.nGram?.choice}: {signals?.nGram?.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals?.nGram?.a : signals?.nGram?.b}%
+                {signals?.nGram?.choice ? `${signals.nGram.choice}: ${signals.nGram.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.nGram.a : signals.nGram.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
               <span style={{ fontSize: '0.62rem', color: '#4facfe' }}>wt: {signals?.nGram?.weight ?? 1.15}x</span>
             </div>
@@ -673,7 +673,7 @@ function PredictionHero({
                 <ShieldCheck size={11} /> {isHi ? 'ओमिशन Z' : 'Omission'}
               </div>
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
-                {signals?.omissionRev?.choice}: {signals?.omissionRev?.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals?.omissionRev?.a : signals?.omissionRev?.b}%
+                {signals?.omissionRev?.choice ? `${signals.omissionRev.choice}: ${signals.omissionRev.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.omissionRev.a : signals.omissionRev.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
               <span style={{ fontSize: '0.62rem', color: '#ff3366' }}>wt: {signals?.omissionRev?.weight ?? 1.1}x</span>
             </div>
@@ -684,7 +684,7 @@ function PredictionHero({
                 <Sparkles size={11} /> {isHi ? 'क्लस्टर' : 'Cluster'}
               </div>
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
-                {signals?.clusterParity?.choice}: {signals?.clusterParity?.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals?.clusterParity?.a : signals?.clusterParity?.b}%
+                {signals?.clusterParity?.choice ? `${signals.clusterParity.choice}: ${signals.clusterParity.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.clusterParity.a : signals.clusterParity.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
               <span style={{ fontSize: '0.62rem', color: '#06d6a0' }}>wt: {signals?.clusterParity?.weight ?? 1.05}x</span>
             </div>
@@ -695,7 +695,7 @@ function PredictionHero({
                 <Zap size={11} /> {isHi ? 'साइकिल' : 'Fourier'}
               </div>
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
-                {signals?.fourierCycle?.choice}: {signals?.fourierCycle?.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals?.fourierCycle?.a : signals?.fourierCycle?.b}%
+                {signals?.fourierCycle?.choice ? `${signals.fourierCycle.choice}: ${signals.fourierCycle.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.fourierCycle.a : signals.fourierCycle.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
               <span style={{ fontSize: '0.62rem', color: '#9d4edd' }}>wt: {signals?.fourierCycle?.weight ?? 0.95}x</span>
             </div>

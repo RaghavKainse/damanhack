@@ -1,7 +1,252 @@
 {
-  "lastUpdated": 1794064992471,
-  "roundsCount": 319,
+  "lastUpdated": 1794236225351,
+  "roundsCount": 354,
   "rounds": [
+    {
+      "issueNumber": "20261109100051794",
+      "number": "2",
+      "color": "red",
+      "timestamp": 1794236225119,
+      "created_at": "2026-11-09T14:57:05.119Z"
+    },
+    {
+      "issueNumber": "20261109100051793",
+      "number": "7",
+      "color": "green",
+      "timestamp": 1794236191751,
+      "created_at": "2026-11-09T14:56:31.751Z"
+    },
+    {
+      "issueNumber": "20261109100051792",
+      "number": "8",
+      "color": "red",
+      "timestamp": 1794236158497,
+      "created_at": "2026-11-09T14:55:58.497Z"
+    },
+    {
+      "issueNumber": "20261109100051791",
+      "number": "2",
+      "color": "red",
+      "timestamp": 1794236145916,
+      "created_at": "2026-11-09T14:55:45.916Z"
+    },
+    {
+      "issueNumber": "20261109100051790",
+      "number": "1",
+      "color": "green",
+      "timestamp": 1794236109931,
+      "created_at": "2026-11-09T14:55:09.931Z"
+    },
+    {
+      "issueNumber": "20261109100051789",
+      "number": "9",
+      "color": "green",
+      "timestamp": 1794236079883,
+      "created_at": "2026-11-09T14:54:39.883Z"
+    },
+    {
+      "issueNumber": "20261109100051788",
+      "number": "6",
+      "color": "red",
+      "timestamp": 1794236050715,
+      "created_at": "2026-11-09T14:54:10.715Z"
+    },
+    {
+      "issueNumber": "20261109100051787",
+      "number": "2",
+      "color": "red",
+      "timestamp": 1794236008568,
+      "created_at": "2026-11-09T14:53:28.568Z"
+    },
+    {
+      "issueNumber": "20261109100051786",
+      "number": "1",
+      "color": "green",
+      "timestamp": 1794235978756,
+      "created_at": "2026-11-09T14:52:58.756Z"
+    },
+    {
+      "issueNumber": "20261109100051785",
+      "number": "6",
+      "color": "red",
+      "timestamp": 1794235949117,
+      "created_at": "2026-11-09T14:52:29.117Z"
+    },
+    {
+      "issueNumber": "20261109100051784",
+      "number": "1",
+      "color": "green",
+      "timestamp": 1794235923381,
+      "created_at": "2026-11-09T14:52:03.381Z"
+    },
+    {
+      "issueNumber": "20261109100051783",
+      "number": "8",
+      "color": "red",
+      "timestamp": 1794235896098,
+      "created_at": "2026-11-09T14:51:36.098Z"
+    },
+    {
+      "issueNumber": "20261109100051782",
+      "number": "0",
+      "color": "red,violet",
+      "timestamp": 1794235875208,
+      "created_at": "2026-11-09T14:51:15.208Z"
+    },
+    {
+      "issueNumber": "20261109100051781",
+      "number": "3",
+      "color": "green",
+      "timestamp": 1794235843910,
+      "created_at": "2026-11-09T14:50:43.910Z"
+    },
+    {
+      "issueNumber": "20261109100051780",
+      "number": "5",
+      "color": "green,violet",
+      "timestamp": 1794235804361,
+      "created_at": "2026-11-09T14:50:04.361Z"
+    },
+    {
+      "issueNumber": "20261109100051780",
+      "number": "5",
+      "color": "green,violet",
+      "timestamp": 1794235805077,
+      "created_at": "2026-11-09T14:50:05.077Z"
+    },
+    {
+      "issueNumber": "20261109100051779",
+      "number": "9",
+      "color": "green",
+      "timestamp": 1794235776644,
+      "created_at": "2026-11-09T14:49:36.644Z"
+    },
+    {
+      "issueNumber": "20261109100051778",
+      "number": "9",
+      "color": "green",
+      "timestamp": 1794235786073,
+      "created_at": "2026-11-09T14:49:46.073Z"
+    },
+    {
+      "issueNumber": "20261109100051777",
+      "number": "8",
+      "color": "red",
+      "timestamp": 1794235708612,
+      "created_at": "2026-11-09T14:48:28.612Z"
+    },
+    {
+      "issueNumber": "20261109100051776",
+      "number": "5",
+      "color": "green,violet",
+      "timestamp": 1794235687670,
+      "created_at": "2026-11-09T14:48:07.670Z"
+    },
+    {
+      "issueNumber": "20261109100051775",
+      "number": "1",
+      "color": "green",
+      "timestamp": 1794235687673,
+      "created_at": "2026-11-09T14:48:07.673Z"
+    },
+    {
+      "issueNumber": "20261109100051774",
+      "number": "1",
+      "color": "green",
+      "timestamp": 1794235687673,
+      "created_at": "2026-11-09T14:48:07.673Z"
+    },
+    {
+      "issueNumber": "20261109100051773",
+      "number": "5",
+      "color": "green,violet",
+      "timestamp": 1794235687674,
+      "created_at": "2026-11-09T14:48:07.674Z"
+    },
+    {
+      "issueNumber": "20261109100051772",
+      "number": "8",
+      "color": "red",
+      "timestamp": 1794235687674,
+      "created_at": "2026-11-09T14:48:07.674Z"
+    },
+    {
+      "issueNumber": "20261109100051771",
+      "number": "3",
+      "color": "green",
+      "timestamp": 1794235687674,
+      "created_at": "2026-11-09T14:48:07.674Z"
+    },
+    {
+      "issueNumber": "20261109100051770",
+      "number": "2",
+      "color": "red",
+      "timestamp": 1794235513856,
+      "created_at": "2026-11-09T14:45:13.856Z"
+    },
+    {
+      "issueNumber": "20261109100051769",
+      "number": "0",
+      "color": "red,violet",
+      "timestamp": 1794235514001,
+      "created_at": "2026-11-09T14:45:14.001Z"
+    },
+    {
+      "issueNumber": "20261109100051768",
+      "number": "8",
+      "color": "red",
+      "timestamp": 1794235514083,
+      "created_at": "2026-11-09T14:45:14.083Z"
+    },
+    {
+      "issueNumber": "20261109100051767",
+      "number": "2",
+      "color": "red",
+      "timestamp": 1794235514439,
+      "created_at": "2026-11-09T14:45:14.439Z"
+    },
+    {
+      "issueNumber": "20261109100051766",
+      "number": "3",
+      "color": "green",
+      "timestamp": 1794235514588,
+      "created_at": "2026-11-09T14:45:14.588Z"
+    },
+    {
+      "issueNumber": "20261109100051765",
+      "number": "8",
+      "color": "red",
+      "timestamp": 1794235514670,
+      "created_at": "2026-11-09T14:45:14.670Z"
+    },
+    {
+      "issueNumber": "20261109100051764",
+      "number": "3",
+      "color": "green",
+      "timestamp": 1794235514748,
+      "created_at": "2026-11-09T14:45:14.748Z"
+    },
+    {
+      "issueNumber": "20261109100051763",
+      "number": "1",
+      "color": "green",
+      "timestamp": 1794235514963,
+      "created_at": "2026-11-09T14:45:14.963Z"
+    },
+    {
+      "issueNumber": "20261109100051762",
+      "number": "7",
+      "color": "green",
+      "timestamp": 1794235515048,
+      "created_at": "2026-11-09T14:45:15.048Z"
+    },
+    {
+      "issueNumber": "20261109100051761",
+      "number": "8",
+      "color": "red",
+      "timestamp": 1794235515150,
+      "created_at": "2026-11-09T14:45:15.150Z"
+    },
     {
       "issueNumber": "20261107100051812",
       "number": "3",
@@ -3793,6 +4038,70 @@
     }
   ],
   "predictionAudits": [
+    {
+      "targetIssue": "20261109100051794",
+      "predicted": "NO CLEAR SIGNAL",
+      "actual": "SMALL",
+      "actualNumber": 2,
+      "probA": 0.526,
+      "isWin": null,
+      "action": "NO_CLEAR_SIGNAL",
+      "brierError": 0.2767,
+      "logLossError": 0.7465,
+      "driftDetected": false,
+      "calibratedConfidence": 50,
+      "timestamp": 1794236225200,
+      "created_at": "2026-11-09T14:57:05.200Z",
+      "_id": "6af1df41db7d8979278084bc"
+    },
+    {
+      "targetIssue": "20261109100051793",
+      "predicted": "NO CLEAR SIGNAL",
+      "actual": "BIG",
+      "actualNumber": 7,
+      "probA": 0.534,
+      "isWin": null,
+      "action": "NO_CLEAR_SIGNAL",
+      "brierError": 0.2172,
+      "logLossError": 0.6274,
+      "driftDetected": false,
+      "calibratedConfidence": 50,
+      "timestamp": 1794236191833,
+      "created_at": "2026-11-09T14:56:31.833Z",
+      "_id": "6af1df1fdb7d8979278084bb"
+    },
+    {
+      "targetIssue": "20261109100051792",
+      "predicted": "NO CLEAR SIGNAL",
+      "actual": "BIG",
+      "actualNumber": 8,
+      "probA": 0.525,
+      "isWin": null,
+      "action": "NO_CLEAR_SIGNAL",
+      "brierError": 0.2256,
+      "logLossError": 0.6444,
+      "driftDetected": false,
+      "calibratedConfidence": 50,
+      "timestamp": 1794236158612,
+      "created_at": "2026-11-09T14:55:58.612Z",
+      "_id": "6af1defedb7d8979278084ba"
+    },
+    {
+      "targetIssue": "20261109100051791",
+      "predicted": "NO CLEAR SIGNAL",
+      "actual": "SMALL",
+      "actualNumber": 2,
+      "probA": 0.508,
+      "isWin": null,
+      "action": "NO_CLEAR_SIGNAL",
+      "brierError": 0.2581,
+      "logLossError": 0.7093,
+      "driftDetected": false,
+      "calibratedConfidence": 50,
+      "timestamp": 1794236146820,
+      "created_at": "2026-11-09T14:55:46.820Z",
+      "_id": "6af1def2db7d8979278084b9"
+    },
     {
       "targetIssue": "20261107100051458",
       "predicted": "NO CLEAR SIGNAL",
@@ -9908,54 +10217,6 @@
       "brierError": 0.25,
       "timestamp": 1793877294428,
       "_id": "6aef0eff8c9eedebe436fc50"
-    },
-    {
-      "targetIssue": "20261105100051345",
-      "predicted": "NO CLEAR SIGNAL",
-      "actual": "BIG",
-      "actualNumber": 8,
-      "probA": 0.5,
-      "isWin": false,
-      "action": "NO_CLEAR_SIGNAL",
-      "brierError": 0.25,
-      "timestamp": 1793877294427,
-      "_id": "6aef0eff8c9eedebe436fc51"
-    },
-    {
-      "targetIssue": "20261105100051346",
-      "predicted": "NO CLEAR SIGNAL",
-      "actual": "SMALL",
-      "actualNumber": 3,
-      "probA": 0.5,
-      "isWin": false,
-      "action": "NO_CLEAR_SIGNAL",
-      "brierError": 0.25,
-      "timestamp": 1793877294425,
-      "_id": "6aef0eff8c9eedebe436fc52"
-    },
-    {
-      "targetIssue": "20261105100051347",
-      "predicted": "NO CLEAR SIGNAL",
-      "actual": "SMALL",
-      "actualNumber": 2,
-      "probA": 0.5,
-      "isWin": false,
-      "action": "NO_CLEAR_SIGNAL",
-      "brierError": 0.25,
-      "timestamp": 1793877294424,
-      "_id": "6aef0eff8c9eedebe436fc53"
-    },
-    {
-      "targetIssue": "20261105100051348",
-      "predicted": "NO CLEAR SIGNAL",
-      "actual": "BIG",
-      "actualNumber": 6,
-      "probA": 0.5,
-      "isWin": false,
-      "action": "NO_CLEAR_SIGNAL",
-      "brierError": 0.25,
-      "timestamp": 1793877294422,
-      "_id": "6aef0eff8c9eedebe436fc54"
     }
   ],
   "dailyRollups": {
@@ -10022,6 +10283,29 @@
       "totalDrawsProcessed": 291,
       "winCount": 21,
       "winRatePercent": 63.6
+    },
+    "2026-11-09": {
+      "_id": "6af1def35ac4ec93c48c4937",
+      "date": "2026-11-09",
+      "brierScoresSum": 0,
+      "completionPercent": 0.1,
+      "hourlyBuckets": {
+        "14": {
+          "draws": 3,
+          "wins": 0,
+          "losses": 0,
+          "skips": 3
+        }
+      },
+      "lastUpdated": 1794236191971,
+      "lossCount": 0,
+      "meanBrierScore": 0.25,
+      "settledPredictions": 0,
+      "skippedCount": 3,
+      "targetDailyRounds": 2880,
+      "totalDrawsProcessed": 3,
+      "winCount": 0,
+      "winRatePercent": 50
     }
   }
 }

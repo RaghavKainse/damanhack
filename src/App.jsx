@@ -13,7 +13,7 @@ import HistoryTable from './components/HistoryTable';
 import MartingaleModal from './components/MartingaleModal';
 import ManualModal from './components/ManualModal';
 
-import { fetchLiveHistory, fetchGameState, GAME_MODES } from './utils/api';
+import { fetchLiveHistory, fetchGameState, fetchFullDayServerHistory, GAME_MODES } from './utils/api';
 import { 
   generatePrediction, 
   getMartingalePlan, 
@@ -163,7 +163,7 @@ export default function App() {
           prevIssueRef.current = latestDraw.issueNumber;
         }
 
-        // Merge and accumulate history (up to 300 rounds for deep statistical accuracy)
+        // Merge and accumulate deep history (up to 10,000 rounds for multi-day statistical learning)
         setHistoryList(prev => {
           const combined = [...historyRes.list];
           const seen = new Set(historyRes.list.map(x => x.issueNumber));
@@ -172,7 +172,7 @@ export default function App() {
               combined.push(item);
               seen.add(item.issueNumber);
             }
-            if (combined.length >= 300) break;
+            if (combined.length >= 10000) break;
           }
 
           // 24/7 Continuous Self-Training Catch-Up (Offline/Missed Rounds Experience Replay on accumulated history)
@@ -184,7 +184,7 @@ export default function App() {
           }
 
           try {
-            localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(combined.slice(0, 300)));
+            localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(combined.slice(0, 5000)));
           } catch {}
           return combined;
         });
@@ -214,13 +214,13 @@ export default function App() {
 
     // 2. Continuous local data persistence: append confirmed result to local historical memory
     setHistoryList(currentHistory => {
-      const merged = [newDraw, ...currentHistory.filter(h => h.issueNumber !== newDraw.issueNumber)].slice(0, 300);
+      const merged = [newDraw, ...currentHistory.filter(h => h.issueNumber !== newDraw.issueNumber)].slice(0, 10000);
       const nextPred = generatePrediction(merged, currentMode, currentTarget, freshWeights);
       setPrediction(nextPred);
       const nextPerf = evaluateHistoryPerformance(merged, currentMode, currentTarget);
       setPerformance(nextPerf);
       try {
-        localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(merged));
+        localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(merged.slice(0, 5000)));
       } catch {}
       return merged;
     });
@@ -270,6 +270,30 @@ export default function App() {
     }, 10000);
     return () => clearInterval(interval);
   }, [loadData]);
+
+  // On startup: populate deep historical memory from verified server storage (up to 10,000 rounds)
+  useEffect(() => {
+    let isMounted = true;
+    fetchFullDayServerHistory(5000).then(res => {
+      if (!isMounted || !res.success || !res.list || res.list.length === 0) return;
+      setHistoryList(prev => {
+        const combined = [...prev];
+        const seen = new Set(prev.map(x => x.issueNumber));
+        for (const item of res.list) {
+          if (!seen.has(item.issueNumber)) {
+            combined.push(item);
+            seen.add(item.issueNumber);
+          }
+          if (combined.length >= 10000) break;
+        }
+        try {
+          localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(combined.slice(0, 5000)));
+        } catch {}
+        return combined;
+      });
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
 
   loadDataRef.current = loadData;
 

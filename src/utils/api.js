@@ -150,3 +150,36 @@ export function generateSimulatedList(count = 30) {
   }
   return list;
 }
+
+/**
+ * Fetches deep historical draws (up to 5,000+ rounds) from local storage adapter or MongoDB
+ */
+export async function fetchFullDayServerHistory(limit = 5000) {
+  const endpoints = [
+    `/api/history?limit=${limit}`,
+    `/api/learning/history?limit=${limit}`,
+    `http://localhost:4001/api/learning/history?limit=${limit}`
+  ];
+
+  for (const ep of endpoints) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(ep, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const json = await res.json();
+        if (json && Array.isArray(json.list) && json.list.length > 0) {
+          return {
+            success: true,
+            source: 'Verified Server Storage',
+            count: json.count || json.list.length,
+            list: json.list
+          };
+        }
+      }
+    } catch {}
+  }
+
+  return { success: false, source: 'None', list: [] };
+}
