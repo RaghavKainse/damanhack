@@ -11,7 +11,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node tests/prediction_engine.test.js",
+    "test": "node tests/prediction_engine.test.js && node tests/aviator_engine.test.js",
     "start:daemon": "node server/learningDaemon.js",
     "start:metrics": "node server/api.js"
   },

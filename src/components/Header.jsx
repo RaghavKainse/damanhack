@@ -53,7 +53,7 @@ export default function Header({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <h1 className="font-heading" style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.5px' }}>
-                DAMAN <span className="glow-text-cyan">WinGo</span> <span className="glow-text-gold">AI TRACKER</span>
+                DAMAN <span style={{ color: selectedGame === 'Aviator' ? '#f43f5e' : 'var(--neon-cyan)' }}>{selectedGame === 'Aviator' ? 'AVIATOR' : 'WinGo'}</span> <span className="glow-text-gold">AI TRACKER</span>
               </h1>
               <span style={{
                 background: isLive ? 'rgba(0, 245, 155, 0.15)' : 'rgba(255, 183, 3, 0.15)',
@@ -74,14 +74,14 @@ export default function Header({
                   background: isLive ? 'var(--neon-green)' : 'var(--neon-gold)',
                   boxShadow: `0 0 8px ${isLive ? 'var(--neon-green)' : 'var(--neon-gold)'}`
                 }} />
-                {isLive ? 'LIVE FEED' : 'SIMULATION'}
+                {selectedGame === 'Aviator' ? (isLive ? 'LIVE RADAR' : 'PROVABLY FAIR') : (isLive ? 'LIVE FEED' : 'SIMULATION')}
               </span>
             </div>
 
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '2px' }}>
-              {isHi 
-                ? '30 सेकंड ऑड-ईवन सटीक पैटर्न एनालिसिस और क्वांट प्रेडिक्शन' 
-                : '30-Second Odd/Even Pattern Analytics & Quantitative Predictor'}
+              {selectedGame === 'Aviator'
+                ? (isHi ? 'क्रिप्टोग्राफिक क्रैश मल्टीप्लायर प्रोबेबिलिटी एवं ऑटो-कैशआउट ऑप्टिमाइज़र' : 'Cryptographic Crash Multiplier Probability & Auto-Cashout Optimizer')
+                : (isHi ? '30 सेकंड ऑड-ईवन सटीक पैटर्न एनालिसिस और क्वांट प्रेडिक्शन' : '30-Second Odd/Even Pattern Analytics & Quantitative Predictor')}
             </p>
           </div>
         </div>

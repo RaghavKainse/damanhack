@@ -34,6 +34,10 @@ import {
   modelMarkovTransition,
   modelExponentiallyWeighted,
   modelStatisticalBaseline,
+  modelPatternSequence,
+  modelRegularizedLogisticML,
+  calculateDiscreteDigitProbabilities,
+  diagnosePredictionError,
   calculateBrierScore,
   calculateLogLoss,
   calculateConfusionMatrix,
@@ -413,7 +417,7 @@ async function runTestSuite() {
     assert(shortStreakStats.ciUpper > 50.0, 'CI upper bound must include null hypothesis 50%');
   });
 
-  it('Verifies active prediction is always outputted even in choppy regimes (never NO CLEAR SIGNAL)', () => {
+  it('Verifies active prediction direction (BIG/SMALL) and VIP numbers are always calculated even in choppy regimes', () => {
     // Highly volatile chopped sequence
     const choppyList = [
       { issueNumber: '20261105100050010', number: '7' },
@@ -426,11 +430,16 @@ async function runTestSuite() {
       { issueNumber: '20261105100050003', number: '0' }
     ];
 
-    const pred = generatePrediction(choppyList, 'ultra_sniper', 'bigSmall');
-    assert(['BIG', 'SMALL'].includes(pred.prediction), 'Must always output active prediction BIG or SMALL');
-    assert.strictEqual(pred.action, 'CONFIRMED_BET', 'Must remain confirmed bet');
-    assert(pred.topNumber !== undefined, 'Must output top VIP number');
-    assert(Array.isArray(pred.goldenBasket) && pred.goldenBasket.length === 3, 'Must output 3-number golden basket');
+    // In all mode, direction is BIG or SMALL
+    const predAll = generatePrediction(choppyList, 'all', 'bigSmall');
+    assert(['BIG', 'SMALL'].includes(predAll.prediction), 'Must always output active prediction direction BIG or SMALL');
+    assert(predAll.topNumber !== undefined, 'Must output top VIP number');
+    assert(Array.isArray(predAll.goldenBasket) && predAll.goldenBasket.length === 3, 'Must output 3-number golden basket');
+
+    // In ultra_sniper mode, choppy noise strictly triggers NO_CLEAR_SIGNAL abstention to protect against losses
+    const predShield = generatePrediction(choppyList, 'ultra_sniper', 'bigSmall');
+    assert(['BIG', 'SMALL'].includes(predShield.prediction), 'Prediction direction is still populated for UI');
+    assert.strictEqual(predShield.action, 'NO_CLEAR_SIGNAL', 'Zero-Loss shield must abstain on choppy noise');
   });
 
   // -------------------------------------------------------------
@@ -703,6 +712,117 @@ async function runTestSuite() {
       assert(typeof stats.sampleSize === 'number', `${mName} must have sampleSize`);
       assert(stats.sampleSize === 50, `${mName} sample size must be 50`);
       assert(stats.brierScore >= 0 && stats.brierScore <= 1, `${mName} brierScore in [0, 1]`);
+    }
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 20: Pattern Sequence & Regularized ML Model
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 20: Pattern Sequence & Regularized ML Model');
+
+  it('Verifies PatternSequence and RegularizedLogisticML models compute bounded probabilities', () => {
+    const history = [];
+    const base = 20261105100050000n;
+    for (let i = 0; i < 40; i++) {
+      history.push({
+        issueNumber: (base + BigInt(i)).toString(),
+        number: String((i % 2 === 0 ? 8 : 2))
+      });
+    }
+
+    const pat = modelPatternSequence(history, 'bigSmall');
+    assert(pat.probA >= 0.10 && pat.probA <= 0.90, 'PatternSequence probA bounded in [0.10, 0.90]');
+    assert(typeof pat.currentStreak === 'number');
+
+    const ml = modelRegularizedLogisticML(history, 'bigSmall');
+    assert(ml.probA >= 0.10 && ml.probA <= 0.90, 'Logistic ML probA bounded in [0.10, 0.90]');
+    assert(ml.choice === 'BIG' || ml.choice === 'SMALL');
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 21: Discrete 0-9 Digit Engine & Basket Normalization
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 21: Discrete 0-9 Digit Engine & Basket Normalization');
+
+  it('Computes valid 0-9 probabilities summing to 100% and top 3 ranked numbers', () => {
+    const history = [];
+    const base = 20261105100050000n;
+    for (let i = 0; i < 30; i++) {
+      history.push({
+        issueNumber: (base + BigInt(i)).toString(),
+        number: String(i % 10)
+      });
+    }
+
+    const digits = calculateDiscreteDigitProbabilities(history);
+    assert.strictEqual(digits.numberProbabilities.length, 10, 'Must contain all 10 digits');
+    assert.strictEqual(digits.top3Numbers.length, 3, 'Top 3 basket must have 3 numbers');
+    assert(digits.topNumber !== undefined, 'Top number must exist');
+
+    const sumProb = digits.numberProbabilities.reduce((sum, d) => sum + d.prob, 0);
+    assert(Math.abs(sumProb - 100.0) < 1.0, `Digit probabilities must sum to 100% (got ${sumProb})`);
+
+    // Verify descending order
+    for (let i = 0; i < digits.numberProbabilities.length - 1; i++) {
+      assert(digits.numberProbabilities[i].prob >= digits.numberProbabilities[i + 1].prob, 'Digits must be ranked descending');
+    }
+
+    // Golden basket coverage equals sum of top 3
+    const sumTop3 = Math.round(digits.top3Numbers.reduce((s, d) => s + d.prob, 0) * 10) / 10;
+    assert.strictEqual(digits.goldenBasketCoverage, sumTop3);
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 22: Diagnostic Error Attribution
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 22: Diagnostic Root-Cause Error Attribution');
+
+  it('Provides actionable empirical diagnosis on both winning and losing predictions', () => {
+    const mockPred = {
+      prediction: 'BIG',
+      rawDelta: 1.2,
+      entropy: 0.992,
+      evidenceLevel: 'INSUFFICIENT',
+      subModels: {
+        markov: { choice: 'SMALL' },
+        bayesian: { choice: 'SMALL' }
+      }
+    };
+
+    // Actual was SMALL -> prediction BIG lost
+    const lossDraw = { issueNumber: '20261105100050001', number: '2' };
+    const diagnosisLoss = diagnosePredictionError(mockPred, lossDraw);
+    assert(typeof diagnosisLoss === 'string' && diagnosisLoss.length > 10);
+    assert(diagnosisLoss.includes('HIGH_ENTROPY_NOISE') || diagnosisLoss.includes('STREAK_MOMENTUM') || diagnosisLoss.includes('WEAK_SIGNAL'));
+
+    // Actual was BIG -> prediction BIG won
+    const winDraw = { issueNumber: '20261105100050002', number: '8' };
+    const diagnosisWin = diagnosePredictionError(mockPred, winDraw);
+    assert(diagnosisWin.includes('MODEL_CONVERGENCE'));
+  });
+
+  // -------------------------------------------------------------
+  // Test Group 23: Separate Big/Small and Exact Number Probabilities
+  // -------------------------------------------------------------
+  console.log('\n📌 GROUP 23: Independent Probability Estimation (No Distortion)');
+
+  it('Calculates Big/Small and individual number probabilities separately without distortion', () => {
+    const mockHistory = [
+      { issueNumber: '20261105100050010', number: '6' },
+      { issueNumber: '20261105100050009', number: '7' },
+      { issueNumber: '20261105100050008', number: '8' }
+    ];
+
+    const pred = generateCalibratedPrediction(mockHistory, 'bigSmall');
+    assert(pred.probabilities.BIG !== undefined);
+    assert(pred.probabilities.SMALL !== undefined);
+    assert(pred.digitForecast !== undefined);
+    assert.strictEqual(pred.digitForecast.numberProbabilities.length, 10);
+
+    // Verify small digits are NOT artificially suppressed to near-zero
+    const smallDigits = pred.digitForecast.numberProbabilities.filter(d => !d.isBig);
+    for (const sd of smallDigits) {
+      assert(sd.prob > 4.0, 'Small digits must not be artificially crushed by Big/Small lean');
     }
   });
 

@@ -319,7 +319,25 @@ function PredictionHero({
         }}>
           
           {/* Status Alert Banner */}
-          {hasShieldAlert ? (
+          {action === 'NO_CLEAR_SIGNAL' || prediction === 'NO CLEAR SIGNAL' ? (
+            <div style={{
+              background: 'rgba(255, 183, 3, 0.15)',
+              border: '1px solid rgba(255, 183, 3, 0.45)',
+              borderRadius: '10px',
+              padding: '6px 12px',
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              fontSize: '0.76rem',
+              color: 'var(--neon-gold)',
+              fontWeight: 800
+            }}>
+              <AlertTriangle size={14} color="var(--neon-gold)" />
+              <span>{isHi ? '⚖️ सांख्यिकीय साक्ष्य अपर्याप्त (NO RELIABLE EDGE - दांव से बचें)' : '⚖️ Insufficient Evidence (NO RELIABLE EDGE - Abstain)'}</span>
+            </div>
+          ) : hasShieldAlert ? (
             <div style={{
               background: 'rgba(251, 133, 0, 0.18)',
               border: '1px solid rgba(251, 133, 0, 0.45)',
@@ -370,17 +388,17 @@ function PredictionHero({
               : '30-SECOND CONFIRMED FORECAST'}
           </p>
 
-          {/* Big / Small Primary Text - ALWAYS SHOWN */}
+          {/* Big / Small Primary Text */}
           <div style={{ margin: '4px 0' }}>
             <h2 className="font-heading pulse-badge" style={{
-              fontSize: '4.2rem',
+              fontSize: (action === 'NO_CLEAR_SIGNAL' || prediction === 'NO CLEAR SIGNAL') ? '2.4rem' : '4.2rem',
               fontWeight: 900,
-              color: primaryColor,
+              color: (action === 'NO_CLEAR_SIGNAL' || prediction === 'NO CLEAR SIGNAL') ? 'var(--neon-gold)' : primaryColor,
               lineHeight: 1.15,
               letterSpacing: '-1px',
-              textShadow: `0 0 35px ${primaryColor}`
+              textShadow: `0 0 35px ${(action === 'NO_CLEAR_SIGNAL' || prediction === 'NO CLEAR SIGNAL') ? 'rgba(255,183,3,0.4)' : primaryColor}`
             }}>
-              {prediction && prediction !== 'NO CLEAR SIGNAL' ? prediction : (targetType === 'bigSmall' ? 'BIG' : 'ODD')}
+              {(action === 'NO_CLEAR_SIGNAL' || prediction === 'NO CLEAR SIGNAL') ? 'NO RELIABLE EDGE' : prediction}
             </h2>
 
             <div style={{
@@ -389,7 +407,9 @@ function PredictionHero({
               color: '#e2e8f0',
               marginTop: '4px'
             }}>
-              {targetType === 'bigSmall' ? (
+              {(action === 'NO_CLEAR_SIGNAL' || prediction === 'NO CLEAR SIGNAL') ? (
+                isHi ? '50/50 सांख्यिकीय साम्यावस्था (कोई बढ़त नहीं - दांव से बचें)' : '50/50 Statistical Equilibrium (No Reliable Edge - Abstain)'
+              ) : targetType === 'bigSmall' ? (
                 isBig ? 'बड़ी संख्याएं (BIG: 5, 6, 7, 8, 9)' : 'छोटी संख्याएं (SMALL: 0, 1, 2, 3, 4)'
               ) : (
                 isOdd ? 'विषम संख्याएं (ODD: 1, 3, 5, 7, 9)' : 'सम संख्याएं (EVEN: 0, 2, 4, 6, 8)'
@@ -438,15 +458,15 @@ function PredictionHero({
                 </div>
               </div>
 
-              {/* 🏆 3-NUMBER GOLDEN COMBO BASKET (9X PAYOUT) */}
+              {/* 🏆 3-NUMBER GOLDEN COMBO BASKET */}
               <div style={{ marginTop: '10px', textAlign: 'left' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <span style={{ fontSize: '0.74rem', color: 'var(--neon-cyan)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Award size={13} color="var(--neon-cyan)" />
-                    {isHi ? '🏆 टॉप 3 गोल्डन बास्केट (9x रिटर्न कॉम्बो)' : '🏆 Top 3 Golden Basket (9x Payout)'}
+                    {isHi ? '🏆 टॉप 3 संख्या बास्केट (Top 3 Digits Basket)' : '🏆 Top 3 Digits Basket'}
                   </span>
                   <span className="font-mono" style={{ fontSize: '0.76rem', color: 'var(--neon-green)', fontWeight: 800 }}>
-                    {goldenBasketCoverage}% {isHi ? 'कवरेज' : 'Coverage'}
+                    {goldenBasketCoverage}% {isHi ? 'सांख्यिकीय संभावना' : 'Empirical Probability'}
                   </span>
                 </div>
 
@@ -465,7 +485,7 @@ function PredictionHero({
                   </div>
 
                   <div style={{ fontSize: '0.68rem', color: '#ffb703', fontWeight: 700, textAlign: 'right' }}>
-                    {isHi ? '3 में से 1 पर भी 9x पेआउट!' : '9x payout on any hit!'}
+                    {isHi ? '3 में से किसी 1 पर 9x पेआउट' : '9x payout on any hit'}
                   </div>
                 </div>
               </div>
@@ -701,7 +721,7 @@ function PredictionHero({
             </div>
           </div>
 
-          {/* Martingale Suggested Bet Level */}
+          {/* Flat Unit Risk & Capital Preservation Rule */}
           {martingalePlan && (
             <div style={{
               background: 'rgba(255, 183, 3, 0.08)',
@@ -715,19 +735,19 @@ function PredictionHero({
             }}>
               <div>
                 <span style={{ fontSize: '0.75rem', color: '#ffb703', fontWeight: 700 }}>
-                  {isHi ? 'अनुशंसित 3X बेट:' : 'Suggested 3X Bet:'}
+                  {isHi ? '🛡️ पूंजी संरक्षण (रूल 9: नो मार्टिंगेल):' : '🛡️ Capital Protection (Rule 9: No Martingale):'}
                 </span>
-                <div className="font-mono" style={{ fontSize: '1rem', fontWeight: 800, color: '#fff' }}>
-                  {`Level ${martingalePlan.level} (₹${martingalePlan.betAmount}) on ${prediction || (targetType === 'bigSmall' ? 'BIG' : 'ODD')}`}
+                <div className="font-mono" style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fff' }}>
+                  {`₹10 Flat Unit Stake (Max 1-2% Risk) on ${prediction || (targetType === 'bigSmall' ? 'BIG' : 'ODD')}`}
                 </div>
               </div>
 
               <div style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                  {isHi ? 'अनुमानित रिटर्न:' : 'Net Return:'}
+                  {isHi ? 'शुद्ध रिटर्न:' : 'Net Return:'}
                 </span>
                 <div className="font-mono" style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--neon-green)' }}>
-                  +₹{martingalePlan.netProfit} Net
+                  +₹9.6 Net
                 </div>
               </div>
             </div>

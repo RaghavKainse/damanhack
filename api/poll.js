@@ -1,7 +1,8 @@
 import { storage } from '../server/storage.js';
 import { 
   validateDraw, 
-  generateCalibratedPrediction 
+  generateCalibratedPrediction,
+  diagnosePredictionError
 } from '../src/utils/statisticalEngine.js';
 import { 
   classifyNumber,
@@ -87,6 +88,8 @@ export default async function handler(req, res) {
           const actualBinary = classified.bigSmall === 'BIG' ? 1.0 : 0.0;
           const brier = Math.pow(probBig - actualBinary, 2);
 
+          const diagnosis = diagnosePredictionError(pred, raw);
+
           const auditRec = {
             targetIssue: String(raw.issueNumber),
             predicted: pred.prediction,
@@ -97,6 +100,7 @@ export default async function handler(req, res) {
             action: pred.action,
             brierError: Math.round(brier * 10000) / 10000,
             calibratedConfidence: pred.calibratedConfidence,
+            diagnosis,
             timestamp: Date.now()
           };
 

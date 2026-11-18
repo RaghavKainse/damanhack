@@ -57,12 +57,14 @@ export class DualStorageAdapter {
     this.isMongoConnected = false;
     this.mongoClient = null;
     this.db = null;
-    this.dbName = 'loccomirror';
+    this.dbName = 'damanhack';
     this.walFilePath = path.join(DATA_DIR, 'learning_store.json');
     this.modelRegistryPath = path.join(DATA_DIR, 'model_registry.json');
     this.learningStatePath = path.join(DATA_DIR, 'learning_state.json');
     this.dailyRollupsPath = path.join(DATA_DIR, 'daily_rollups.json');
     this._flushTimer = null;
+    this._lastMongoConnectAttempt = 0;
+    this._isConnecting = false;
     this.walCache = {
       rounds: [],
       evaluations: [],
@@ -83,74 +85,144 @@ export class DualStorageAdapter {
     this._loadWalCache();
 
     // 3. Attempt MongoDB connection if MONGODB_URI is defined
-    const mongoUri = process.env.MONGODB_URI;
-    if (mongoUri) {
-      try {
-        if (mongoUri.startsWith('mongodb+srv://')) {
-          try {
-            dns.setServers(['8.8.8.8', '1.1.1.1']);
-          } catch {}
-        }
-
-        let resolvedDbName = 'loccomirror';
-        try {
-          const match = mongoUri.match(/mongodb(?:\+srv)?:\/\/[^/]+\/([^?]+)/);
-          if (match && match[1]) {
-            resolvedDbName = match[1];
-          }
-        } catch {}
-        this.dbName = resolvedDbName;
-
-        const { MongoClient } = await import('mongodb');
-        this.mongoClient = new MongoClient(mongoUri, { serverSelectionTimeoutMS: 5000 });
-        await this.mongoClient.connect();
-        this.db = this.mongoClient.db(this.dbName);
-        
-        // Ensure collections & indexes
-        await this.db.collection('draw_rounds').createIndex({ issueNumber: 1 }, { unique: true });
-        await this.db.collection('draw_rounds').createIndex({ timestamp: -1 });
-        await this.db.collection('evaluations').createIndex({ timestamp: -1 });
-        await this.db.collection('model_registry').createIndex({ version: 1 }, { unique: true });
-        await this.db.collection('prediction_audits').createIndex({ targetIssue: 1 });
-        await this.db.collection('prediction_audits').createIndex({ timestamp: -1 });
-        await this.db.collection('daily_learning_rollups').createIndex({ date: 1 }, { unique: true });
-        await this.db.collection('learning_state').createIndex({ key: 1 }, { unique: true });
-
-        this.isMongoConnected = true;
-        console.log(`✅ Connected to MongoDB Atlas [${this.dbName}] successfully.`);
-
-        // Sync existing local WAL rounds to MongoDB
-        await this._syncLocalCacheToMongo();
-      } catch (err) {
-        console.warn(`⚠️ MongoDB connection unavailable (${err.message}). Using ACID WAL Store.`);
-        this.isMongoConnected = false;
-      }
-    } else {
-      console.log('ℹ️ MONGODB_URI not specified. Operating in persistent ACID WAL file mode.');
-    }
+    await this._ensureMongoConnection();
 
     return {
       storageMode: this.isMongoConnected ? `MongoDB (${this.dbName})` : 'ACID_WAL_Store',
-      roundsStored: this.walCache.rounds.length
+      roundsStored: this.walCache.rounds.length,
+      auditsStored: (this.walCache.predictionAudits || []).length
     };
+  }
+
+  /**
+   * Resilient, auto-reconnecting MongoDB connection manager with DNS resolution support
+   */
+  async _ensureMongoConnection() {
+    if (this.isMongoConnected && this.db) return true;
+    const now = Date.now();
+    if (this._isConnecting || (now - this._lastMongoConnectAttempt < 60000)) {
+      return this.isMongoConnected;
+    }
+
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      if (this._lastMongoConnectAttempt === 0) {
+        console.log('ℹ️ MONGODB_URI not specified. Operating in persistent ACID WAL file mode.');
+      }
+      this._lastMongoConnectAttempt = now;
+      return false;
+    }
+
+    this._isConnecting = true;
+    this._lastMongoConnectAttempt = now;
+
+    try {
+      if (mongoUri.startsWith('mongodb+srv://')) {
+        try {
+          dns.setServers(['8.8.8.8', '1.1.1.1']);
+        } catch {}
+      }
+
+      let resolvedDbName = this.dbName || 'damanhack';
+      try {
+        const match = mongoUri.match(/mongodb(?:\+srv)?:\/\/[^/]+\/([^?]+)/);
+        if (match && match[1]) {
+          resolvedDbName = match[1];
+        }
+      } catch {}
+      this.dbName = resolvedDbName;
+
+      const { MongoClient } = await import('mongodb');
+      if (this.mongoClient) {
+        try { await this.mongoClient.close(); } catch {}
+      }
+
+      this.mongoClient = new MongoClient(mongoUri, { 
+        serverSelectionTimeoutMS: 12000,
+        connectTimeoutMS: 12000
+      });
+      await this.mongoClient.connect();
+      this.db = this.mongoClient.db(this.dbName);
+
+      // Ensure collections & indexes safely (never fail connection on existing index options)
+      const safeIndex = async (collName, spec, opts = {}) => {
+        try {
+          await this.db.collection(collName).createIndex(spec, opts);
+        } catch {
+          // Ignore index option conflict if index already exists
+        }
+      };
+
+      await safeIndex('draw_rounds', { issueNumber: 1 }, { unique: true });
+      await safeIndex('draw_rounds', { timestamp: -1 });
+      await safeIndex('evaluations', { timestamp: -1 });
+      await safeIndex('model_registry', { version: 1 }, { unique: true });
+      await safeIndex('prediction_audits', { targetIssue: 1 });
+      await safeIndex('prediction_audits', { timestamp: -1 });
+      await safeIndex('daily_learning_rollups', { date: 1 }, { unique: true });
+      await safeIndex('learning_state', { key: 1 }, { unique: true });
+
+      this.isMongoConnected = true;
+      console.log(`✅ Connected to MongoDB Atlas [${this.dbName}] successfully.`);
+
+      // Sync existing local WAL rounds and prediction audits to MongoDB
+      await this._syncLocalCacheToMongo();
+      return true;
+    } catch (err) {
+      console.warn(`⚠️ MongoDB connection unavailable (${err.message}). Using ACID WAL Store.`);
+      this.isMongoConnected = false;
+      return false;
+    } finally {
+      this._isConnecting = false;
+    }
   }
 
   async _syncLocalCacheToMongo() {
     if (!this.isMongoConnected || !this.db) return;
     try {
       if (this.walCache.rounds.length > 0) {
-        const ops = this.walCache.rounds.slice(0, 500).map(r => ({
-          updateOne: {
-            filter: { issueNumber: String(r.issueNumber) },
-            update: { $setOnInsert: r },
-            upsert: true
-          }
-        }));
+        const ops = this.walCache.rounds.slice(0, 1000).map(r => {
+          const { _id, ...roundWithoutId } = r;
+          return {
+            updateOne: {
+              filter: { issueNumber: String(r.issueNumber) },
+              update: { $setOnInsert: roundWithoutId },
+              upsert: true
+            }
+          };
+        });
         if (ops.length > 0) {
           await this.db.collection('draw_rounds').bulkWrite(ops, { ordered: false });
         }
       }
-    } catch {}
+
+      if (Array.isArray(this.walCache.predictionAudits) && this.walCache.predictionAudits.length > 0) {
+        const auditOps = this.walCache.predictionAudits.slice(0, 500).map(a => {
+          const { _id, ...auditWithoutId } = a;
+          return {
+            updateOne: {
+              filter: { targetIssue: String(a.targetIssue) },
+              update: { $set: auditWithoutId },
+              upsert: true
+            }
+          };
+        });
+        if (auditOps.length > 0) {
+          await this.db.collection('prediction_audits').bulkWrite(auditOps, { ordered: false });
+        }
+      }
+
+      if (this.walCache.learningState) {
+        const { _id, ...stateWithoutId } = this.walCache.learningState;
+        await this.db.collection('learning_state').updateOne(
+          { key: 'active_learning_state' },
+          { $set: { key: 'active_learning_state', ...stateWithoutId } },
+          { upsert: true }
+        );
+      }
+    } catch (e) {
+      console.warn('Sync WAL cache to MongoDB error:', e.message);
+    }
   }
 
   _loadWalCache() {
@@ -226,12 +298,9 @@ export class DualStorageAdapter {
       created_at: new Date()
     };
 
-    // 1. Deduplication check in memory
-    if (this.walCache.seenIssues.has(record.issueNumber)) {
-      return false; // Already recorded
-    }
+    await this._ensureMongoConnection();
 
-    // 2. Commit to MongoDB if active
+    // 1. Commit to MongoDB if active (upsert ensures idempotency)
     if (this.isMongoConnected && this.db) {
       try {
         await this.db.collection('draw_rounds').updateOne(
@@ -244,6 +313,11 @@ export class DualStorageAdapter {
           console.warn('MongoDB saveRound error:', err.message);
         }
       }
+    }
+
+    // 2. Deduplication check in memory
+    if (this.walCache.seenIssues.has(record.issueNumber)) {
+      return false; // Already recorded in WAL
     }
 
     // 3. Commit to WAL cache & maintain strict monotonic descending sort by issueNumber
@@ -383,15 +457,24 @@ export class DualStorageAdapter {
    * Persists a prediction settlement audit record
    */
   async savePredictionAudit(auditRecord) {
+    if (!auditRecord || !auditRecord.targetIssue) return false;
     const record = {
       ...auditRecord,
+      targetIssue: String(auditRecord.targetIssue),
       timestamp: auditRecord.timestamp || Date.now(),
-      created_at: new Date()
+      created_at: auditRecord.created_at || new Date()
     };
+
+    await this._ensureMongoConnection();
 
     if (this.isMongoConnected && this.db) {
       try {
-        await this.db.collection('prediction_audits').insertOne(record);
+        const { _id, ...recordWithoutId } = record;
+        await this.db.collection('prediction_audits').updateOne(
+          { targetIssue: record.targetIssue },
+          { $set: recordWithoutId },
+          { upsert: true }
+        );
       } catch (err) {
         console.warn('MongoDB savePredictionAudit error:', err.message);
       }
@@ -400,7 +483,12 @@ export class DualStorageAdapter {
     if (!Array.isArray(this.walCache.predictionAudits)) {
       this.walCache.predictionAudits = [];
     }
-    this.walCache.predictionAudits.unshift(record);
+    const existingIdx = this.walCache.predictionAudits.findIndex(a => String(a.targetIssue) === record.targetIssue);
+    if (existingIdx >= 0) {
+      this.walCache.predictionAudits[existingIdx] = { ...this.walCache.predictionAudits[existingIdx], ...record };
+    } else {
+      this.walCache.predictionAudits.unshift(record);
+    }
     this._flushWalCache();
     return true;
   }
@@ -636,9 +724,10 @@ export class DualStorageAdapter {
 
     if (this.isMongoConnected && this.db) {
       try {
+        const { _id, ...dailyWithoutId } = daily;
         await this.db.collection('daily_learning_rollups').updateOne(
           { date: dateStr },
-          { $set: daily },
+          { $set: dailyWithoutId },
           { upsert: true }
         );
       } catch (err) {

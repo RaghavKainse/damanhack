@@ -16,6 +16,7 @@ function SelfLearningMatrix({
     nGram = 1.20,
     omissionRev = 1.25,
     clusterParity = 1.30,
+    logisticML = 1.20,
     fourierCycle = 0.85,
     learningRounds = 0,
     winScore = 0,
@@ -31,6 +32,7 @@ function SelfLearningMatrix({
     { key: 'nGram', name: isHi ? 'एन-ग्राम पैटर्न मैचर' : 'N-Gram Pattern', weight: nGram, color: '#4facfe' },
     { key: 'omissionRev', name: isHi ? 'ओमिशन रिवर्शन (Z-Score)' : 'Omission Reversion', weight: omissionRev, color: '#ff3366' },
     { key: 'clusterParity', name: isHi ? 'मल्टी-हॉरिजॉन क्लस्टर' : 'Multi-Horizon Cluster', weight: clusterParity, color: '#06d6a0' },
+    { key: 'logisticML', name: isHi ? 'रेगुलराइज़्ड मशीन लर्निंग (ML)' : 'Regularized Logistic ML', weight: logisticML, color: '#e040fb' },
     { key: 'fourierCycle', name: isHi ? 'हार्मोनिक वेव (निष्क्रिय)' : 'Fourier Harmonic (Disabled)', weight: fourierCycle, color: '#64748b' },
     { key: 'crowdLiquidity', name: isHi ? 'पूल मॉनिटर (निष्क्रिय)' : 'Pool Monitor (Disabled)', weight: crowdLiquidity, color: '#64748b' }
   ];

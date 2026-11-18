@@ -119,6 +119,82 @@ export function createMetricsServer(port = 4001) {
         return;
       }
 
+      if ((url.pathname === '/api/record-prediction-result' || url.pathname === '/api/learning/record-prediction' || url.pathname === '/api/prediction/settle') && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = body ? JSON.parse(body) : {};
+            const { classifyNumber, updateLearningFromOutcome, getBayesianTransitionMatrix, saveLearnedWeights } = await import('../src/utils/engine.js');
+            const { diagnosePredictionError } = await import('../src/utils/statisticalEngine.js');
+
+            await storage.init();
+
+            const targetIssue = String(data.targetIssue || '');
+            const rawDraw = data.rawDraw || {
+              issueNumber: targetIssue,
+              number: String(data.actualNumber ?? 0),
+              color: 'unknown'
+            };
+
+            await storage.saveRound(rawDraw);
+
+            const classified = classifyNumber(rawDraw.number);
+            const actualBS = classified.bigSmall;
+            const predicted = data.predicted || 'NO CLEAR SIGNAL';
+            const action = data.action || 'CONFIRMED_BET';
+            const isSkip = action === 'NO_CLEAR_SIGNAL' || action === 'WAIT_SKIP' || predicted === 'NO CLEAR SIGNAL';
+            const isWin = isSkip ? null : (predicted === actualBS);
+
+            const probA = typeof data.probA === 'number' ? data.probA : 0.50;
+            const actualBinary = actualBS === 'BIG' ? 1.0 : 0.0;
+            const brierError = Math.round(Math.pow(probA - actualBinary, 2) * 10000) / 10000;
+            const boundedP = Math.max(1e-6, Math.min(1 - 1e-6, probA));
+            const logLossError = Math.round(-(actualBinary * Math.log(boundedP) + (1 - actualBinary) * Math.log(1 - boundedP)) * 10000) / 10000;
+
+            const diagnosis = diagnosePredictionError({ prediction: predicted, probA, action, confidence: data.confidence }, rawDraw);
+
+            const auditRecord = {
+              targetIssue,
+              predicted,
+              actual: actualBS,
+              actualNumber: classified.number,
+              probA,
+              isWin,
+              action,
+              brierError,
+              logLossError,
+              calibratedConfidence: data.confidence || 50,
+              diagnosis,
+              timestamp: Date.now()
+            };
+
+            await storage.savePredictionAudit(auditRecord);
+            const daily = await storage.updateDailyProgress(auditRecord);
+
+            try {
+              const freshWeights = updateLearningFromOutcome({ prediction: predicted }, rawDraw);
+              saveLearnedWeights(freshWeights);
+              await storage.saveLearningState(freshWeights, getBayesianTransitionMatrix());
+            } catch {}
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              success: true,
+              targetIssue,
+              isWin,
+              storageMode: storage.isMongoConnected ? `MongoDB (${storage.dbName})` : 'ACID_WAL_Store',
+              auditRecord,
+              daily
+            }));
+          } catch (e) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
+          }
+        });
+        return;
+      }
+
       if (url.pathname === '/api/learning/train-now' && req.method === 'POST') {
         const history = await storage.getHistory(500);
         const updatedWeights = replayUntrainedHistory(history, 'all', 'bigSmall');

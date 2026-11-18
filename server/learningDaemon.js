@@ -22,7 +22,8 @@ import {
   checkCircuitBreaker,
   calculateDieboldMarianoTest,
   calculateShannonEntropy,
-  validateDraw
+  validateDraw,
+  diagnosePredictionError
 } from '../src/utils/statisticalEngine.js';
 import { 
   classifyNumber,
@@ -266,6 +267,8 @@ class LearningDaemon {
 
       const drift = detectPageHinkleyDrift(this.recentErrors);
 
+      const diagnosis = diagnosePredictionError(predObj, newDraw);
+
       const auditRecord = {
         targetIssue: issueStr,
         predicted: pred,
@@ -278,6 +281,7 @@ class LearningDaemon {
         logLossError: Math.round(logLossErr * 10000) / 10000,
         driftDetected: drift.driftDetected,
         calibratedConfidence: predObj.calibratedConfidence,
+        diagnosis,
         timestamp: Date.now()
       };
 

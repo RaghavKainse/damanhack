@@ -12,6 +12,7 @@ export const GAME_MODES = {
   'WinGo_1M': { id: 'WinGo_1M', name: 'Win Go 1Min', duration: 60, codePrefix: '10001', title: 'WinGo 1 Minute' },
   'WinGo_3M': { id: 'WinGo_3M', name: 'Win Go 3Min', duration: 180, codePrefix: '10002', title: 'WinGo 3 Minute' },
   'WinGo_5M': { id: 'WinGo_5M', name: 'Win Go 5Min', duration: 300, codePrefix: '10003', title: 'WinGo 5 Minute' },
+  'Aviator': { id: 'Aviator', name: '✈️ Aviator', duration: 20, codePrefix: 'AVIATOR', title: 'Aviator Crash Multiplier Predictor' }
 };
 
 /**
@@ -183,3 +184,34 @@ export async function fetchFullDayServerHistory(limit = 5000) {
 
   return { success: false, source: 'None', list: [] };
 }
+
+/**
+ * Persists prediction settlement and draw outcome directly to MongoDB & WAL storage
+ */
+export async function recordPredictionSettlement(settlementData) {
+  const endpoints = [
+    '/api/record-prediction-result',
+    '/api/learning/record-prediction',
+    'http://localhost:4001/api/record-prediction-result'
+  ];
+
+  for (const ep of endpoints) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(ep, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settlementData),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const json = await res.json();
+        return { success: true, ...json };
+      }
+    } catch {}
+  }
+  return { success: false };
+}
+

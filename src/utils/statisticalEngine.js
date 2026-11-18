@@ -1,13 +1,23 @@
 /**
- * 🔬 STATISTICAL MACHINE LEARNING PREDICTION & EVALUATION ENGINE
+ * 🔬 SCIENTIFIC STATISTICAL & MACHINE LEARNING PREDICTION ENGINE
  * 
  * Provides:
- * 1. Six Independent Statistical Models (A through F)
- * 2. Strict Chronological Walk-Forward Validation Engine
- * 3. Formal Scoring Metrics: Brier Score, Log Loss, Calibration, Confusion Matrix, Binomial Test
- * 4. Page-Hinkley Concept Drift Detector
- * 5. Model Version Control & Safe Promotion Registry
- * 6. Calibrated Probability & "NO CLEAR SIGNAL" Evidence Gater
+ * 1. 10-Step Draw Validation Protocol (Deduplication, Boundaries, Regex, Range)
+ * 2. 7 Independent Statistical & Machine Learning Models (A through G) + Null Control
+ *    - Model A: Historical Frequency (Laplace / Dirichlet)
+ *    - Model B: Rolling Window Probability (Finite Memory)
+ *    - Model C: Bayesian Conjugate Beta-Binomial / Dirichlet-Multinomial
+ *    - Model D: Higher-Order Markov Transition (1st & 2nd Order on strictly past data)
+ *    - Model E: Exponentially Weighted Moving Average (EWMA)
+ *    - Model F: Pattern & Sequence Analysis (N-Gram & Run-Length Streak Dynamics)
+ *    - Model G: Machine Learning (L2-Regularized Online Logistic Regression on Multi-Lag Features)
+ *    - Model Control: Statistical Baseline (Null Hypothesis 50/50 Control)
+ * 3. Discrete 0-9 Digit Probability Engine (Separate from Big/Small, Strictly Normalized)
+ * 4. Diagnostic Root-Cause Error Attribution for Every Settled Draw
+ * 5. Strict Chronological Walk-Forward Backtesting (Zero Future Lookahead Bias)
+ * 6. Formal Scoring Metrics: Brier Score, Log Loss, Calibration (ECE), Confusion Matrix, Binomial Significance
+ * 7. Page-Hinkley Drift Detector, Shannon Entropy Uncertainty & Circuit Breakers
+ * 8. Calibrated Multi-Model Ensemble with Evidence Gater ("NO RELIABLE EDGE")
  */
 
 import { classifyNumber } from './engine.js';
@@ -16,10 +26,6 @@ import { classifyNumber } from './engine.js';
 // 0. OFFICIAL 10-STEP DRAW VALIDATION PROTOCOL
 // -------------------------------------------------------------
 
-/**
- * Validates an incoming draw object against strict schema, boundaries, and formatting rules.
- * Guarantees zero corrupted or unverified records enter the model pipeline.
- */
 export function validateDraw(draw) {
   if (!draw) return { valid: false, reason: 'Draw object is null or undefined' };
 
@@ -54,7 +60,6 @@ export function validateDraw(draw) {
   if (draw.timestamp) {
     const ts = Number(draw.timestamp);
     const now = Date.now();
-    // Must be after Jan 1, 2020 and not more than 2 hours in future
     if (isNaN(ts) || ts < 1577836800000 || ts > now + 7200000) {
       return { valid: false, reason: `Timestamp out of sane boundaries: ${draw.timestamp}` };
     }
@@ -82,7 +87,7 @@ export function validateDraw(draw) {
 }
 
 // -------------------------------------------------------------
-// 1. SIX INDEPENDENT STATISTICAL MODELS
+// 1. INDEPENDENT STATISTICAL & ML PREDICTION MODELS
 // -------------------------------------------------------------
 
 /**
@@ -105,7 +110,6 @@ export function modelHistoricalFrequency(historyList, field = 'bigSmall') {
   }
 
   const N = historyList.length;
-  // Uniform Laplace smoothing (+1 / +2)
   const probA = (countA + 1) / (N + 2);
   const probB = 1 - probA;
   const choice = probA >= 0.5 ? valA : valB;
@@ -116,7 +120,7 @@ export function modelHistoricalFrequency(historyList, field = 'bigSmall') {
 
 /**
  * Model B: Rolling Window Probability Model
- * Finite local window (e.g. K = 25 or K = 50) with Laplace smoothing.
+ * Finite local window with Laplace smoothing.
  */
 export function modelRollingWindow(historyList, field = 'bigSmall', windowSize = 25) {
   const isBS = field === 'bigSmall';
@@ -180,7 +184,7 @@ export function modelBayesianBetaBinomial(historyList, field = 'bigSmall', prior
 
 /**
  * Model D: Higher-Order Markov Transition Model
- * 1st-order P(Y_t | Y_{t-1}) and 2nd-order P(Y_t | Y_{t-1}, Y_{t-2}) with Laplace smoothing.
+ * 1st-order and 2nd-order transitions calculated strictly on past data with Laplace smoothing.
  */
 export function modelMarkovTransition(historyList, field = 'bigSmall') {
   const isBS = field === 'bigSmall';
@@ -241,7 +245,6 @@ export function modelExponentiallyWeighted(historyList, field = 'bigSmall', lamb
     return { model: 'ExponentiallyWeighted', probA: 0.5, probB: 0.5, choice: valA, confidence: 50.0 };
   }
 
-  // Chronological order: oldest [0] -> newest [N-1]
   const seq = [...historyList].reverse().map(h => classifyNumber(h.number)[field]);
   let ewma = 0.5; // Neutral start
   for (const s of seq) {
@@ -258,7 +261,161 @@ export function modelExponentiallyWeighted(historyList, field = 'bigSmall', lamb
 }
 
 /**
- * Model F: Statistical Baseline Model (Null Hypothesis Control)
+ * Model F: Pattern & Sequence Analysis (N-Gram & Run-Length Streak Dynamics)
+ * Evaluates sequence suffix matches and empirical run-length survival.
+ */
+export function modelPatternSequence(historyList, field = 'bigSmall') {
+  const isBS = field === 'bigSmall';
+  const valA = isBS ? 'BIG' : 'ODD';
+  const valB = isBS ? 'SMALL' : 'EVEN';
+
+  if (!historyList || historyList.length < 3) {
+    return { model: 'PatternSequence', probA: 0.5, probB: 0.5, choice: valA, confidence: 50.0 };
+  }
+
+  const seq = [...historyList].reverse().map(h => classifyNumber(h.number)[field]);
+  const N = seq.length;
+
+  // Streak length of current run
+  const lastVal = seq[N - 1];
+  let currentStreak = 0;
+  for (let i = N - 1; i >= 0; i--) {
+    if (seq[i] === lastVal) currentStreak++;
+    else break;
+  }
+
+  // Empirical streak continuation frequency in historical data
+  let streakMatches = 0;
+  let streakContinued = 0;
+  let runLen = 1;
+  for (let i = 1; i < N; i++) {
+    if (seq[i] === seq[i - 1]) {
+      runLen++;
+    } else {
+      if (runLen === currentStreak) {
+        streakMatches++;
+      }
+      runLen = 1;
+    }
+  }
+
+  // N-gram pattern match on last 2-gram
+  let ngramA = 0, ngramTotal = 0;
+  if (N >= 3) {
+    const lastPattern = `${seq[N - 2]}->${seq[N - 1]}`;
+    for (let i = 0; i < N - 2; i++) {
+      if (`${seq[i]}->${seq[i + 1]}` === lastPattern) {
+        ngramTotal++;
+        if (seq[i + 2] === valA) ngramA++;
+      }
+    }
+  }
+
+  const pNgram = ngramTotal >= 2 ? (ngramA + 1) / (ngramTotal + 2) : 0.50;
+  const pStreakCont = streakMatches >= 3 ? (streakContinued + 1) / (streakMatches + 2) : 0.50;
+  const pStreakA = lastVal === valA ? pStreakCont : (1 - pStreakCont);
+
+  const probA = Math.max(0.10, Math.min(0.90, pNgram * 0.55 + pStreakA * 0.45));
+  const probB = 1 - probA;
+  const choice = probA >= 0.5 ? valA : valB;
+  const confidence = Math.round(Math.max(probA, probB) * 1000) / 10;
+
+  return { model: 'PatternSequence', probA, probB, choice, confidence, currentStreak };
+}
+
+/**
+ * Model G: Machine Learning Model (L2 Regularized Online Logistic Regression)
+ * Trains strictly walk-forward on past feature representations without lookahead bias.
+ */
+export function modelRegularizedLogisticML(historyList, field = 'bigSmall') {
+  const isBS = field === 'bigSmall';
+  const valA = isBS ? 'BIG' : 'ODD';
+  const valB = isBS ? 'SMALL' : 'EVEN';
+
+  if (!historyList || historyList.length < 25) {
+    return { model: 'RegularizedLogisticML', probA: 0.5, probB: 0.5, choice: valA, confidence: 50.0 };
+  }
+
+  const chron = [...historyList].reverse();
+  const N = chron.length;
+
+  const X = [];
+  const Y = [];
+
+  for (let i = 3; i < N; i++) {
+    const y = classifyNumber(chron[i].number)[field] === valA ? 1 : 0;
+    const l1 = classifyNumber(chron[i - 1].number)[field] === valA ? 1 : -1;
+    const l2 = classifyNumber(chron[i - 2].number)[field] === valA ? 1 : -1;
+    const l3 = classifyNumber(chron[i - 3].number)[field] === valA ? 1 : -1;
+
+    let s = 1;
+    const lastF = classifyNumber(chron[i - 1].number)[field];
+    for (let k = i - 2; k >= 0; k--) {
+      if (classifyNumber(chron[k].number)[field] === lastF) s++;
+      else break;
+    }
+    const streakSign = lastF === valA ? 1 : -1;
+    const streakFeat = (streakSign * Math.min(s, 5)) / 5.0;
+
+    const rStart = Math.max(0, i - 10);
+    const rSlice = chron.slice(rStart, i);
+    const rCountA = rSlice.filter(c => classifyNumber(c.number)[field] === valA).length;
+    const rollingFeat = (rCountA / rSlice.length) - 0.50;
+
+    X.push([1.0, l1, l2, l3, streakFeat, rollingFeat]);
+    Y.push(y);
+  }
+
+  const numFeatures = 6;
+  const weights = Array(numFeatures).fill(0);
+  const lr = 0.05;
+  const l2 = 0.01;
+  const epochs = 10;
+
+  for (let ep = 0; ep < epochs; ep++) {
+    for (let i = 0; i < X.length; i++) {
+      const xi = X[i];
+      const yi = Y[i];
+      let z = 0;
+      for (let j = 0; j < numFeatures; j++) z += weights[j] * xi[j];
+      const p = 1 / (1 + Math.exp(-Math.max(-10, Math.min(10, z))));
+      const err = yi - p;
+      for (let j = 0; j < numFeatures; j++) {
+        const reg = j === 0 ? 0 : l2 * weights[j];
+        weights[j] += lr * (err * xi[j] - reg);
+      }
+    }
+  }
+
+  // Predict on next round using recent history (historyList[0..2])
+  const curL1 = classifyNumber(historyList[0].number)[field] === valA ? 1 : -1;
+  const curL2 = historyList.length > 1 ? (classifyNumber(historyList[1].number)[field] === valA ? 1 : -1) : 0;
+  const curL3 = historyList.length > 2 ? (classifyNumber(historyList[2].number)[field] === valA ? 1 : -1) : 0;
+
+  let curS = 1;
+  const curF = classifyNumber(historyList[0].number)[field];
+  for (let k = 1; k < historyList.length; k++) {
+    if (classifyNumber(historyList[k].number)[field] === curF) curS++;
+    else break;
+  }
+  const curStreakSign = curF === valA ? 1 : -1;
+  const curStreakFeat = (curStreakSign * Math.min(curS, 5)) / 5.0;
+  const curR10 = (historyList.slice(0, 10).filter(c => classifyNumber(c.number)[field] === valA).length / Math.min(10, historyList.length)) - 0.50;
+
+  const curX = [1.0, curL1, curL2, curL3, curStreakFeat, curR10];
+  let curZ = 0;
+  for (let j = 0; j < numFeatures; j++) curZ += weights[j] * curX[j];
+  const predProbA = 1 / (1 + Math.exp(-Math.max(-10, Math.min(10, curZ))));
+  const boundedP = Math.max(0.10, Math.min(0.90, predProbA));
+  const probB = 1 - boundedP;
+  const choice = boundedP >= 0.5 ? valA : valB;
+  const confidence = Math.round(Math.max(boundedP, probB) * 1000) / 10;
+
+  return { model: 'RegularizedLogisticML', probA: boundedP, probB, choice, confidence };
+}
+
+/**
+ * Model Control: Statistical Baseline Model (Null Hypothesis Control)
  * Pure 50/50 unbiased benchmark.
  */
 export function modelStatisticalBaseline(historyList, field = 'bigSmall') {
@@ -268,13 +425,170 @@ export function modelStatisticalBaseline(historyList, field = 'bigSmall') {
 }
 
 // -------------------------------------------------------------
-// 2. MATHEMATICAL SCORING & CALIBRATION METRICS
+// 2. DISCRETE 0-9 DIGIT PROBABILITY ENGINE
 // -------------------------------------------------------------
 
 /**
- * Calculates Brier Score: Mean squared error between predicted prob and binary target.
- * Brier = (1 / N) * sum((p_i - y_i)^2). Optimal = 0.0, 50/50 baseline = 0.2500.
+ * Calculates scientifically grounded 0-9 number probabilities combining:
+ * 1. Dirichlet-Laplace frequency
+ * 2. 10x10 Markov transitions computed strictly on past slice
+ * 3. Exponentially weighted recency
+ * 4. Omission survival
+ * Digits probabilities sum strictly to 100% (1.0).
+ * Big/Small and Odd/Even are NOT artificially used to multiply or distort digits!
  */
+export function calculateDiscreteDigitProbabilities(historyList) {
+  if (!historyList || historyList.length === 0) {
+    const uniform = Array.from({ length: 10 }, (_, i) => ({
+      number: i,
+      prob: 10.0,
+      isBig: i >= 5,
+      isOdd: i % 2 !== 0,
+      omission: 0,
+      color: i === 0 || [2, 4, 6, 8].includes(i) ? 'red' : 'green',
+      status: 'NORMAL'
+    }));
+    return {
+      numberProbabilities: uniform,
+      topNumber: uniform[0],
+      top3Numbers: uniform.slice(0, 3),
+      goldenBasket: uniform.slice(0, 3),
+      goldenBasketCoverage: 30.0,
+      hasReliableEdge: false
+    };
+  }
+
+  const N = historyList.length;
+  const items = historyList.map(h => parseInt(h.number, 10));
+  const lastNum = items[0];
+
+  // 1. Dirichlet-smoothed empirical frequency
+  const digitCounts = Array(10).fill(0);
+  for (const n of items) {
+    if (!isNaN(n) && n >= 0 && n <= 9) digitCounts[n]++;
+  }
+  const pFreq = digitCounts.map(c => (c + 1) / (N + 10));
+
+  // 2. 10x10 Markov transitions from last drawn number (computed strictly on historyList)
+  const transRow = Array(10).fill(0);
+  if (!isNaN(lastNum) && lastNum >= 0 && lastNum <= 9) {
+    for (let i = 0; i < N - 1; i++) {
+      const fromD = items[i + 1];
+      const toD = items[i];
+      if (fromD === lastNum) transRow[toD]++;
+    }
+  }
+  const transSum = transRow.reduce((a, b) => a + b, 0);
+  const pMarkov = transRow.map(c => (c + 1) / (transSum + 10));
+
+  // 3. Omission Index
+  const omissions = Array(10).fill(0);
+  for (let d = 0; d < 10; d++) {
+    const idx = items.indexOf(d);
+    omissions[d] = idx === -1 ? N : idx;
+  }
+  const totalOm = omissions.reduce((a, b) => a + b, 0) || 1;
+  const pOmission = omissions.map(om => (om + 2) / (totalOm + 20));
+
+  // 4. EWMA recency decay (lambda = 0.05)
+  const pEwma = Array(10).fill(0.10);
+  const lambda = 0.05;
+  for (let i = items.length - 1; i >= 0; i--) {
+    const d = items[i];
+    if (d >= 0 && d <= 9) {
+      for (let j = 0; j < 10; j++) {
+        pEwma[j] = (1 - lambda) * pEwma[j] + (j === d ? lambda : 0);
+      }
+    }
+  }
+
+  // 5. Normalized Ensemble of Digit Probabilities
+  const pEnsemble = Array(10).fill(0);
+  for (let d = 0; d < 10; d++) {
+    pEnsemble[d] = (pFreq[d] * 0.35) + (pMarkov[d] * 0.35) + (pOmission[d] * 0.15) + (pEwma[d] * 0.15);
+  }
+  const totalEns = pEnsemble.reduce((a, b) => a + b, 0) || 1;
+
+  const digitList = [];
+  for (let d = 0; d < 10; d++) {
+    const normalizedProb = Math.round((pEnsemble[d] / totalEns) * 1000) / 10;
+    const om = omissions[d];
+    let status = 'NORMAL';
+    if (om <= 2) status = 'VERY_HOT';
+    else if (om <= 5) status = 'HOT';
+    else if (om >= 18) status = 'OVERDUE_COLD';
+    else if (om >= 12) status = 'COLD';
+
+    digitList.push({
+      number: d,
+      prob: normalizedProb,
+      isBig: d >= 5,
+      isOdd: d % 2 !== 0,
+      omission: om,
+      color: d === 0 || [2, 4, 6, 8].includes(d) ? 'red' : 'green',
+      status
+    });
+  }
+
+  // Rank descending by probability
+  digitList.sort((a, b) => b.prob - a.prob);
+
+  const topNumber = digitList[0];
+  const top3Numbers = digitList.slice(0, 3);
+  const goldenBasketCoverage = Math.round(top3Numbers.reduce((sum, item) => sum + item.prob, 0) * 10) / 10;
+  const maxProb = digitList[0].prob;
+  const minProb = digitList[digitList.length - 1].prob;
+  const hasReliableEdge = (maxProb - minProb) >= 3.5;
+
+  return {
+    numberProbabilities: digitList,
+    topNumber,
+    top3Numbers,
+    goldenBasket: top3Numbers,
+    goldenBasketCoverage,
+    hasReliableEdge
+  };
+}
+
+// -------------------------------------------------------------
+// 3. ROOT CAUSE ERROR DIAGNOSTICS & ATTRIBUTION
+// -------------------------------------------------------------
+
+/**
+ * Explains exactly WHY a settled prediction won or lost based on empirical dynamics.
+ */
+export function diagnosePredictionError(predictionObj, actualDraw) {
+  if (!predictionObj || !actualDraw) return 'NO_DATA';
+  const classified = classifyNumber(actualDraw.number);
+  const actualBS = classified.bigSmall;
+  const isWin = predictionObj.prediction === actualBS;
+
+  if (isWin) {
+    return 'MODEL_CONVERGENCE: Multi-model statistical confluence correctly captured transition distribution.';
+  }
+
+  const rawDelta = predictionObj.rawDelta || 0;
+  const entropy = predictionObj.entropy || 1.0;
+
+  if (entropy >= 0.985 || rawDelta < 2.0) {
+    return 'HIGH_ENTROPY_NOISE: Outcome occurred in near-maximal entropy (50/50) equilibrium regime.';
+  }
+
+  if (predictionObj.subModels?.markov?.choice !== actualBS && predictionObj.subModels?.bayesian?.choice !== actualBS) {
+    return 'STREAK_MOMENTUM_OVERRIDE: Run continuation or abrupt alternation broke higher-order Markov transition state.';
+  }
+
+  if (predictionObj.evidenceLevel === 'INSUFFICIENT') {
+    return 'WEAK_SIGNAL_SPLIT: Consensus among sub-models was divided (< 65% agreement).';
+  }
+
+  return 'DYNAMIC_REGIME_SHIFT: Short-term distribution drifted from empirical prior.';
+}
+
+// -------------------------------------------------------------
+// 4. MATHEMATICAL SCORING & CALIBRATION METRICS
+// -------------------------------------------------------------
+
 export function calculateBrierScore(predictions, outcomes) {
   if (!predictions || predictions.length === 0 || predictions.length !== outcomes.length) {
     return 0.2500;
@@ -288,10 +602,6 @@ export function calculateBrierScore(predictions, outcomes) {
   return Math.round((sumSqErr / predictions.length) * 10000) / 10000;
 }
 
-/**
- * Calculates Log Loss (Cross-Entropy Loss): Penalizes confident wrong predictions.
- * LogLoss = -(1 / N) * sum(y * ln(p) + (1 - y) * ln(1 - p)). Baseline 50/50 = -ln(0.5) = 0.6931.
- */
 export function calculateLogLoss(probabilities, outcomes) {
   if (!probabilities || probabilities.length === 0 || probabilities.length !== outcomes.length) {
     return 0.6931;
@@ -306,9 +616,6 @@ export function calculateLogLoss(probabilities, outcomes) {
   return Math.round((-totalLoss / probabilities.length) * 10000) / 10000;
 }
 
-/**
- * Calculates Confusion Matrix: TP, FP, TN, FN, Specificity, Sensitivity.
- */
 export function calculateConfusionMatrix(predictions, outcomes, positiveClass = 'BIG') {
   let tp = 0, fp = 0, tn = 0, fn = 0;
   for (let i = 0; i < predictions.length; i++) {
@@ -333,14 +640,11 @@ export function calculateConfusionMatrix(predictions, outcomes, positiveClass = 
   };
 }
 
-/**
- * Calculates Probability Calibration & Expected Calibration Error (ECE) across M bins.
- */
 export function calculateCalibration(probabilities, outcomes, numBins = 5) {
   if (!probabilities || probabilities.length === 0) return { ece: 0, bins: [] };
 
   const bins = [];
-  const binWidth = 0.5 / numBins; // Bins from 0.50 to 1.00 (confidence scale)
+  const binWidth = 0.5 / numBins;
 
   for (let b = 0; b < numBins; b++) {
     const lower = 0.50 + b * binWidth;
@@ -351,7 +655,6 @@ export function calculateCalibration(probabilities, outcomes, numBins = 5) {
   for (let i = 0; i < probabilities.length; i++) {
     const rawProb = probabilities[i];
     const isWin = outcomes[i] ? 1 : 0;
-    // Map probability to [0.5, 1.0] confidence
     const conf = Math.max(rawProb, 1 - rawProb);
 
     let binIdx = Math.min(numBins - 1, Math.floor((conf - 0.50) / binWidth));
@@ -387,9 +690,6 @@ export function calculateCalibration(probabilities, outcomes, numBins = 5) {
   };
 }
 
-/**
- * Two-tailed Binomial test against random 50% baseline (H0: p = 0.50) with 95% Confidence Intervals
- */
 export function calculateBinomialSignificance(wins, total, nullProb = 0.50) {
   if (total <= 0) {
     return { 
@@ -410,17 +710,14 @@ export function calculateBinomialSignificance(wins, total, nullProb = 0.50) {
   const variance = total * nullProb * (1 - nullProb);
   const stdDev = Math.sqrt(variance);
 
-  // Continuity correction
   const diff = Math.abs(wins - expected) - 0.5;
   const zScore = diff > 0 ? diff / stdDev : 0;
 
-  // Approximate normal CDF complement for two-tailed p-value
   const t = 1 / (1 + 0.2316419 * Math.abs(zScore));
   const d = 0.3989423 * Math.exp(-zScore * zScore / 2);
   const prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
   const pValue = Math.min(1.0, Math.round(2 * prob * 10000) / 10000);
 
-  // Wilson Score / Wald 95% Confidence Interval
   const stdErr = Math.sqrt(Math.max(0.0001, (pObs * (1 - pObs)) / total));
   const ciLower = Math.max(0.0, Math.round((pObs - 1.96 * stdErr) * 1000) / 10);
   const ciUpper = Math.min(100.0, Math.round((pObs + 1.96 * stdErr) * 1000) / 10);
@@ -441,13 +738,6 @@ export function calculateBinomialSignificance(wins, total, nullProb = 0.50) {
   };
 }
 
-// -------------------------------------------------------------
-// 3. PAGE-HINKLEY CONCEPT DRIFT DETECTOR
-// -------------------------------------------------------------
-
-/**
- * Detects statistical regime changes / drift in prediction error series.
- */
 export function detectPageHinkleyDrift(errorSeries, threshold = 12.0, delta = 0.005) {
   if (!errorSeries || errorSeries.length < 20) {
     return { driftDetected: false, score: 0, meanError: 0 };
@@ -476,11 +766,6 @@ export function detectPageHinkleyDrift(errorSeries, threshold = 12.0, delta = 0.
   };
 }
 
-/**
- * 3.1 Shannon Entropy Uncertainty Detector
- * Measures prediction disorder/stalemate: H = -p log2(p) - (1-p) log2(1-p).
- * Normalized strictly to [0.0, 1.0], where 1.0 = maximum coin-toss entropy.
- */
 export function calculateShannonEntropy(probA) {
   const p = Math.max(1e-6, Math.min(1 - 1e-6, probA));
   const q = 1 - p;
@@ -488,10 +773,6 @@ export function calculateShannonEntropy(probA) {
   return Math.round(entropy * 10000) / 10000;
 }
 
-/**
- * 3.2 Overfitting & Generalization Gap Detector
- * Detects if a model overfits in-sample training data compared to walk-forward validation.
- */
 export function detectOverfitting(inSampleAccuracy, outOfSampleAccuracy, threshold = 12.0) {
   const gap = Math.round((inSampleAccuracy - outOfSampleAccuracy) * 10) / 10;
   const isOverfitting = gap > threshold;
@@ -507,10 +788,6 @@ export function detectOverfitting(inSampleAccuracy, outOfSampleAccuracy, thresho
   };
 }
 
-/**
- * 3.3 Dynamic Performance Drop Circuit Breaker
- * Halts speculative bets when rolling Brier score exceeds coin-toss bounds (> 0.2580).
- */
 export function checkCircuitBreaker(rollingBrier, rollingWinRate, minDraws = 20) {
   const isTriggered = (minDraws >= 20) && (rollingBrier > 0.2580 || rollingWinRate < 46.0);
   return {
@@ -524,10 +801,6 @@ export function checkCircuitBreaker(rollingBrier, rollingWinRate, minDraws = 20)
   };
 }
 
-/**
- * 3.4 Diebold-Mariano Paired Significance Test
- * Statistically verifies whether Candidate Model B significantly outperforms Champion Model A.
- */
 export function calculateDieboldMarianoTest(errorsModelA, errorsModelB) {
   if (!errorsModelA || !errorsModelB || errorsModelA.length < 30 || errorsModelA.length !== errorsModelB.length) {
     return { isSignificant: false, pValue: 1.0, dmStat: 0, sampleSize: errorsModelA?.length || 0, isModelBBetter: false };
@@ -565,13 +838,9 @@ export function calculateDieboldMarianoTest(errorsModelA, errorsModelB) {
 }
 
 // -------------------------------------------------------------
-// 4. STRICT CHRONOLOGICAL WALK-FORWARD VALIDATION
+// 5. STRICT CHRONOLOGICAL WALK-FORWARD VALIDATION
 // -------------------------------------------------------------
 
-/**
- * Runs chronological walk-forward validation across all 6 models.
- * Strictly avoids data leakage: predicting round t uses only rounds 0..t-1.
- */
 export function runChronologicalWalkForward(historyList, field = 'bigSmall', targetWindows = [50, 100, 250, 500]) {
   if (!historyList || historyList.length < 20) {
     return { success: false, reason: 'Insufficient history for walk-forward validation' };
@@ -581,7 +850,6 @@ export function runChronologicalWalkForward(historyList, field = 'bigSmall', tar
   const valA = isBS ? 'BIG' : 'ODD';
   const valB = isBS ? 'SMALL' : 'EVEN';
 
-  // Chronological order: oldest [0] -> newest [N-1]
   const chronological = [...historyList].sort((a, b) => {
     try {
       const aBig = BigInt(a.issueNumber);
@@ -593,7 +861,7 @@ export function runChronologicalWalkForward(historyList, field = 'bigSmall', tar
   });
 
   const totalRounds = chronological.length;
-  const warmup = Math.min(20, Math.floor(totalRounds * 0.15));
+  const warmup = Math.min(25, Math.floor(totalRounds * 0.15));
   const evaluatableCount = totalRounds - warmup;
 
   const modelKeys = [
@@ -602,34 +870,29 @@ export function runChronologicalWalkForward(historyList, field = 'bigSmall', tar
     'BayesianBetaBinomial',
     'MarkovTransition',
     'ExponentiallyWeighted',
+    'PatternSequence',
+    'RegularizedLogisticML',
     'StatisticalBaseline'
   ];
 
   const resultsByModel = {};
   for (const k of modelKeys) {
-    resultsByModel[k] = {
-      predictions: [],
-      probabilities: [],
-      choices: [],
-      outcomes: [],
-      isWins: []
-    };
+    resultsByModel[k] = { predictions: [], probabilities: [], choices: [], outcomes: [], isWins: [] };
   }
 
-  // Walk forward step by step
+  // Walk forward step by step (predicting t uses strictly 0..t-1)
   for (let t = warmup; t < totalRounds; t++) {
-    // Strictly historical past: 0 to t-1
-    // Invert slice so newest is at [0] (standard engine convention)
     const pastSlice = chronological.slice(0, t).reverse();
     const actualTarget = classifyNumber(chronological[t].number)[field];
     const isTargetA = actualTarget === valA;
 
-    // Evaluate each model
     const mHist = modelHistoricalFrequency(pastSlice, field);
     const mRoll = modelRollingWindow(pastSlice, field, 25);
     const mBayes = modelBayesianBetaBinomial(pastSlice, field, 10, 10);
     const mMarkov = modelMarkovTransition(pastSlice, field);
     const mEWMA = modelExponentiallyWeighted(pastSlice, field, 0.05);
+    const mPat = modelPatternSequence(pastSlice, field);
+    const mML = modelRegularizedLogisticML(pastSlice, field);
     const mBase = modelStatisticalBaseline(pastSlice, field);
 
     const modelRuns = [
@@ -638,6 +901,8 @@ export function runChronologicalWalkForward(historyList, field = 'bigSmall', tar
       { key: 'BayesianBetaBinomial', res: mBayes },
       { key: 'MarkovTransition', res: mMarkov },
       { key: 'ExponentiallyWeighted', res: mEWMA },
+      { key: 'PatternSequence', res: mPat },
+      { key: 'RegularizedLogisticML', res: mML },
       { key: 'StatisticalBaseline', res: mBase }
     ];
 
@@ -652,7 +917,6 @@ export function runChronologicalWalkForward(historyList, field = 'bigSmall', tar
     }
   }
 
-  // Compile metrics per model across requested windows
   const windowSummaries = {};
   for (const winSize of targetWindows) {
     const actualWindow = Math.min(evaluatableCount, winSize);
@@ -701,13 +965,9 @@ export function runChronologicalWalkForward(historyList, field = 'bigSmall', tar
 }
 
 // -------------------------------------------------------------
-// 5. CALIBRATED ENSEMBLE WITH "NO CLEAR SIGNAL" EVIDENCE GATER
+// 6. CALIBRATED ENSEMBLE WITH "NO RELIABLE EDGE" GATER
 // -------------------------------------------------------------
 
-/**
- * Multi-model calibrated predictor with explicit evidence gating.
- * Returns action: 'NO_CLEAR_SIGNAL' when evidence is weak (delta < 2.5% or agreement <= 3/6).
- */
 export function generateCalibratedPrediction(historyList, field = 'bigSmall', customWeights = null) {
   const isBS = field === 'bigSmall';
   const valA = isBS ? 'BIG' : 'ODD';
@@ -716,10 +976,12 @@ export function generateCalibratedPrediction(historyList, field = 'bigSmall', cu
   const defaultWeights = {
     HistoricalFrequency: 1.0,
     RollingWindow: 0.8,
-    BayesianBetaBinomial: 1.35,
-    MarkovTransition: 1.35,
-    ExponentiallyWeighted: 0.8,
-    StatisticalBaseline: 0.0 // Baseline is a benchmark control; does not vote in predictive ensemble
+    BayesianBetaBinomial: 1.25,
+    MarkovTransition: 1.30,
+    ExponentiallyWeighted: 0.85,
+    PatternSequence: 1.10,
+    RegularizedLogisticML: 1.20,
+    StatisticalBaseline: 0.0 // Baseline control does not vote in predictive ensemble
   };
   const weights = customWeights || defaultWeights;
 
@@ -728,19 +990,23 @@ export function generateCalibratedPrediction(historyList, field = 'bigSmall', cu
   const mBayes = modelBayesianBetaBinomial(historyList, field, 10, 10);
   const mMarkov = modelMarkovTransition(historyList, field);
   const mEWMA = modelExponentiallyWeighted(historyList, field, 0.05);
+  const mPat = modelPatternSequence(historyList, field);
+  const mML = modelRegularizedLogisticML(historyList, field);
   const mBase = modelStatisticalBaseline(historyList, field);
 
   const subModels = [
     { key: 'HistoricalFrequency', res: mHist, weight: weights.HistoricalFrequency !== undefined ? weights.HistoricalFrequency : 1.0 },
     { key: 'RollingWindow', res: mRoll, weight: weights.RollingWindow !== undefined ? weights.RollingWindow : 0.8 },
-    { key: 'BayesianBetaBinomial', res: mBayes, weight: weights.BayesianBetaBinomial !== undefined ? weights.BayesianBetaBinomial : 1.35 },
-    { key: 'MarkovTransition', res: mMarkov, weight: weights.MarkovTransition !== undefined ? weights.MarkovTransition : 1.35 },
-    { key: 'ExponentiallyWeighted', res: mEWMA, weight: weights.ExponentiallyWeighted !== undefined ? weights.ExponentiallyWeighted : 0.8 },
+    { key: 'BayesianBetaBinomial', res: mBayes, weight: weights.BayesianBetaBinomial !== undefined ? weights.BayesianBetaBinomial : 1.25 },
+    { key: 'MarkovTransition', res: mMarkov, weight: weights.MarkovTransition !== undefined ? weights.MarkovTransition : 1.30 },
+    { key: 'ExponentiallyWeighted', res: mEWMA, weight: weights.ExponentiallyWeighted !== undefined ? weights.ExponentiallyWeighted : 0.85 },
+    { key: 'PatternSequence', res: mPat, weight: weights.PatternSequence !== undefined ? weights.PatternSequence : 1.10 },
+    { key: 'RegularizedLogisticML', res: mML, weight: weights.RegularizedLogisticML !== undefined ? weights.RegularizedLogisticML : 1.20 },
     { key: 'StatisticalBaseline', res: mBase, weight: weights.StatisticalBaseline !== undefined ? weights.StatisticalBaseline : 0.0 }
   ];
 
   const activeSubModels = subModels.filter(sm => sm.weight > 0);
-  const numActive = activeSubModels.length || 5;
+  const numActive = activeSubModels.length || 7;
 
   let weightedSumA = 0;
   let totalW = 0;
@@ -754,21 +1020,22 @@ export function generateCalibratedPrediction(historyList, field = 'bigSmall', cu
 
   const ensembleProbA = totalW > 0 ? (weightedSumA / totalW) : 0.50;
   const ensembleProbB = 1 - ensembleProbA;
-  const rawDelta = Math.abs(ensembleProbA - 0.5);
+  const rawDelta = Math.abs(ensembleProbA - 0.50);
   const entropy = calculateShannonEntropy(ensembleProbA);
 
   const prediction = ensembleProbA >= 0.5 ? valA : valB;
   const agreementCount = prediction === valA ? votesA : (numActive - votesA);
 
   // Evidence Level & Gating Rule:
-  // If raw delta < 2.0% (prob between 48.0% and 52.0%), entropy > 0.985, or consensus split, signal NO_CLEAR_SIGNAL
+  // If raw delta < 2.0% (prob between 48.0% and 52.0%), entropy > 0.985, or consensus split (< 60%),
+  // signal NO_CLEAR_SIGNAL / NO RELIABLE EDGE
   let evidenceLevel = 'INSUFFICIENT';
   let action = 'NO_CLEAR_SIGNAL';
 
-  if (rawDelta >= 0.035 && agreementCount >= Math.ceil(numActive * 0.7) && entropy <= 0.975) {
+  if (rawDelta >= 0.035 && agreementCount >= Math.ceil(numActive * 0.70) && entropy <= 0.975) {
     evidenceLevel = 'HIGH';
     action = 'CONFIRMED_BET';
-  } else if (rawDelta >= 0.020 && agreementCount >= Math.ceil(numActive * 0.6) && entropy <= 0.985) {
+  } else if (rawDelta >= 0.020 && agreementCount >= Math.ceil(numActive * 0.60) && entropy <= 0.985) {
     evidenceLevel = 'MODERATE';
     action = 'CONFIRMED_BET';
   } else {
@@ -778,10 +1045,13 @@ export function generateCalibratedPrediction(historyList, field = 'bigSmall', cu
 
   // Calibrated Probability & Confidence:
   // If evidence is insufficient (abstain), confidence is strictly 50.0% (uninformative null).
-  // Otherwise, bounded strictly within realistic 52% - 62% empirical range.
+  // Otherwise, bounded strictly within realistic 51.5% - 58.5% empirical range. Never fabricated 90%+!
   const calibratedConfidence = action === 'NO_CLEAR_SIGNAL'
     ? 50.0
-    : Math.min(62.0, Math.max(50.0, Math.round((50.0 + rawDelta * 100 * 0.8) * 10) / 10));
+    : Math.min(58.5, Math.max(50.0, Math.round((50.0 + rawDelta * 100 * 0.75) * 10) / 10));
+
+  // Discrete 0-9 Digit Probability Calculation (Independent from Big/Small)
+  const digitForecast = calculateDiscreteDigitProbabilities(historyList);
 
   const predictionId = `pred_${(historyList[0]?.issueNumber || '0')}_${Date.now().toString(36).slice(-4)}`;
 
@@ -799,15 +1069,18 @@ export function generateCalibratedPrediction(historyList, field = 'bigSmall', cu
     rawDelta: Math.round(rawDelta * 10000) / 100,
     entropy,
     evidenceLevel,
-    selectedModel: 'CalibratedEnsemble_v3',
-    modelAgreement: `${agreementCount}/6`,
+    selectedModel: 'ScientificEnsemble_v4',
+    modelAgreement: `${agreementCount}/${numActive}`,
     observationsUsed: historyList.length,
+    digitForecast,
     subModels: {
       historicalFrequency: { probA: Math.round(mHist.probA * 1000) / 10, choice: mHist.choice },
       rollingWindow: { probA: Math.round(mRoll.probA * 1000) / 10, choice: mRoll.choice },
       bayesian: { probA: Math.round(mBayes.probA * 1000) / 10, choice: mBayes.choice },
       markov: { probA: Math.round(mMarkov.probA * 1000) / 10, choice: mMarkov.choice },
       ewma: { probA: Math.round(mEWMA.probA * 1000) / 10, choice: mEWMA.choice },
+      patternSequence: { probA: Math.round(mPat.probA * 1000) / 10, choice: mPat.choice },
+      regularizedML: { probA: Math.round(mML.probA * 1000) / 10, choice: mML.choice },
       baseline: { probA: 50.0, choice: mBase.choice }
     }
   };

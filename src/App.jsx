@@ -10,10 +10,11 @@ import SelfLearningMatrix from './components/SelfLearningMatrix';
 import AccuracyMetrics from './components/AccuracyMetrics';
 import TrendRoadmap from './components/TrendRoadmap';
 import HistoryTable from './components/HistoryTable';
+import AviatorPredictor from './components/AviatorPredictor';
 import MartingaleModal from './components/MartingaleModal';
 import ManualModal from './components/ManualModal';
 
-import { fetchLiveHistory, fetchGameState, fetchFullDayServerHistory, GAME_MODES } from './utils/api';
+import { fetchLiveHistory, fetchGameState, fetchFullDayServerHistory, recordPredictionSettlement, GAME_MODES } from './utils/api';
 import { 
   generatePrediction, 
   getMartingalePlan, 
@@ -68,7 +69,7 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
 
-  const [predictionMode, setPredictionMode] = useState('all'); // 'all' (Predict Every Round), 'sniper', or 'ultra_sniper'
+  const [predictionMode, setPredictionMode] = useState('all'); // 'all' (Predict Every Round without skips)
   const [targetType, setTargetType] = useState('bigSmall'); // 'bigSmall' (default) or 'oddEven'
   const [learnedWeights, setLearnedWeights] = useState(getLearnedWeights());
 
@@ -217,7 +218,7 @@ export default function App() {
       const merged = [newDraw, ...currentHistory.filter(h => h.issueNumber !== newDraw.issueNumber)].slice(0, 10000);
       const nextPred = generatePrediction(merged, currentMode, currentTarget, freshWeights);
       setPrediction(nextPred);
-      const nextPerf = evaluateHistoryPerformance(merged, currentMode, currentTarget);
+      const nextPerf = evaluateHistoryPerformance(merged, currentMode, currentTarget, freshWeights);
       setPerformance(nextPerf);
       try {
         localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(merged.slice(0, 5000)));
@@ -243,6 +244,31 @@ export default function App() {
         soundManager.playWarning();
       }
     }
+
+    // 4. Real-time MongoDB & WAL Settlement Persistence (Every single prediction round is committed)
+    try {
+      const actualTarget = currentTarget === 'bigSmall' ? classified.bigSmall : classified.oddEven;
+      const isSkip = !activePred || activePred.action === 'NO_CLEAR_SIGNAL' || activePred.action === 'WAIT_SKIP' || activePred.prediction === 'NO CLEAR SIGNAL';
+      const isWin = isSkip ? null : (activePred?.prediction === actualTarget);
+      
+      const payload = {
+        targetIssue: String(newDraw.issueNumber),
+        predicted: activePred?.prediction || 'NO CLEAR SIGNAL',
+        actual: actualTarget,
+        actualNumber: classified.number,
+        probA: (activePred?.signals?.markov2?.a ?? 50) / 100,
+        confidence: activePred?.confidence || 50,
+        action: activePred?.action || 'NO_CLEAR_SIGNAL',
+        isWin,
+        predictionMode: currentMode,
+        targetType: currentTarget,
+        rawDraw: newDraw
+      };
+
+      recordPredictionSettlement(payload);
+    } catch (e) {
+      console.warn('Real-time settlement sync error:', e);
+    }
   };
   handleNewResultArrivalRef.current = handleNewResultArrival;
 
@@ -257,7 +283,7 @@ export default function App() {
       const pred = generatePrediction(historyList, predictionMode, targetType, learnedWeights);
       setPrediction(pred);
 
-      const perf = evaluateHistoryPerformance(historyList, predictionMode, targetType);
+      const perf = evaluateHistoryPerformance(historyList, predictionMode, targetType, learnedWeights);
       setPerformance(perf);
     }
   }, [historyList, predictionMode, targetType, learnedWeights]);
@@ -428,71 +454,78 @@ export default function App() {
         isRefreshing={isRefreshing}
       />
 
-      {/* 1. Live Countdown & Period Bar (Synced to Daman Server) */}
-      <LiveTimerCard
-        currentPeriod={currentPeriod}
-        nextPeriod={nextPeriod}
-        remainingSeconds={remainingSeconds}
-        totalDuration={totalDuration}
-        lastResult={historyList[0]}
-        language={language}
-      />
+      {/* 1. Main Game Display (Aviator Predictor OR WinGo Suite) */}
+      {selectedGame === 'Aviator' ? (
+        <AviatorPredictor language={language} soundEnabled={soundEnabled} />
+      ) : (
+        <>
+          {/* 1. Live Countdown & Period Bar (Synced to Daman Server) */}
+          <LiveTimerCard
+            currentPeriod={currentPeriod}
+            nextPeriod={nextPeriod}
+            remainingSeconds={remainingSeconds}
+            totalDuration={totalDuration}
+            lastResult={historyList[0]}
+            language={language}
+          />
 
-      {/* 2. Hero Prediction Showcase (BIG/SMALL or ODD/EVEN) */}
-      <div style={{ marginTop: '20px' }}>
-        <PredictionHero
-          predictionData={prediction}
-          targetPeriod={currentPeriod}
-          martingalePlan={martingalePlan}
-          language={language}
-          predictionMode={predictionMode}
-          onTogglePredictionMode={setPredictionMode}
-          targetType={targetType}
-          onToggleTargetType={setTargetType}
-        />
-      </div>
+          {/* 2. Hero Prediction Showcase (BIG/SMALL or ODD/EVEN) */}
+          <div style={{ marginTop: '20px' }}>
+            <PredictionHero
+              predictionData={prediction}
+              targetPeriod={currentPeriod}
+              martingalePlan={martingalePlan}
+              language={language}
+              predictionMode={predictionMode}
+              onTogglePredictionMode={setPredictionMode}
+              targetType={targetType}
+              onToggleTargetType={setTargetType}
+            />
+          </div>
 
-      {/* 2.1 📊 24-Hour Full-Day Intraday Dynamics */}
-      <FullDayAnalytics
-        fullDayDynamics={prediction?.fullDayDynamics}
-        language={language}
-      />
+          {/* 2.1 📊 24-Hour Full-Day Intraday Dynamics */}
+          <FullDayAnalytics
+            fullDayDynamics={prediction?.fullDayDynamics}
+            language={language}
+          />
 
-      {/* 2.2 💰 Crowd Liquidity & House Risk Monitor */}
-      <CrowdLiquidityCard
-        crowdLiquidity={prediction?.crowdLiquidity}
-        targetType={targetType}
-        language={language}
-        remainingSeconds={remainingSeconds}
-        totalDuration={totalDuration}
-      />
+          {/* 2.2 💰 Crowd Liquidity & House Risk Monitor */}
+          <CrowdLiquidityCard
+            crowdLiquidity={prediction?.crowdLiquidity}
+            targetType={targetType}
+            language={language}
+            remainingSeconds={remainingSeconds}
+            totalDuration={totalDuration}
+          />
 
-      {/* 2.5 🧠 Self-Learning Neural Matrix */}
-      <SelfLearningMatrix
-        learnedWeights={learnedWeights}
-        onResetLearning={handleResetLearning}
-        regime={prediction?.regime}
-        language={language}
-      />
+          {/* 2.5 🧠 Self-Learning Neural Matrix */}
+          <SelfLearningMatrix
+            learnedWeights={learnedWeights}
+            onResetLearning={handleResetLearning}
+            regime={prediction?.regime}
+            language={language}
+          />
 
-      {/* 3. Accuracy & Performance Metrics */}
-      <AccuracyMetrics
-        performance={performance}
-        language={language}
-      />
+          {/* 3. Accuracy & Performance Metrics */}
+          <AccuracyMetrics
+            performance={performance}
+            language={language}
+          />
 
-      {/* 4. Pattern Roadmap (Bead Plate, Big Road, Hot/Cold) */}
-      <TrendRoadmap
-        historyList={historyList}
-        language={language}
-        targetType={targetType}
-      />
+          {/* 4. Pattern Roadmap (Bead Plate, Big Road, Hot/Cold) */}
+          <TrendRoadmap
+            historyList={historyList}
+            language={language}
+            targetType={targetType}
+          />
 
-      {/* 5. Detailed Audit Log & History Table */}
-      <HistoryTable
-        historyLogs={performance?.logs}
-        language={language}
-      />
+          {/* 5. Detailed Audit Log & History Table */}
+          <HistoryTable
+            historyLogs={performance?.logs}
+            language={language}
+          />
+        </>
+      )}
 
       {/* Modals */}
       <MartingaleModal

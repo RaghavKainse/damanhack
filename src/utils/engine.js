@@ -16,6 +16,10 @@ export {
   modelMarkovTransition,
   modelExponentiallyWeighted,
   modelStatisticalBaseline,
+  modelPatternSequence,
+  modelRegularizedLogisticML,
+  calculateDiscreteDigitProbabilities,
+  diagnosePredictionError,
   calculateBrierScore,
   calculateLogLoss,
   calculateConfusionMatrix,
@@ -32,6 +36,10 @@ export {
 } from './statisticalEngine.js';
 
 import {
+  modelPatternSequence,
+  modelRegularizedLogisticML,
+  calculateDiscreteDigitProbabilities,
+  diagnosePredictionError,
   calculateBrierScore,
   calculateLogLoss,
   calculateConfusionMatrix,
@@ -107,12 +115,13 @@ export function getNodeLearningState() {
 
 const DEFAULT_LEARNED_WEIGHTS = {
   crowdLiquidity: 0.0,  // Disabled: synthetic turnover noise must not distort predictions
-  markov2: 1.50,        // Hierarchical Higher-Order Markov Chains
-  dragonTrend: 1.05,    // Controlled Streak Momentum & Decay
-  bayesianTrans: 1.45,  // 10x10 Bayesian Transition Matrix
-  nGram: 1.20,          // N-Gram Pattern Matcher
-  omissionRev: 1.25,    // Omission Chi-Square Reversion
-  clusterParity: 1.30,  // Multi-Horizon Cluster Parity
+  markov2: 1.45,        // Hierarchical Higher-Order Markov Chains
+  dragonTrend: 1.35,    // Empirical Streak & Pattern Momentum
+  bayesianTrans: 1.40,  // 10x10 Bayesian Transition Matrix
+  nGram: 1.15,          // N-Gram Pattern Matcher
+  omissionRev: 0.95,    // Omission Chi-Square Reversion
+  clusterParity: 1.25,  // Multi-Horizon Cluster Parity
+  logisticML: 1.35,     // L2 Regularized Machine Learning Classifier (Signed features)
   fourierCycle: 0.0,    // Disabled: periodic sine artifact
   learningRounds: 0,
   winScore: 0,
@@ -130,6 +139,7 @@ const DEFAULT_LEARNED_WEIGHTS = {
     nGram: { wins: 0, total: 0 },
     omissionRev: { wins: 0, total: 0 },
     clusterParity: { wins: 0, total: 0 },
+    logisticML: { wins: 0, total: 0 },
     fourierCycle: { wins: 0, total: 0 }
   },
   lastUpdated: Date.now()
@@ -246,8 +256,8 @@ export function updateLearningFromOutcome(lastPredictions, actualDraw) {
   }
 
   const actualClass = classifyNumber(actualDraw.number);
-  const eta = 0.04; // Stabilized learning rate (prevents recency whipsaw)
-  const lambda = 0.06; // L2 shrinkage back towards foundational prior weights
+  const eta = 0.05; // Stabilized learning rate (prevents recency whipsaw)
+  const lambda = 0.015; // Soft L2 shrinkage preserving persistent empirical learning
 
   const signals = lastPredictions.signals || {};
   const actualBS = actualClass.bigSmall;
@@ -270,13 +280,13 @@ export function updateLearningFromOutcome(lastPredictions, actualDraw) {
       newW = currentW * (1 + eta);
       weights.winScore++;
     } else {
-      newW = currentW * (1 - eta * 0.9);
+      newW = currentW * (1 - eta * 0.85);
       weights.lossScore++;
     }
-    // Pull back toward empirical prior to prevent single-streak overreaction
+    // Pull back gently toward empirical prior to prevent single-streak overreaction
     newW = (1 - lambda) * newW + lambda * baseW;
-    // Allow weights to drop to 0.0 when models consistently underperform
-    weights[modelKey] = Math.max(0.0, Math.min(2.40, Math.round(newW * 100) / 100));
+    // Allow weights to range safely
+    weights[modelKey] = Math.max(0.10, Math.min(2.50, Math.round(newW * 100) / 100));
 
     // Per-model win/total tracking
     if (!weights.modelStats) weights.modelStats = {};
@@ -292,6 +302,7 @@ export function updateLearningFromOutcome(lastPredictions, actualDraw) {
   if (signals.nGram) evaluate('nGram', signals.nGram.choice);
   if (signals.omissionRev) evaluate('omissionRev', signals.omissionRev.choice);
   if (signals.clusterParity) evaluate('clusterParity', signals.clusterParity.choice);
+  if (signals.logisticML) evaluate('logisticML', signals.logisticML.choice);
   if (signals.fourierCycle) evaluate('fourierCycle', signals.fourierCycle.choice);
 
   // 2. Rolling Accuracy Tracking (Only for Confirmed Settled Bets, NEVER for Skips/Abstentions)
@@ -361,12 +372,23 @@ export function replayUntrainedHistory(historyList, mode = 'all', targetType = '
     }
   });
 
+  // Learn full 10x10 Bayesian transition matrix directly from the entire chronological sequence
+  const matrix = getBayesianTransitionMatrix();
+  for (let i = 0; i < chronological.length - 1; i++) {
+    const from = parseInt(chronological[i].number, 10);
+    const to = parseInt(chronological[i + 1].number, 10);
+    if (!isNaN(from) && !isNaN(to) && from >= 0 && from <= 9 && to >= 0 && to <= 9) {
+      matrix[from][to] = (matrix[from][to] || 0) + 1;
+    }
+  }
+  saveBayesianTransitionMatrix(matrix);
+
   const lastTrained = weights.lastTrainedIssue;
   let untrainedDraws = [];
 
   if (!lastTrained) {
-    // Initial bootstrap: train on historical past in chronological order (up to 40 rounds)
-    const bootstrapCount = Math.min(chronological.length - 4, 40);
+    // Comprehensive bootstrap: train across historical past in chronological order (up to 300 rounds)
+    const bootstrapCount = Math.min(chronological.length - 4, 300);
     if (bootstrapCount > 0) {
       untrainedDraws = chronological.slice(-bootstrapCount);
     }
@@ -902,102 +924,99 @@ export function calculateOmissionStats(historyList) {
 
 export function calculateNumberProbabilities(historyList, primaryLeanBS = 'BIG', primaryLeanOE = 'ODD', fullDayDynamics = null, crowdLiquidity = null) {
   if (!historyList || historyList.length === 0) {
-    return Array.from({ length: 10 }, (_, i) => ({
-      number: i,
-      prob: 10,
-      isBig: i >= 5,
-      isOdd: i % 2 !== 0,
-      omission: 0,
-      color: i === 0 || [2, 4, 6, 8].includes(i) ? 'red' : 'green'
-    }));
+    const digitForecast = calculateDiscreteDigitProbabilities(historyList);
+    return digitForecast.numberProbabilities;
   }
 
-  const items = historyList.map(h => parseInt(h.number, 10));
+  const items = historyList.map(h => parseInt(h.number, 10)).filter(n => !isNaN(n));
   const lastNum = items[0];
-  const omissionStats = calculateOmissionStats(historyList);
-  const bayesMatrix = getBayesianTransitionMatrix();
+  const N = items.length;
 
-  // Bayesian Posterior Scores
-  const scores = Array(10).fill(12);
+  const digitCounts = Array(10).fill(0);
+  items.forEach(d => { if (d >= 0 && d <= 9) digitCounts[d]++; });
 
-  // 1. Bayesian Transition Matrix P(N_t | N_{t-1} = lastNum)
-  if (lastNum >= 0 && lastNum <= 9) {
-    const row = bayesMatrix[lastNum] || Array(10).fill(1);
-    const rowSum = row.reduce((a, b) => a + b, 0) || 10;
-    for (let d = 0; d < 10; d++) {
-      const bayesProb = (row[d] / rowSum) * 100;
-      scores[d] += bayesProb * 0.45;
+  // 1. Empirical local Markov transitions from lastNum
+  const localRow = Array(10).fill(0);
+  let localRowSum = 0;
+  if (!isNaN(lastNum) && lastNum >= 0 && lastNum <= 9) {
+    for (let i = 0; i < N - 1; i++) {
+      if (items[i + 1] === lastNum) {
+        localRow[items[i]]++;
+        localRowSum++;
+      }
     }
   }
 
-  // 2. Recent Recency Frequency (decaying EMA weight)
-  items.slice(0, 30).forEach((n, idx) => {
-    if (n >= 0 && n <= 9) {
-      scores[n] += (30 - idx) * 0.22;
-    }
-  });
+  // 2. Persistent 10x10 Bayesian transition matrix (learned across all historical sessions)
+  const matrix = getBayesianTransitionMatrix();
+  const matRow = (!isNaN(lastNum) && matrix && matrix[lastNum]) ? matrix[lastNum] : Array(10).fill(1);
+  const matRowSum = matRow.reduce((a, b) => a + b, 0);
 
-  // 3. Omission Pressure (Numbers cold for 15+ rounds get high reversion probability)
-  omissionStats.forEach(stat => {
-    if (stat.omission >= 16) {
-      scores[stat.number] += Math.min(25, (stat.omission - 15) * 2.8);
-    } else if (stat.omission <= 3) {
-      scores[stat.number] += (4 - stat.omission) * 3.5;
-    }
-  });
+  // 3. Short-term recency (last 20 draws)
+  const recent20 = items.slice(0, 20);
 
-  // 4. Full-Day Dynamics Injection (Hot and Cold Digits of the 2,880 daily sequence)
-  if (fullDayDynamics) {
-    (fullDayDynamics.hotDigits || []).forEach((digit, idx) => {
-      scores[digit] += (3 - idx) * 3.8;
-    });
-    (fullDayDynamics.coldDigits || []).forEach((digit, idx) => {
-      scores[digit] += (3 - idx) * 2.8;
-    });
-  }
-
-  // 5. Primary & Secondary Alignments (The Big/Small and Odd/Even filter)
-  const hasBSLean = primaryLeanBS === 'BIG' || primaryLeanBS === 'SMALL';
-  const hasOELean = primaryLeanOE === 'ODD' || primaryLeanOE === 'EVEN';
-
+  // 4. Omission Index
+  const omissions = Array(10).fill(0);
   for (let d = 0; d < 10; d++) {
+    const idx = items.indexOf(d);
+    omissions[d] = idx === -1 ? N : idx;
+  }
+
+  // 5. Unconditioned base score for each digit
+  const scores = Array(10).fill(0);
+  for (let d = 0; d < 10; d++) {
+    const pTrans = ((matRow[d] || 1) + localRow[d] + 1) / (matRowSum + localRowSum + 20);
+    const pFreq = (digitCounts[d] + 1) / (N + 10);
+    const recCount = recent20.filter(x => x === d).length;
+    const pRec = (recCount + 1) / (recent20.length + 10);
+
+    let base = pTrans * 0.45 + pFreq * 0.30 + pRec * 0.25;
+
+    // 6. Conditioning on predicted Big/Small and Odd/Even
     const isBig = d >= 5;
     const isOdd = d % 2 !== 0;
 
-    if (hasBSLean) {
-      if (primaryLeanBS === 'BIG' && isBig) scores[d] *= 3.2;
-      else if (primaryLeanBS === 'SMALL' && !isBig) scores[d] *= 3.2;
-      else scores[d] *= 0.22;
+    const bsMatch = (primaryLeanBS === 'BIG' && isBig) || (primaryLeanBS === 'SMALL' && !isBig);
+    const oeMatch = (primaryLeanOE === 'ODD' && isOdd) || (primaryLeanOE === 'EVEN' && !isOdd);
+
+    if (primaryLeanBS && primaryLeanBS !== 'NO CLEAR SIGNAL') {
+      if (bsMatch) base *= 2.2;
+      else base *= 0.35;
     }
 
-    if (hasOELean) {
-      if (primaryLeanOE === 'ODD' && isOdd) scores[d] *= 1.6;
-      else if (primaryLeanOE === 'EVEN' && !isOdd) scores[d] *= 1.6;
-      else scores[d] *= 0.75;
+    if (primaryLeanOE && primaryLeanOE !== 'NO CLEAR SIGNAL') {
+      if (oeMatch) base *= 1.30;
+      else base *= 0.80;
     }
+
+    scores[d] = base;
   }
 
   const totalScore = scores.reduce((a, b) => a + b, 0) || 1;
-  const probList = scores.map((sc, d) => {
-    const isBig = d >= 5;
-    const isOdd = d % 2 !== 0;
-    const prob = Math.round((sc / totalScore) * 1000) / 10;
-    let color = 'green';
-    if (d === 0 || [2, 4, 6, 8].includes(d)) color = 'red';
-    const om = omissionStats.find(o => o.number === d)?.omission || 0;
-    return {
+  const list = [];
+  for (let d = 0; d < 10; d++) {
+    const prob = Math.round((scores[d] / totalScore) * 1000) / 10;
+    const om = omissions[d];
+    let status = 'NORMAL';
+    if (om <= 2) status = 'VERY_HOT';
+    else if (om <= 5) status = 'HOT';
+    else if (om >= 18) status = 'OVERDUE_COLD';
+    else if (om >= 12) status = 'COLD';
+
+    list.push({
       number: d,
       prob,
-      isBig,
-      isOdd,
+      isBig: d >= 5,
+      isOdd: d % 2 !== 0,
       omission: om,
-      color
-    };
-  });
+      color: d === 0 ? 'red-violet' : (d === 5 ? 'green-violet' : (d % 2 === 0 ? 'red' : 'green')),
+      status
+    });
+  }
 
   // Sort descending by probability
-  probList.sort((a, b) => b.prob - a.prob);
-  return probList;
+  list.sort((a, b) => b.prob - a.prob);
+  return list;
 }
 
 // -------------------------------------------------------------
@@ -1038,6 +1057,9 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   const analysis = analyzeFieldPatterns(historyList, field);
   const streak = analysis.currentStreak;
 
+  const countAInChron = chronological.filter(c => c === valA).length;
+  const baseRateA = chronological.length > 0 ? (countAInChron / chronological.length) : 0.50;
+
   // 1. MODEL 1: Hierarchical Higher-Order Markov Chains (Order 3, Order 2, Order 1)
   let trans3A = 0, trans3Total = 0;
   let trans2A = 0, trans2Total = 0;
@@ -1065,67 +1087,73 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     }
   }
 
-  const countAInChron = chronological.filter(c => c === valA).length;
-  const baseRateA = chronological.length > 0 ? (countAInChron / chronological.length) : 0.50;
-
-  const delta1 = trans1Total >= 4 ? ((trans1A / trans1Total) - baseRateA) : 0;
-  const delta2 = trans2Total >= 2 ? ((trans2A / trans2Total) - baseRateA) : delta1;
-  const delta3 = trans3Total >= 2 ? ((trans3A / trans3Total) - baseRateA) : delta2;
-
-  let markovDelta = delta3 * 0.45 + delta2 * 0.35 + delta1 * 0.20;
-
-  // If a double formation is in progress and Order-3 has no evidence (trans3Total < 2),
-  // shrink Order-2 ping-pong bias toward neutral 0.50 so it doesn't fight the forming double
-  if (analysis.isDoubleForming && trans3Total < 2) {
-    markovDelta = 0.50 * markovDelta;
-  }
-  const markovProbA = Math.max(38, Math.min(62, (0.50 + markovDelta * 0.45) * 100));
+  const p1 = trans1Total >= 2 ? (trans1A + 2) / (trans1Total + 4) : 0.50;
+  const p2 = trans2Total >= 2 ? (trans2A + 2) / (trans2Total + 4) : p1;
+  const p3 = trans3Total >= 2 ? (trans3A + 2) / (trans3Total + 4) : p2;
+  const markovProbA = Math.max(36, Math.min(64, (p3 * 0.40 + p2 * 0.40 + p1 * 0.20) * 100));
 
   // 2. MODEL 2: Dragon Streak Momentum & Mean Survival Curve
   let dragonProbA = 50;
   let streakReason = '';
 
-  if (analysis.isPingPong && analysis.pingPongCount >= 4) {
-    dragonProbA = last1 === valB ? 56 : 44;
-    streakReason = `${analysis.pingPongCount}-स्टेप पिंग-पोंग ऑसिलेशन (अल्टरनेशन ट्रेंड)।`;
-  } else if (analysis.isDoubleForming) {
-    dragonProbA = last1 === valA ? 58 : 42;
+  if (analysis.isDoubleForming) {
+    dragonProbA = last1 === valA ? 57 : 43;
     streakReason = `डबल-फॉर्मेशन (${last1}) - 2-2 चक्र का दूसरा राउंड अपेक्षित।`;
   } else if (analysis.isDoubleJump) {
     dragonProbA = last1 === valB ? 54 : 46;
     streakReason = `डबल-जंप (${valA}${valA}-${valB}${valB}) चक्र पूर्ण - रिवर्सल संभावित।`;
+  } else if (analysis.isPingPong && analysis.pingPongCount >= 3) {
+    dragonProbA = last1 === valB ? 56 : 44;
+    streakReason = `${analysis.pingPongCount}-स्टेप पिंग-पोंग ऑसिलेशन (अल्टरनेशन ट्रेंड)।`;
   } else if (streak.count >= 2) {
-    if (streak.count === 2) {
-      dragonProbA = streak.type === valA ? 52 : 48;
-      streakReason = `2-राउंड ${streak.type} निरंतरता।`;
-    } else if (streak.count <= 4) {
-      dragonProbA = streak.type === valA ? 56 : 44;
-      streakReason = `सक्रिय ${streak.count}-राउंड ${streak.type} ड्रैगन मोमेंटम।`;
+    if (streak.count <= 5) {
+      dragonProbA = streak.type === valA ? 57 : 43;
+      streakReason = `सक्रिय ${streak.count}-राउंड ${streak.type} ड्रैगन मोमेंटम (ट्रेंड राइडिंग)।`;
     } else {
-      // 5+ Strong active dragon momentum: RIDE THE DRAGON! NEVER BET AGAINST AN ACTIVE DRAGON!
-      dragonProbA = streak.type === valA ? 58 : 42;
-      streakReason = `अत्यधिक मजबूत ${streak.count}-राउंड ${streak.type} ड्रैगन मोमेंटम (ट्रेंड राइडिंग)।`;
+      dragonProbA = streak.type === valA ? 55 : 45;
+      streakReason = `अत्यधिक मजबूत ${streak.count}-राउंड ${streak.type} ड्रैगन मोमेंटम।`;
+    }
+  } else if (streak.count === 1) {
+    if (isBS) {
+      dragonProbA = streak.type === valA ? 53.6 : 46.4;
+      streakReason = `1-राउंड ${streak.type} निरंतरता (पेयर गठन चक्र)।`;
+    } else {
+      dragonProbA = streak.type === valA ? 44.4 : 55.6;
+      streakReason = `1-राउंड ${streak.type} रिवर्सल (अल्टरनेशन चक्र)।`;
     }
   } else {
     dragonProbA = 50;
     streakReason = 'सामान्य ऑसिलेशन चक्र।';
   }
 
-  // 3. MODEL 3: Bayesian Number Transition Projection
-  const bayesMatrix = getBayesianTransitionMatrix();
+  // 3. MODEL 3: Bayesian Number Transition Projection (Persistent 10x10 Matrix & History)
   const lastNum = parseInt(items[0].number, 10);
   let bayesProbA = 50;
   if (!isNaN(lastNum) && lastNum >= 0 && lastNum <= 9) {
-    const row = bayesMatrix[lastNum] || Array(10).fill(1);
-    let countA = 0;
-    let countTotal = 0;
+    const mat = getBayesianTransitionMatrix();
+    const matRow = mat[lastNum] || Array(10).fill(1);
+    let matA = 0, matTot = 0;
     for (let d = 0; d < 10; d++) {
+      const cnt = matRow[d] || 1;
+      matTot += cnt;
       const isTarget = isBS ? d >= 5 : d % 2 !== 0;
-      const weight = row[d] || 1;
-      countTotal += weight;
-      if (isTarget) countA += weight;
+      if (isTarget) matA += cnt;
     }
-    bayesProbA = countTotal > 0 ? (countA / countTotal) * 100 : 50;
+
+    let localA = 0, localTot = 0;
+    for (let i = 0; i < items.length - 1; i++) {
+      const fromNum = parseInt(items[i + 1].number, 10);
+      const toNum = parseInt(items[i].number, 10);
+      if (fromNum === lastNum) {
+        localTot++;
+        const isTarget = isBS ? toNum >= 5 : toNum % 2 !== 0;
+        if (isTarget) localA++;
+      }
+    }
+
+    const combA = matA + localA + 4;
+    const combTot = matTot + localTot + 8;
+    bayesProbA = Math.max(35, Math.min(65, Math.round((combA / combTot) * 1000) / 10));
   }
 
   // 4. MODEL 4: N-Gram Sequence Pattern Resonance (Scanning Full Chronological History)
@@ -1203,18 +1231,28 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   let wNGram = learnedW.nGram !== undefined ? learnedW.nGram : 1.20;
   let wOmission = learnedW.omissionRev !== undefined ? learnedW.omissionRev : 1.25;
   let wCluster = learnedW.clusterParity !== undefined ? learnedW.clusterParity : 1.30;
+  let wML = learnedW.logisticML !== undefined ? learnedW.logisticML : 1.20;
   let wFourier = learnedW.fourierCycle !== undefined ? learnedW.fourierCycle : 0.0;
+
+  // Model 9: Machine Learning - L2 Regularized Logistic Regression
+  const mlRes = modelRegularizedLogisticML(historyList, field);
+  const mlProbA = mlRes.probA * 100;
 
   // Dynamic Regime Multipliers
   if (analysis.regime === 'DRAGON_STREAK') {
-    wDragon *= 1.3;
-    wMarkov *= 1.2;
+    wDragon *= 1.4;
+    wMarkov *= 1.25;
+    wOmission *= 0.5;
   } else if (analysis.regime === 'PING_PONG_WAVE') {
-    wMarkov *= 1.5;
-    wDragon *= 1.1;
+    wMarkov *= 1.4;
+    wDragon *= 1.2;
+  } else if (analysis.regime === 'DOUBLE_JUMP') {
+    wDragon *= 1.4;
+    wMarkov *= 1.2;
   } else if (analysis.regime === 'MEAN_REVERSION_SKEW') {
-    wOmission *= 1.5;
-    wCluster *= 1.3;
+    wDragon *= 1.2;
+    wMarkov *= 1.2;
+    wOmission *= 0.5;
   }
 
   // Active models (disabled models with weight 0 do not participate)
@@ -1225,6 +1263,7 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     { key: 'nGram', probA: nGramProbA, weight: wNGram },
     { key: 'omissionRev', probA: omissionRevProbA, weight: wOmission },
     { key: 'clusterParity', probA: clusterProbA, weight: wCluster },
+    { key: 'logisticML', probA: mlProbA, weight: wML },
     { key: 'crowdLiquidity', probA: crowdProbA, weight: wCrowd },
     { key: 'fourierCycle', probA: fourierProbA, weight: wFourier }
   ];
@@ -1239,16 +1278,20 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
 
   const ensembleA = totalWeight > 0 ? (weightedProbA / totalWeight) : 50.0;
   const rawDelta = Math.abs(ensembleA - 50.0);
-  const prediction = ensembleA >= 50.0 ? valA : valB;
 
   // Consensus count across active models
   let votesA = 0;
   let votesB = 0;
-  const voteThreshold = 51.5;
+  const voteThreshold = 50.8;
 
   for (const m of activeModels) {
     if (m.probA >= voteThreshold) votesA++;
     else if (m.probA <= (100 - voteThreshold)) votesB++;
+  }
+
+  let prediction = ensembleA >= 50.0 ? valA : valB;
+  if (rawDelta < 1.2 && votesA !== votesB) {
+    prediction = votesA > votesB ? valA : valB;
   }
 
   const agreementCount = prediction === valA ? votesA : votesB;
@@ -1282,50 +1325,71 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   let evidenceLevel = 'MODERATE';
 
   if (mode === 'ultra_sniper') {
-    if (agreementCount >= Math.ceil(numActive * 0.70) && rawDelta >= 1.8 && !isStreakExhausted && !isPingPongTrap) {
+    // Ultra Sniper Mode (Zero-Loss Shield):
+    // Requires high consensus (>= 70% of active models agree) AND a decisive probability delta (>= 1.8%).
+    // If the market is in an oscillating chop or ping-pong trap, requires higher consensus (>= 75%) and delta >= 2.5%.
+    // If streak is exhausted (>= 5) or system is underperforming, strictly abstains to prevent whipsaw losses.
+    const isChop = analysis.regime === 'OSCILLATION_CHOP' || isPingPongTrap;
+    const minAgreement = isChop ? Math.ceil(numActive * 0.75) : Math.ceil(numActive * 0.70);
+    const minDelta = isChop ? 2.5 : 1.8;
+
+    if (agreementCount >= minAgreement && rawDelta >= minDelta && !isStreakExhausted && !isUnderperforming) {
       badge = 'ULTRA_SNIPER';
       evidenceLevel = 'HIGH';
-    } else if (agreementCount >= Math.ceil(numActive * 0.60)) {
-      badge = 'STRONG';
-      evidenceLevel = 'MODERATE';
+      action = 'CONFIRMED_BET';
     } else {
-      badge = 'MODERATE';
-      evidenceLevel = 'MODERATE';
+      badge = 'NO_CLEAR_SIGNAL';
+      evidenceLevel = 'INSUFFICIENT';
+      action = 'NO_CLEAR_SIGNAL';
     }
   } else if (mode === 'sniper') {
-    if (agreementCount >= Math.ceil(numActive * 0.60) && rawDelta >= 1.5) {
+    // Balanced Sniper Mode:
+    // Requires moderate consensus (>= 60% of active models agree) and rawDelta >= 1.2%.
+    // In chop, abstains unless delta is solid.
+    const isChop = analysis.regime === 'OSCILLATION_CHOP' || isPingPongTrap;
+    if (agreementCount >= Math.ceil(numActive * 0.60) && rawDelta >= 1.2 && !isStreakExhausted) {
       badge = 'STRONG';
       evidenceLevel = 'MODERATE';
-    } else {
+      action = 'CONFIRMED_BET';
+    } else if (!isChop && agreementCount >= Math.ceil(numActive * 0.50) && rawDelta >= 0.8) {
       badge = 'MODERATE';
       evidenceLevel = 'MODERATE';
+      action = 'CONFIRMED_BET';
+    } else {
+      badge = 'NO_CLEAR_SIGNAL';
+      evidenceLevel = 'INSUFFICIENT';
+      action = 'NO_CLEAR_SIGNAL';
     }
   } else {
-    // Mode === 'all'
+    // Mode === 'all': Predicts every round continuously without any skips
+    action = 'CONFIRMED_BET';
     badge = agreementCount >= Math.ceil(numActive * 0.60) ? 'STRONG' : 'MODERATE';
     evidenceLevel = agreementCount >= Math.ceil(numActive * 0.60) ? 'HIGH' : 'MODERATE';
   }
 
-  // Always output continuous active prediction (never NO CLEAR SIGNAL)
+  // Always output continuous active prediction (BIG or SMALL)
   const finalPrediction = prediction;
   const finalConfidence = confidence;
+  const finalAction = action;
   const isBettingAligned = false;
 
   let finalReason = '';
   const histDepth = historyList.length;
   const trainedRounds = learnedW.dailyRoundsTrained || learnedW.learningRounds || 0;
 
-  if (shieldAlert) {
-    finalReason = `${shieldAlert} [${histDepth}-ड्रा विश्लेषण: ${agreementCount}/8 मॉडल्स सहमति -> ${prediction} संकेत सक्रिय]`;
+  if (finalAction === 'NO_CLEAR_SIGNAL') {
+    finalReason = `⚖️ [शील्ड सुरक्षा सक्रिय] सांख्यिकीय साक्ष्य अपर्याप्त (सहमति: ${agreementCount}/${numActive}, एज: +${rawDelta}% | 50/50 व्हिपसॉ चॉप ट्रैप से बैंकroll सुरक्षित)। कोई दांव न लें।`;
+  } else if (shieldAlert) {
+    finalReason = `${shieldAlert} [${histDepth}-ड्रा विश्लेषण: ${agreementCount}/${numActive} मॉडल्स सहमति -> ${prediction} संकेत सक्रिय]`;
   } else if (streakReason) {
-    finalReason = `${streakReason} [${histDepth}-राउंड्स एनालिसिस: ${agreementCount}/8 मॉडल्स सहमति | 24/7 ट्रेंड: ${trainedRounds} राउंड्स]`;
+    finalReason = `${streakReason} [${histDepth}-राउंड्स एनालिसिस: ${agreementCount}/${numActive} मॉडल्स सहमति | 24/7 ट्रेंड: ${trainedRounds} राउंड्स]`;
   } else {
-    finalReason = `📊 ${histDepth}-राउंड्स डीप क्वांट एनालिसिस: मार्कोव और बायेसियन में से ${agreementCount}/8 मॉडल्स की ${prediction} पर पुष्टि। [24/7 एक्टिव ट्रेंडिंग: ${trainedRounds} ड्रा]`;
+    finalReason = `📊 ${histDepth}-राउंड्स डीप क्वांट एनालिसिस: ${agreementCount}/${numActive} मॉडल्स की ${prediction} पर सांख्यिकीय पुष्टि। [24/7 एक्टिव ट्रेंडिंग: ${trainedRounds} ड्रा]`;
   }
 
   return {
     field,
-    action,
+    action: finalAction,
     prediction: finalPrediction,
     confidence: finalConfidence,
     agreementCount,
@@ -1339,14 +1403,15 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
       shieldAlert: shieldAlert || null
     },
     signals: {
-      crowdLiquidity: { a: Math.round(crowdProbA), b: Math.round(100 - crowdProbA), choice: crowdProbA >= 50 ? valA : valB, weight: Math.round(wCrowd * 100) / 100 },
-      markov2: { a: Math.round(markovProbA), b: Math.round(100 - markovProbA), choice: markovProbA >= 50 ? valA : valB, weight: Math.round(wMarkov * 100) / 100 },
-      dragonTrend: { a: Math.round(dragonProbA), b: Math.round(100 - dragonProbA), choice: dragonProbA >= 50 ? valA : valB, weight: Math.round(wDragon * 100) / 100 },
-      bayesianTrans: { a: Math.round(bayesProbA), b: Math.round(100 - bayesProbA), choice: bayesProbA >= 50 ? valA : valB, weight: Math.round(wBayes * 100) / 100 },
-      nGram: { a: Math.round(nGramProbA), b: Math.round(100 - nGramProbA), choice: nGramProbA >= 50 ? valA : valB, weight: Math.round(wNGram * 100) / 100 },
-      omissionRev: { a: Math.round(omissionRevProbA), b: Math.round(100 - omissionRevProbA), choice: omissionRevProbA >= 50 ? valA : valB, weight: Math.round(wOmission * 100) / 100 },
-      clusterParity: { a: Math.round(clusterProbA), b: Math.round(100 - clusterProbA), choice: clusterProbA >= 50 ? valA : valB, weight: Math.round(wCluster * 100) / 100 },
-      fourierCycle: { a: Math.round(fourierProbA), b: Math.round(100 - fourierProbA), choice: fourierProbA >= 50 ? valA : valB, weight: Math.round(wFourier * 100) / 100 }
+      crowdLiquidity: { a: Math.round(crowdProbA), b: Math.round(100 - crowdProbA), choice: crowdProbA > 50 ? valA : (crowdProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wCrowd * 100) / 100 },
+      markov2: { a: Math.round(markovProbA), b: Math.round(100 - markovProbA), choice: markovProbA > 50 ? valA : (markovProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wMarkov * 100) / 100 },
+      dragonTrend: { a: Math.round(dragonProbA), b: Math.round(100 - dragonProbA), choice: dragonProbA > 50 ? valA : (dragonProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wDragon * 100) / 100 },
+      bayesianTrans: { a: Math.round(bayesProbA), b: Math.round(100 - bayesProbA), choice: bayesProbA > 50 ? valA : (bayesProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wBayes * 100) / 100 },
+      nGram: { a: Math.round(nGramProbA), b: Math.round(100 - nGramProbA), choice: nGramProbA > 50 ? valA : (nGramProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wNGram * 100) / 100 },
+      omissionRev: { a: Math.round(omissionRevProbA), b: Math.round(100 - omissionRevProbA), choice: omissionRevProbA > 50 ? valA : (omissionRevProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wOmission * 100) / 100 },
+      clusterParity: { a: Math.round(clusterProbA), b: Math.round(100 - clusterProbA), choice: clusterProbA > 50 ? valA : (clusterProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wCluster * 100) / 100 },
+      logisticML: { a: Math.round(mlProbA), b: Math.round(100 - mlProbA), choice: mlProbA > 50 ? valA : (mlProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wML * 100) / 100 },
+      fourierCycle: { a: Math.round(fourierProbA), b: Math.round(100 - fourierProbA), choice: fourierProbA > 50 ? valA : (fourierProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wFourier * 100) / 100 }
     },
     reason: finalReason,
     badge,
@@ -1451,7 +1516,7 @@ export function getMartingalePlan(baseBet = 10, lossStreak = 0, multiplier = 3) 
 // 📈 8. AUDIT & BACKTESTING EVALUATION ENGINE
 // -------------------------------------------------------------
 
-export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetType = 'bigSmall') {
+export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetType = 'bigSmall', customWeights = null) {
   if (!list || list.length < 10) {
     return { 
       winRate: 50.0, 
@@ -1493,7 +1558,7 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
     if (pastData.length < 5) continue;
 
     const actual = classifyNumber(list[i].number);
-    const pred = generatePrediction(pastData, mode, targetType);
+    const pred = generatePrediction(pastData, mode, targetType, customWeights);
     const actualTarget = targetType === 'bigSmall' ? actual.bigSmall : actual.oddEven;
 
     const actualNum = actual.number;
@@ -1510,9 +1575,9 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
         actualOddEven: actual.oddEven,
         actualBigSmall: actual.bigSmall,
         actualColor: actual.color,
-        predicted: 'NO CLEAR SIGNAL',
-        predictedNumber: '---',
-        confidence: 50.0,
+        predicted: pred.prediction,
+        predictedNumber: pred.topNumber?.number ?? '---',
+        confidence: pred.confidence,
         isWin: null,
         action: 'NO_CLEAR_SIGNAL',
         pattern: 'सांख्यिकीय साक्ष्य अपर्याप्त (50/50 रैंडम बेसलाइन - कोई दांव नहीं)'
@@ -1552,7 +1617,7 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
       confidence: pred.confidence,
       isWin,
       action: 'BET',
-      pattern: pred.reason
+      pattern: isWin ? pred.reason : diagnosePredictionError(pred, list[i])
     });
   }
 

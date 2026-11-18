@@ -1,7 +1,313 @@
 {
-  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs",
-  "lastPromotionTimestamp": 1794236205370,
+  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm",
+  "lastPromotionTimestamp": 1795018375262,
   "history": [
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm",
+      "promotedAt": 1795018375282,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts"
+    },
+    {
+      "version": "v2.4.test-mwmblemy",
+      "promotedAt": 1795018375258,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts",
+      "promotedAt": 1795018069648,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v"
+    },
+    {
+      "version": "v2.4.test-mwmbeutc",
+      "promotedAt": 1795018069632,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v",
+      "promotedAt": 1795017692947,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq"
+    },
+    {
+      "version": "v2.4.test-mwmb6s5i",
+      "promotedAt": 1795017692934,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq",
+      "promotedAt": 1795016642750,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b"
+    },
+    {
+      "version": "v2.4.test-mwmak9tk",
+      "promotedAt": 1795016642744,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b",
+      "promotedAt": 1795015997615,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755"
+    },
+    {
+      "version": "v2.4.test-mwma6g11",
+      "promotedAt": 1795015997605,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755",
+      "promotedAt": 1795015286249,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj"
+    },
+    {
+      "version": "v2.4.test-mwm9r74y",
+      "promotedAt": 1795015286242,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj",
+      "promotedAt": 1795015192303,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt"
+    },
+    {
+      "version": "v2.4.test-mwm9p6nc",
+      "promotedAt": 1795015192296,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt",
+      "promotedAt": 1795014987473,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3"
+    },
+    {
+      "version": "v2.4.test-mwm9ksln",
+      "promotedAt": 1795014987467,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3",
+      "promotedAt": 1794284023935,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g"
+    },
+    {
+      "version": "v2.4.test-mwa6dpiv",
+      "promotedAt": 1794284023927,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g",
+      "promotedAt": 1794283686592,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b"
+    },
+    {
+      "version": "v2.4.test-mwa66h86",
+      "promotedAt": 1794283686582,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b",
+      "promotedAt": 1794283098059,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka"
+    },
+    {
+      "version": "v2.4.test-mwa5tv3z",
+      "promotedAt": 1794283098047,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka",
+      "promotedAt": 1794280176154,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706"
+    },
+    {
+      "version": "v2.4.test-mwa438k1",
+      "promotedAt": 1794280176145,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706",
+      "promotedAt": 1794278074614,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab"
+    },
+    {
+      "version": "v2.4.test-mwa2u6zd",
+      "promotedAt": 1794278074585,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab",
+      "promotedAt": 1794277855955,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti"
+    },
+    {
+      "version": "v2.4.test-mwa2pia2",
+      "promotedAt": 1794277855946,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti",
+      "promotedAt": 1794277811286,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04"
+    },
+    {
+      "version": "v2.4.test-mwa2ojta",
+      "promotedAt": 1794277811278,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04",
+      "promotedAt": 1794277779124,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk"
+    },
+    {
+      "version": "v2.4.test-mwa2nuzv",
+      "promotedAt": 1794277779115,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk",
+      "promotedAt": 1794276371288,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs"
+    },
+    {
+      "version": "v2.4.test-mwa1topc",
+      "promotedAt": 1794276371280,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
     {
       "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs",
       "promotedAt": 1794236205376,
