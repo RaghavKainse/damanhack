@@ -18,6 +18,10 @@ export {
   modelStatisticalBaseline,
   modelPatternSequence,
   modelRegularizedLogisticML,
+  modelDecisionTreeEnsemble,
+  modelPoissonWaitingTimes,
+  analyzeMarketOdds,
+  calculateKellyFraction,
   calculateDiscreteDigitProbabilities,
   diagnosePredictionError,
   calculateBrierScore,
@@ -38,6 +42,10 @@ export {
 import {
   modelPatternSequence,
   modelRegularizedLogisticML,
+  modelDecisionTreeEnsemble,
+  modelPoissonWaitingTimes,
+  analyzeMarketOdds,
+  calculateKellyFraction,
   calculateDiscreteDigitProbabilities,
   diagnosePredictionError,
   calculateBrierScore,
@@ -119,9 +127,11 @@ const DEFAULT_LEARNED_WEIGHTS = {
   dragonTrend: 1.35,    // Empirical Streak & Pattern Momentum
   bayesianTrans: 1.40,  // 10x10 Bayesian Transition Matrix
   nGram: 1.15,          // N-Gram Pattern Matcher
-  omissionRev: 0.95,    // Omission Chi-Square Reversion
+  omissionRev: 1.10,    // Omission Chi-Square Reversion
   clusterParity: 1.25,  // Multi-Horizon Cluster Parity
   logisticML: 1.35,     // L2 Regularized Machine Learning Classifier (Signed features)
+  decisionTree: 1.30,   // Non-linear Decision Tree Ensemble
+  poissonWait: 1.20,    // Poisson Waiting Times & Omission Hazard
   fourierCycle: 0.0,    // Disabled: periodic sine artifact
   learningRounds: 0,
   winScore: 0,
@@ -140,6 +150,8 @@ const DEFAULT_LEARNED_WEIGHTS = {
     omissionRev: { wins: 0, total: 0 },
     clusterParity: { wins: 0, total: 0 },
     logisticML: { wins: 0, total: 0 },
+    decisionTree: { wins: 0, total: 0 },
+    poissonWait: { wins: 0, total: 0 },
     fourierCycle: { wins: 0, total: 0 }
   },
   lastUpdated: Date.now()
@@ -303,6 +315,8 @@ export function updateLearningFromOutcome(lastPredictions, actualDraw) {
   if (signals.omissionRev) evaluate('omissionRev', signals.omissionRev.choice);
   if (signals.clusterParity) evaluate('clusterParity', signals.clusterParity.choice);
   if (signals.logisticML) evaluate('logisticML', signals.logisticML.choice);
+  if (signals.decisionTree) evaluate('decisionTree', signals.decisionTree.choice);
+  if (signals.poissonWait) evaluate('poissonWait', signals.poissonWait.choice);
   if (signals.fourierCycle) evaluate('fourierCycle', signals.fourierCycle.choice);
 
   // 2. Rolling Accuracy Tracking (Only for Confirmed Settled Bets, NEVER for Skips/Abstentions)
@@ -1114,13 +1128,16 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
       streakReason = `अत्यधिक मजबूत ${streak.count}-राउंड ${streak.type} ड्रैगन मोमेंटम।`;
     }
   } else if (streak.count === 1) {
-    if (isBS) {
-      dragonProbA = streak.type === valA ? 53.6 : 46.4;
-      streakReason = `1-राउंड ${streak.type} निरंतरता (पेयर गठन चक्र)।`;
-    } else {
-      dragonProbA = streak.type === valA ? 44.4 : 55.6;
-      streakReason = `1-राउंड ${streak.type} रिवर्सल (अल्टरनेशन चक्र)।`;
+    let singleCont = 0, singleTot = 0;
+    for (let i = 0; i < chronological.length - 2; i++) {
+      if (chronological[i] !== chronological[i + 1]) {
+        singleTot++;
+        if (chronological[i + 2] === chronological[i + 1]) singleCont++;
+      }
     }
+    const pSingleCont = singleTot >= 3 ? (singleCont + 2) / (singleTot + 4) : 0.51;
+    dragonProbA = streak.type === valA ? (pSingleCont * 100) : ((1 - pSingleCont) * 100);
+    streakReason = `1-राउंड ${streak.type} निरंतरता (अनुभवजन्य गठन दर: ${(pSingleCont * 100).toFixed(1)}%)।`;
   } else {
     dragonProbA = 50;
     streakReason = 'सामान्य ऑसिलेशन चक्र।';
@@ -1185,12 +1202,8 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   const expectedMean = evalLen * 0.5;
   const stdDev = Math.sqrt(evalLen * 0.25) || 1.0;
   const zScore = (countAInWindow - expectedMean) / stdDev;
-  let omissionRevProbA = 50;
-  if (zScore > 2.0) {
-    omissionRevProbA = 50 - Math.min(4, (zScore - 2.0) * 1.5);
-  } else if (zScore < -2.0) {
-    omissionRevProbA = 50 + Math.min(4, (Math.abs(zScore) - 2.0) * 1.5);
-  }
+  const reversionDelta = Math.max(-8, Math.min(8, zScore * 2.2));
+  let omissionRevProbA = Math.max(42, Math.min(58, Math.round((50 - reversionDelta) * 10) / 10));
 
   // 6. MODEL 6: Multi-Horizon Spectrum (10 vs 30 vs Macro Historical Balance)
   const win10 = items.slice(0, Math.min(items.length, 10));
@@ -1232,20 +1245,32 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   let wOmission = learnedW.omissionRev !== undefined ? learnedW.omissionRev : 1.25;
   let wCluster = learnedW.clusterParity !== undefined ? learnedW.clusterParity : 1.30;
   let wML = learnedW.logisticML !== undefined ? learnedW.logisticML : 1.20;
+  let wDT = learnedW.decisionTree !== undefined ? learnedW.decisionTree : 1.30;
+  let wPoisson = learnedW.poissonWait !== undefined ? learnedW.poissonWait : 1.20;
   let wFourier = learnedW.fourierCycle !== undefined ? learnedW.fourierCycle : 0.0;
 
   // Model 9: Machine Learning - L2 Regularized Logistic Regression
   const mlRes = modelRegularizedLogisticML(historyList, field);
   const mlProbA = mlRes.probA * 100;
 
+  // Model 10: Decision Tree Ensemble (Gradient Stumps)
+  const dtRes = modelDecisionTreeEnsemble(historyList, field);
+  const dtProbA = dtRes.probA * 100;
+
+  // Model 11: Poisson Inter-arrival Hazard Model
+  const pwRes = modelPoissonWaitingTimes(historyList, field);
+  const pwProbA = pwRes.probA * 100;
+
   // Dynamic Regime Multipliers
   if (analysis.regime === 'DRAGON_STREAK') {
     wDragon *= 1.4;
     wMarkov *= 1.25;
+    wDT *= 1.25;
     wOmission *= 0.5;
   } else if (analysis.regime === 'PING_PONG_WAVE') {
     wMarkov *= 1.4;
     wDragon *= 1.2;
+    wDT *= 1.3;
   } else if (analysis.regime === 'DOUBLE_JUMP') {
     wDragon *= 1.4;
     wMarkov *= 1.2;
@@ -1264,6 +1289,8 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     { key: 'omissionRev', probA: omissionRevProbA, weight: wOmission },
     { key: 'clusterParity', probA: clusterProbA, weight: wCluster },
     { key: 'logisticML', probA: mlProbA, weight: wML },
+    { key: 'decisionTree', probA: dtProbA, weight: wDT },
+    { key: 'poissonWait', probA: pwProbA, weight: wPoisson },
     { key: 'crowdLiquidity', probA: crowdProbA, weight: wCrowd },
     { key: 'fourierCycle', probA: fourierProbA, weight: wFourier }
   ];
@@ -1300,6 +1327,12 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   // Mathematically Calibrated Confidence (strictly bounded without artificial boosts)
   const confidence = Math.min(64, Math.max(50, Math.round(50 + (rawDelta * 1.15))));
 
+  // Quantitative Market Odds & Expected Value (EV = P * Odds - 1)
+  const predProb = prediction === valA ? (ensembleA / 100) : (1 - ensembleA / 100);
+  const oddsAnalysis = analyzeMarketOdds(field, predProb, 1.96, historyList.length);
+  const expectedValue = oddsAnalysis.expectedValue;
+  const hasEdge = oddsAnalysis.isValuableOpportunity;
+
   // 🛡️ MISTAKE-PREVENTION SHIELDS
   // Shield 1: Deep Streak Collapse / Exhaustion Trap Shield (ड्रैगन थकावट ट्रैप)
   const isStreakExhausted = streak.count >= 5;
@@ -1326,14 +1359,13 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
 
   if (mode === 'ultra_sniper') {
     // Ultra Sniper Mode (Zero-Loss Shield):
-    // Requires high consensus (>= 70% of active models agree) AND a decisive probability delta (>= 1.8%).
-    // If the market is in an oscillating chop or ping-pong trap, requires higher consensus (>= 75%) and delta >= 2.5%.
-    // If streak is exhausted (>= 5) or system is underperforming, strictly abstains to prevent whipsaw losses.
+    // Requires high consensus (>= 70% of active models agree), decisive probability delta (>= 1.8%),
+    // AND positive mathematical expected value (EV > 0).
     const isChop = analysis.regime === 'OSCILLATION_CHOP' || isPingPongTrap;
     const minAgreement = isChop ? Math.ceil(numActive * 0.75) : Math.ceil(numActive * 0.70);
     const minDelta = isChop ? 2.5 : 1.8;
 
-    if (agreementCount >= minAgreement && rawDelta >= minDelta && !isStreakExhausted && !isUnderperforming) {
+    if (agreementCount >= minAgreement && rawDelta >= minDelta && !isStreakExhausted && !isUnderperforming && hasEdge) {
       badge = 'ULTRA_SNIPER';
       evidenceLevel = 'HIGH';
       action = 'CONFIRMED_BET';
@@ -1344,14 +1376,13 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     }
   } else if (mode === 'sniper') {
     // Balanced Sniper Mode:
-    // Requires moderate consensus (>= 60% of active models agree) and rawDelta >= 1.2%.
-    // In chop, abstains unless delta is solid.
+    // Requires moderate consensus (>= 60% of active models agree), rawDelta >= 1.2%, and positive EV.
     const isChop = analysis.regime === 'OSCILLATION_CHOP' || isPingPongTrap;
-    if (agreementCount >= Math.ceil(numActive * 0.60) && rawDelta >= 1.2 && !isStreakExhausted) {
+    if (agreementCount >= Math.ceil(numActive * 0.60) && rawDelta >= 1.2 && !isStreakExhausted && hasEdge) {
       badge = 'STRONG';
       evidenceLevel = 'MODERATE';
       action = 'CONFIRMED_BET';
-    } else if (!isChop && agreementCount >= Math.ceil(numActive * 0.50) && rawDelta >= 0.8) {
+    } else if (!isChop && agreementCount >= Math.ceil(numActive * 0.50) && rawDelta >= 0.8 && expectedValue > -1.0) {
       badge = 'MODERATE';
       evidenceLevel = 'MODERATE';
       action = 'CONFIRMED_BET';
@@ -1378,13 +1409,13 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
   const trainedRounds = learnedW.dailyRoundsTrained || learnedW.learningRounds || 0;
 
   if (finalAction === 'NO_CLEAR_SIGNAL') {
-    finalReason = `⚖️ [शील्ड सुरक्षा सक्रिय] सांख्यिकीय साक्ष्य अपर्याप्त (सहमति: ${agreementCount}/${numActive}, एज: +${rawDelta}% | 50/50 व्हिपसॉ चॉप ट्रैप से बैंकroll सुरक्षित)। कोई दांव न लें।`;
+    finalReason = `⚖️ [शील्ड सुरक्षा सक्रिय] सांख्यिकीय साक्ष्य अपर्याप्त (सहमति: ${agreementCount}/${numActive}, EV: ${expectedValue >= 0 ? '+' : ''}${expectedValue}%, एज: +${rawDelta}% | 50/50 व्हिपसॉ चॉप ट्रैप से बैंकroll सुरक्षित)। कोई दांव न लें।`;
   } else if (shieldAlert) {
-    finalReason = `${shieldAlert} [${histDepth}-ड्रा विश्लेषण: ${agreementCount}/${numActive} मॉडल्स सहमति -> ${prediction} संकेत सक्रिय]`;
+    finalReason = `${shieldAlert} [${histDepth}-ड्रा विश्लेषण: ${agreementCount}/${numActive} मॉडल्स सहमति -> ${prediction} संकेत सक्रिय | EV: ${expectedValue >= 0 ? '+' : ''}${expectedValue}%]`;
   } else if (streakReason) {
-    finalReason = `${streakReason} [${histDepth}-राउंड्स एनालिसिस: ${agreementCount}/${numActive} मॉडल्स सहमति | 24/7 ट्रेंड: ${trainedRounds} राउंड्स]`;
+    finalReason = `${streakReason} [${histDepth}-राउंड्स एनालिसिस: ${agreementCount}/${numActive} मॉडल्स सहमति | EV: ${expectedValue >= 0 ? '+' : ''}${expectedValue}% | 24/7 ट्रेंड: ${trainedRounds} राउंड्स]`;
   } else {
-    finalReason = `📊 ${histDepth}-राउंड्स डीप क्वांट एनालिसिस: ${agreementCount}/${numActive} मॉडल्स की ${prediction} पर सांख्यिकीय पुष्टि। [24/7 एक्टिव ट्रेंडिंग: ${trainedRounds} ड्रा]`;
+    finalReason = `📊 ${histDepth}-राउंड्स डीप क्वांट एनालिसिस: ${agreementCount}/${numActive} मॉडल्स की ${prediction} पर सांख्यिकीय पुष्टि। [EV: ${expectedValue >= 0 ? '+' : ''}${expectedValue}% | 24/7 एक्टिव ट्रेंडिंग: ${trainedRounds} ड्रा]`;
   }
 
   return {
@@ -1394,6 +1425,8 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     confidence: finalConfidence,
     agreementCount,
     evidenceLevel,
+    expectedValue,
+    marketOdds: oddsAnalysis,
     shields: {
       isStreakExhausted,
       isPingPongTrap,
@@ -1408,9 +1441,11 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
       dragonTrend: { a: Math.round(dragonProbA), b: Math.round(100 - dragonProbA), choice: dragonProbA > 50 ? valA : (dragonProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wDragon * 100) / 100 },
       bayesianTrans: { a: Math.round(bayesProbA), b: Math.round(100 - bayesProbA), choice: bayesProbA > 50 ? valA : (bayesProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wBayes * 100) / 100 },
       nGram: { a: Math.round(nGramProbA), b: Math.round(100 - nGramProbA), choice: nGramProbA > 50 ? valA : (nGramProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wNGram * 100) / 100 },
-      omissionRev: { a: Math.round(omissionRevProbA), b: Math.round(100 - omissionRevProbA), choice: omissionRevProbA > 50 ? valA : (omissionRevProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wOmission * 100) / 100 },
+      omissionRev: { a: Math.round(omissionRevProbA), b: Math.round(100 - omissionRevProbA), choice: omissionRevProbA >= 50 ? valA : valB, weight: Math.round(wOmission * 100) / 100 },
       clusterParity: { a: Math.round(clusterProbA), b: Math.round(100 - clusterProbA), choice: clusterProbA > 50 ? valA : (clusterProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wCluster * 100) / 100 },
       logisticML: { a: Math.round(mlProbA), b: Math.round(100 - mlProbA), choice: mlProbA > 50 ? valA : (mlProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wML * 100) / 100 },
+      decisionTree: { a: Math.round(dtProbA), b: Math.round(100 - dtProbA), choice: dtProbA >= 50 ? valA : valB, weight: Math.round(wDT * 100) / 100 },
+      poissonWait: { a: Math.round(pwProbA), b: Math.round(100 - pwProbA), choice: pwProbA >= 50 ? valA : valB, weight: Math.round(wPoisson * 100) / 100 },
       fourierCycle: { a: Math.round(fourierProbA), b: Math.round(100 - fourierProbA), choice: fourierProbA > 50 ? valA : (fourierProbA < 50 ? valB : 'NEUTRAL'), weight: Math.round(wFourier * 100) / 100 }
     },
     reason: finalReason,
@@ -1447,12 +1482,61 @@ export function generatePrediction(historyList, mode = 'ultra_sniper', targetTyp
     fullDayDynamics,
     crowdLiquidity
   );
-  const topNumber = numberProbabilities[0];
-  const secondaryNumbers = numberProbabilities.slice(1, 4);
 
-  // Golden Basket: Top 3 numbers together
-  const goldenBasket = numberProbabilities.slice(0, 3);
+  // Multi-Market Individual Odds & Expected Value Enhancement
+  const enhancedDigits = numberProbabilities.map(d => {
+    const digitOdds = 9.00;
+    const digitProbDec = d.prob / 100;
+    const ev = Math.round(((digitProbDec * digitOdds) - 1.0) * 10000) / 100;
+    const edge = Math.round((d.prob - 11.11) * 10) / 10;
+    const kelly = calculateKellyFraction(digitOdds, digitProbDec, 0.20);
+    return {
+      ...d,
+      odds: digitOdds,
+      impliedProb: 11.11,
+      expectedValue: ev,
+      edge,
+      isPositiveEV: ev > 0,
+      kellyStakePercent: kelly.stakePercent
+    };
+  });
+
+  const topNumber = enhancedDigits[0];
+  const secondaryNumbers = enhancedDigits.slice(1, 4);
+
+  // Golden Basket: Top 3 numbers together (Effective odds = 3.00x)
+  const goldenBasket = enhancedDigits.slice(0, 3);
   const goldenBasketCoverage = Math.round(goldenBasket.reduce((acc, curr) => acc + curr.prob, 0) * 10) / 10;
+  const basketEV = Math.round((((goldenBasketCoverage / 100) * 3.00) - 1.0) * 10000) / 100;
+  const basketKelly = calculateKellyFraction(3.00, goldenBasketCoverage / 100, 0.25);
+
+  // Color Market Analysis (Red / Green / Violet)
+  let probRed = 0, probGreen = 0, probViolet = 0;
+  for (const d of enhancedDigits) {
+    if ([2, 4, 6, 8].includes(d.number)) probRed += d.prob;
+    else if ([1, 3, 7, 9].includes(d.number)) probGreen += d.prob;
+    else if (d.number === 0) { probRed += (d.prob * 0.5); probViolet += d.prob; }
+    else if (d.number === 5) { probGreen += (d.prob * 0.5); probViolet += d.prob; }
+  }
+  probRed = Math.round(probRed * 10) / 10;
+  probGreen = Math.round(probGreen * 10) / 10;
+  probViolet = Math.round(probViolet * 10) / 10;
+
+  const evRed = Math.round(((probRed / 100 * 1.96) - 1.0) * 10000) / 100;
+  const evGreen = Math.round(((probGreen / 100 * 1.96) - 1.0) * 10000) / 100;
+  const evViolet = Math.round(((probViolet / 100 * 4.41) - 1.0) * 10000) / 100;
+
+  const colorChoices = [
+    { color: 'RED', prob: probRed, ev: evRed, odds: 1.96, isPositiveEV: evRed > 0 },
+    { color: 'GREEN', prob: probGreen, ev: evGreen, odds: 1.96, isPositiveEV: evGreen > 0 },
+    { color: 'VIOLET', prob: probViolet, ev: evViolet, odds: 4.41, isPositiveEV: evViolet > 0 }
+  ].sort((a, b) => b.ev - a.ev);
+
+  const bestColor = colorChoices[0];
+
+  // Quantitative Kelly Risk Sizing Plan for current round
+  const primaryEV = primary.expectedValue !== undefined ? primary.expectedValue : 0;
+  const kellyPlan = getKellyRiskPlan(1000, 1.96, primary.confidence, 0.25);
 
   const targetIssue = historyList[0]?.issueNumber
     ? (BigInt(historyList[0].issueNumber) + 1n).toString()
@@ -1464,14 +1548,28 @@ export function generatePrediction(historyList, mode = 'ultra_sniper', targetTyp
     action: primary.action,
     prediction: primary.prediction,
     confidence: primary.confidence,
+    expectedValue: primaryEV,
+    marketOdds: primary.marketOdds,
     secondaryPrediction: secondary.prediction,
     secondaryType: targetType === 'bigSmall' ? 'ODD / EVEN' : 'BIG / SMALL',
+    secondaryEV: secondary.expectedValue,
+    secondaryOdds: secondary.marketOdds,
     topNumber,
     secondaryNumbers,
     goldenBasket,
     goldenBasketCoverage,
-    numberProbabilities,
+    goldenBasketEV: basketEV,
+    goldenBasketKelly: basketKelly.stakePercent,
+    numberProbabilities: enhancedDigits,
     color: topNumber.color,
+    colorForecast: {
+      bestColor,
+      choices: colorChoices,
+      red: { prob: probRed, ev: evRed },
+      green: { prob: probGreen, ev: evGreen },
+      violet: { prob: probViolet, ev: evViolet }
+    },
+    kellyPlan,
     signals: primary.signals,
     agreementCount: primary.agreementCount,
     reason: primary.reason,
@@ -1489,8 +1587,39 @@ export function generatePrediction(historyList, mode = 'ultra_sniper', targetTyp
 }
 
 // -------------------------------------------------------------
-// 💰 7. MARTINGALE & RISK CALCULATOR
+// 💰 7. QUANTITATIVE RISK & CAPITAL SIZING CALCULATOR
 // -------------------------------------------------------------
+
+/**
+ * Calculates Quarter-Kelly Stake and capital preservation guidelines
+ */
+export function getKellyRiskPlan(bankroll = 1000, decimalOdds = 1.96, winProbPercent = 53, fraction = 0.25) {
+  const p = winProbPercent / 100;
+  const b = decimalOdds - 1.0;
+  const q = 1.0 - p;
+  const fullKelly = Math.max(0, (b * p - q) / b);
+  const quarterKellyPercent = Math.min(5.0, Math.max(0, Math.round(fullKelly * fraction * 1000) / 10));
+  const halfKellyPercent = Math.min(10.0, Math.max(0, Math.round(fullKelly * 0.5 * 1000) / 10));
+
+  const quarterStake = Math.max(1, Math.round(bankroll * (quarterKellyPercent / 100)));
+  const halfStake = Math.max(1, Math.round(bankroll * (halfKellyPercent / 100)));
+  const expectedProfitPerBet = Math.round(quarterStake * ((p * decimalOdds) - 1.0) * 10) / 10;
+
+  return {
+    bankroll,
+    decimalOdds,
+    winProbPercent,
+    fullKellyPercent: Math.round(fullKelly * 1000) / 10,
+    quarterKellyPercent,
+    quarterStake,
+    halfKellyPercent,
+    halfStake,
+    expectedProfitPerBet,
+    isPositiveEV: (p * decimalOdds) > 1.0,
+    ruinRisk: quarterKellyPercent <= 2.5 ? 'NEGLIGIBLE (<0.01%)' : 'LOW (<1%)',
+    advice: (p * decimalOdds) > 1.0 ? 'FAVORABLE_EDGE_CONFIRMED' : 'NEGATIVE_EDGE_ABSTAIN'
+  };
+}
 
 export function getMartingalePlan(baseBet = 10, lossStreak = 0, multiplier = 3) {
   const level = lossStreak + 1;

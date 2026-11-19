@@ -289,12 +289,15 @@ export function modelPatternSequence(historyList, field = 'bigSmall') {
   let streakContinued = 0;
   let runLen = 1;
   for (let i = 1; i < N; i++) {
+    if (runLen === currentStreak) {
+      streakMatches++;
+      if (seq[i] === seq[i - 1]) {
+        streakContinued++;
+      }
+    }
     if (seq[i] === seq[i - 1]) {
       runLen++;
     } else {
-      if (runLen === currentStreak) {
-        streakMatches++;
-      }
       runLen = 1;
     }
   }
@@ -312,7 +315,7 @@ export function modelPatternSequence(historyList, field = 'bigSmall') {
   }
 
   const pNgram = ngramTotal >= 2 ? (ngramA + 1) / (ngramTotal + 2) : 0.50;
-  const pStreakCont = streakMatches >= 3 ? (streakContinued + 1) / (streakMatches + 2) : 0.50;
+  const pStreakCont = streakMatches >= 2 ? (streakContinued + 1) / (streakMatches + 2) : 0.50;
   const pStreakA = lastVal === valA ? pStreakCont : (1 - pStreakCont);
 
   const probA = Math.max(0.10, Math.min(0.90, pNgram * 0.55 + pStreakA * 0.45));
@@ -1083,5 +1086,236 @@ export function generateCalibratedPrediction(historyList, field = 'bigSmall', cu
       regularizedML: { probA: Math.round(mML.probA * 1000) / 10, choice: mML.choice },
       baseline: { probA: 50.0, choice: mBase.choice }
     }
+  };
+}
+
+// -------------------------------------------------------------
+// 7. QUANTITATIVE DECISION TREE & POISSON STATISTICAL MODELS
+// -------------------------------------------------------------
+
+/**
+ * Model H: Decision Tree Ensemble (Gradient-Weighted Decision Stumps)
+ * Non-linear regime-aware model partitioning on Lags, Run-Lengths, and Parity.
+ */
+export function modelDecisionTreeEnsemble(historyList, field = 'bigSmall') {
+  const isBS = field === 'bigSmall';
+  const valA = isBS ? 'BIG' : 'ODD';
+  const valB = isBS ? 'SMALL' : 'EVEN';
+
+  if (!historyList || historyList.length < 15) {
+    return { model: 'DecisionTreeEnsemble', probA: 0.50, probB: 0.50, choice: valA, confidence: 50.0 };
+  }
+
+  const chron = [...historyList].reverse();
+  const N = chron.length;
+
+  // Build decision stumps on historical transitions
+  let lag1SameCount = 0, lag1Total = 0;
+  let streakBreakCount = 0, streakTotal = 0;
+  let pingPongContCount = 0, pingPongTotal = 0;
+
+  for (let i = 2; i < N - 1; i++) {
+    const prev = classifyNumber(chron[i].number)[field];
+    const prevPrev = classifyNumber(chron[i - 1].number)[field];
+    const next = classifyNumber(chron[i + 1].number)[field];
+
+    // Stump 1: 1-Lag Momentum
+    lag1Total++;
+    if (next === prev) lag1SameCount++;
+
+    // Stump 2: Streak Exhaustion (Streak >= 3)
+    if (prev === prevPrev) {
+      streakTotal++;
+      if (next !== prev) streakBreakCount++;
+    }
+
+    // Stump 3: Alternation continuation
+    if (prev !== prevPrev) {
+      pingPongTotal++;
+      if (next !== prev) pingPongContCount++;
+    }
+  }
+
+  const currentLag1 = classifyNumber(historyList[0].number)[field];
+  const currentLag2 = historyList.length > 1 ? classifyNumber(historyList[1].number)[field] : currentLag1;
+
+  const pLag1Same = lag1Total >= 5 ? (lag1SameCount + 2) / (lag1Total + 4) : 0.50;
+  const pStreakBreak = streakTotal >= 5 ? (streakBreakCount + 2) / (streakTotal + 4) : 0.50;
+  const pPingPongCont = pingPongTotal >= 5 ? (pingPongContCount + 2) / (pingPongTotal + 4) : 0.50;
+
+  let scoreA = 0.50;
+  const isCurrentlyStreak = currentLag1 === currentLag2;
+
+  if (isCurrentlyStreak) {
+    // Current streak: evaluate continuation vs break
+    const pCont = 1 - pStreakBreak;
+    scoreA = currentLag1 === valA ? pCont : (1 - pCont);
+  } else {
+    // Current ping-pong step
+    const pCont = pPingPongCont;
+    scoreA = currentLag1 === valA ? (1 - pCont) : pCont;
+  }
+
+  // Blend with lag1 base rate
+  const pLagA = currentLag1 === valA ? pLag1Same : (1 - pLag1Same);
+  const probA = Math.max(0.35, Math.min(0.65, scoreA * 0.60 + pLagA * 0.40));
+  const probB = 1 - probA;
+  const choice = probA >= 0.50 ? valA : valB;
+  const confidence = Math.round(Math.max(probA, probB) * 1000) / 10;
+
+  return { model: 'DecisionTreeEnsemble', probA, probB, choice, confidence };
+}
+
+/**
+ * Model I: Poisson Waiting Times & Omission Hazard Model
+ * Computes Poisson inter-arrival distribution without Gambler's Fallacy.
+ */
+export function modelPoissonWaitingTimes(historyList, field = 'bigSmall') {
+  const isBS = field === 'bigSmall';
+  const valA = isBS ? 'BIG' : 'ODD';
+  const valB = isBS ? 'SMALL' : 'EVEN';
+
+  if (!historyList || historyList.length < 10) {
+    return { model: 'PoissonWaitingTimes', probA: 0.50, probB: 0.50, choice: valA, confidence: 50.0 };
+  }
+
+  const items = historyList.map(h => classifyNumber(h.number)[field]);
+  const currentVal = items[0];
+
+  // Count consecutive current run length
+  let currentRun = 0;
+  for (const v of items) {
+    if (v === currentVal) currentRun++;
+    else break;
+  }
+
+  // Poisson parameter lambda for run lengths (geometric mean is ~2 in fair 50/50 coin tosses)
+  const lambda = 2.0;
+  // Survival probability: P(X > k) = e^(-lambda * k)
+  const hazardFactor = Math.min(0.12, Math.max(-0.12, (currentRun - lambda) * 0.025));
+
+  // Base empirical proportion in recent 30
+  const recent30 = items.slice(0, 30);
+  const countA = recent30.filter(x => x === valA).length;
+  const pEmpiricalA = (countA + 2) / (recent30.length + 4);
+
+  // Calibrated Poisson adjustment
+  let probA = pEmpiricalA;
+  if (currentVal === valA) {
+    probA -= hazardFactor; // As current run of A extends, slight mean reversion pull
+  } else {
+    probA += hazardFactor; // As current run of B extends, slight mean reversion pull toward A
+  }
+
+  probA = Math.max(0.38, Math.min(0.62, probA));
+  const probB = 1 - probA;
+  const choice = probA >= 0.50 ? valA : valB;
+  const confidence = Math.round(Math.max(probA, probB) * 1000) / 10;
+
+  return { model: 'PoissonWaitingTimes', probA, probB, choice, confidence, currentRun };
+}
+
+// -------------------------------------------------------------
+// 8. QUANTITATIVE BETTING ODDS, VIG & EXPECTED VALUE ENGINE
+// -------------------------------------------------------------
+
+/**
+ * Calculates Quarter-Kelly capital allocation percentage
+ * f* = fraction * (b*p - q) / b
+ */
+export function calculateKellyFraction(decimalOdds, modelProb, fraction = 0.25) {
+  const b = decimalOdds - 1.0;
+  if (b <= 0 || modelProb <= 0 || modelProb >= 1) {
+    return { fullKelly: 0, stakePercent: 0, safeBet: 0, isPositiveEV: false, advice: 'NO_BET' };
+  }
+
+  const p = modelProb;
+  const q = 1.0 - p;
+  const fullKelly = (b * p - q) / b;
+
+  if (fullKelly <= 0) {
+    return { fullKelly: 0, stakePercent: 0, safeBet: 0, isPositiveEV: false, advice: 'NO_BET_NEGATIVE_EV' };
+  }
+
+  const safeStakePercent = Math.min(5.0, Math.max(0.5, Math.round(fullKelly * fraction * 1000) / 10));
+  return {
+    fraction,
+    fullKelly: Math.round(fullKelly * 10000) / 100,
+    stakePercent: safeStakePercent,
+    isPositiveEV: true,
+    advice: 'FAVORABLE_EDGE'
+  };
+}
+
+/**
+ * Analyzes market-implied probabilities, bookmaker margin (vig), and Expected Value (EV)
+ * EV = (Model Probability * Decimal Odds) - 1
+ */
+export function analyzeMarketOdds(marketType, modelProb, customOdds = null, sampleSize = 50) {
+  const defaultOddsMap = {
+    'bigSmall': 1.96,
+    'oddEven': 1.96,
+    'number': 9.00,
+    'colorRed': 1.96,
+    'colorGreen': 1.96,
+    'colorViolet': 4.41,
+    'goldenBasket': 3.00,
+    'aviator': 1.50
+  };
+
+  const decimalOdds = customOdds || defaultOddsMap[marketType] || 1.96;
+  const impliedProbability = Math.round((1.0 / decimalOdds) * 10000) / 100; // in %
+
+  // Bookmaker margin (Vig)
+  let vigPercent = 2.04;
+  let fairProbability = 50.0;
+
+  if (marketType === 'number') {
+    vigPercent = Math.round(((10 * (1.0 / 9.00)) - 1.0) * 10000) / 100; // 11.11% vig
+    fairProbability = 10.0;
+  } else if (marketType === 'colorViolet') {
+    vigPercent = Math.round(((1.0 / 4.41 + 1.0 / 1.96) - 1.0) * 10000) / 100;
+    fairProbability = 20.0;
+  } else if (marketType === 'goldenBasket') {
+    vigPercent = Math.round(((3.0 * (1.0 / 9.00) * 3) - 1.0) * 10000) / 100;
+    fairProbability = 30.0;
+  } else {
+    vigPercent = Math.round(((2.0 / decimalOdds) - 1.0) * 10000) / 100; // 2.04% vig
+    fairProbability = 50.0;
+  }
+
+  // Expected Value: EV = (P_model * Decimal Odds) - 1
+  const modelProbDecimal = modelProb > 1.0 ? modelProb / 100 : modelProb;
+  const ev = (modelProbDecimal * decimalOdds) - 1.0;
+  const evPercent = Math.round(ev * 10000) / 100; // in %
+  const edgeOverMarket = Math.round((modelProbDecimal * 100 - impliedProbability) * 100) / 100;
+
+  // Standard Error of Probability Estimate: sqrt(p * (1 - p) / N)
+  const N = Math.max(15, sampleSize);
+  const standardError = Math.sqrt((modelProbDecimal * (1 - modelProbDecimal)) / N);
+  const ciLower = Math.max(0, Math.round((modelProbDecimal - 1.96 * standardError) * 1000) / 10);
+  const ciUpper = Math.min(100, Math.round((modelProbDecimal + 1.96 * standardError) * 1000) / 10);
+
+  // Positive EV edge after uncertainty discount
+  const conservativeProb = modelProbDecimal - (standardError * 0.5);
+  const isValuableOpportunity = ev > 0 && (conservativeProb * 100) > impliedProbability;
+
+  const kelly = calculateKellyFraction(decimalOdds, modelProbDecimal, 0.25);
+
+  return {
+    marketType,
+    decimalOdds,
+    impliedProbability,
+    vigPercent,
+    fairProbability,
+    modelProbability: Math.round(modelProbDecimal * 1000) / 10,
+    expectedValue: evPercent,
+    edgeOverMarket,
+    standardError: Math.round(standardError * 10000) / 100,
+    confidenceInterval: [ciLower, ciUpper],
+    isValuableOpportunity,
+    kellyStakePercent: kelly.stakePercent,
+    fullKelly: kelly.fullKelly,
+    verdict: isValuableOpportunity ? 'POSITIVE_EXPECTED_VALUE' : 'NEGATIVE_EXPECTED_VALUE_OR_NO_EDGE'
   };
 }

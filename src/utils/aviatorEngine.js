@@ -200,6 +200,8 @@ export function calculateBracketProbabilities(history) {
     const empiricalProb = sampleSize > 0 ? Math.round((hits / sampleSize) * 1000) / 10 : getTheoreticalProbability(target);
     const theoreticalProb = Math.round(getTheoreticalProbability(target) * 10) / 10;
     const delta = Math.round((empiricalProb - theoreticalProb) * 10) / 10;
+    const ev = Math.round(((empiricalProb / 100) * target - 1.0) * 100) / 100;
+    const impliedProb = Math.round((1.0 / target) * 1000) / 10;
 
     return {
       targetMultiplier: target,
@@ -207,8 +209,10 @@ export function calculateBracketProbabilities(history) {
       total: sampleSize,
       empiricalProb,
       theoreticalProb,
+      impliedProb,
       delta,
-      isPositiveEdge: delta > 0
+      ev: ev >= 0 ? `+${ev.toFixed(2)}` : `${ev.toFixed(2)}`,
+      isPositiveEdge: ev > 0
     };
   });
 }
@@ -308,41 +312,49 @@ export function generateAviatorPrediction(history, mode = 'safe') {
     }
   }
 
-  // Expected Value calculation: EV = (Multiplier * Probability) - 1
-  const theoreticalProbDecimal = getTheoreticalProbability(recommendedCashout) / 100;
-  const ev = Math.round((recommendedCashout * theoreticalProbDecimal - 1) * 100) / 100;
+  // Expected Value calculation: EV = (Multiplier * ModelProbability) - 1
+  const modelProbDecimal = (confidence / 100);
+  const ev = Math.round((recommendedCashout * modelProbDecimal - 1) * 100) / 100;
 
   // Reason text
   let reason = '';
   if (regimeData.isColdTrap) {
-    reason = `⚠️ [क्रैश क्लस्टर चेतावनी - सेफ टारगेट: ${recommendedCashout.toFixed(2)}x] लगातार लो-क्रैश खतरा है, न्यूनतम मल्टीप्लायर ${recommendedCashout.toFixed(2)}x पर तुरंत ऑटो-कैशआउट लें।`;
+    reason = `⚠️ [क्रैश क्लस्टर चेतावनी - सेफ टारगेट: ${recommendedCashout.toFixed(2)}x] लगातार लो-क्रैश खतरा है, न्यूनतम मल्टीप्लायर ${recommendedCashout.toFixed(2)}x पर तुरंत ऑटो-कैशआउट लें (EV: ${ev >= 0 ? '+' + ev : ev})।`;
   } else if (regimeData.isHotSurge) {
-    reason = `🚀 [सर्वोत्तम कैशआउट: ${recommendedCashout.toFixed(2)}x] ${regimeData.roundsSince2x} राउंड्स से 2x पेंडिंग होने के कारण रिबाउंड वेव सक्रिय है (ऐतिहासिक सर्वाइवल: ${p1_5}%)।`;
+    reason = `🚀 [सर्वोत्तम कैशआउट: ${recommendedCashout.toFixed(2)}x] ${regimeData.roundsSince2x} राउंड्स से 2x पेंडिंग होने के कारण रिबाउंड वेव सक्रिय है (ऐतिहासिक सर्वाइवल: ${p1_5}%, EV: ${ev >= 0 ? '+' + ev : ev})।`;
   } else {
-    reason = `📊 [सांख्यिकीय सुरक्षित कैशआउट: ${recommendedCashout.toFixed(2)}x] 97% आरटीपी कर्व पर ${confidence}% सर्वाइवल प्रोबेबिलिटी।`;
+    reason = `📊 [सांख्यिकीय सुरक्षित कैशआउट: ${recommendedCashout.toFixed(2)}x] 97% आरटीपी कर्व पर ${confidence}% सर्वाइवल प्रोबेबिलिटी (EV: ${ev >= 0 ? '+' + ev : ev})।`;
   }
 
-  // Top 3 target recommendations
+  // Top 3 target recommendations with dynamically computed empirical EV
+  const pSafe = Math.min(95, Math.max(50, Math.round(p1_2 * 0.95)));
+  const pBal = Math.min(85, Math.max(30, Math.round(p2_0 * 1.05)));
+  const pMoon = Math.min(50, Math.max(10, Math.round(p5_0 * 1.02)));
+
+  const evSafe = Math.round(((pSafe / 100) * 1.28 - 1) * 100) / 100;
+  const evBal = Math.round(((pBal / 100) * 1.85 - 1) * 100) / 100;
+  const evMoon = Math.round(((pMoon / 100) * 4.80 - 1) * 100) / 100;
+
   const top3Targets = [
     {
       label: '🛡️ अल्ट्रा-सेफ (Ultra-Safe)',
       multiplier: 1.28,
-      probability: Math.round(p1_2 * 0.95),
-      ev: '+0.03',
+      probability: pSafe,
+      ev: evSafe >= 0 ? `+${evSafe.toFixed(2)}` : `${evSafe.toFixed(2)}`,
       badge: 'HIGH_WIN_RATE'
     },
     {
       label: '🎯 बैलेंस्ड ऑटो-कैशआउट (Balanced)',
       multiplier: 1.85,
-      probability: Math.round(p2_0 * 1.05),
-      ev: '-0.02',
+      probability: pBal,
+      ev: evBal >= 0 ? `+${evBal.toFixed(2)}` : `${evBal.toFixed(2)}`,
       badge: 'BALANCED'
     },
     {
       label: '🚀 मूनशॉट वेव (Moonshot Wave)',
       multiplier: 4.80,
-      probability: Math.round(p5_0 * 1.02),
-      ev: '-0.06',
+      probability: pMoon,
+      ev: evMoon >= 0 ? `+${evMoon.toFixed(2)}` : `${evMoon.toFixed(2)}`,
       badge: 'HIGH_RISK'
     }
   ];

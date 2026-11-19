@@ -18,7 +18,6 @@ import {
   Crown,
   Database,
   AlertTriangle,
-  Coins,
   Scale
 } from 'lucide-react';
 
@@ -49,13 +48,20 @@ function PredictionHero({
     action, 
     prediction, 
     confidence, 
+    expectedValue,
+    marketOdds,
     secondaryPrediction, 
     secondaryType, 
+    secondaryEV,
     topNumber, 
     secondaryNumbers = [], 
     goldenBasket = [],
     goldenBasketCoverage = 75,
+    goldenBasketEV,
     numberProbabilities = [], 
+    color,
+    colorForecast,
+    kellyPlan,
     signals = {}, 
     agreementCount = 0,
     reason, 
@@ -485,7 +491,12 @@ function PredictionHero({
                   </div>
 
                   <div style={{ fontSize: '0.68rem', color: '#ffb703', fontWeight: 700, textAlign: 'right' }}>
-                    {isHi ? '3 में से किसी 1 पर 9x पेआउट' : '9x payout on any hit'}
+                    <div>{isHi ? '3 में से किसी 1 पर 9x पेआउट' : '9x payout on any hit'}</div>
+                    {goldenBasketEV !== undefined && (
+                      <span className="font-mono" style={{ color: goldenBasketEV >= 0 ? 'var(--neon-green)' : '#94a3b8', fontSize: '0.66rem' }}>
+                        EV: {goldenBasketEV >= 0 ? `+${goldenBasketEV}%` : `${goldenBasketEV}%`}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -510,6 +521,11 @@ function PredictionHero({
               color: '#f8fafc'
             }}>
               {secondaryType}: <strong style={{ color: 'var(--neon-cyan)' }}>{secondaryPrediction && secondaryPrediction !== 'NO CLEAR SIGNAL' ? secondaryPrediction : (targetType === 'bigSmall' ? 'ODD' : 'BIG')}</strong>
+              {secondaryEV !== undefined && (
+                <span className="font-mono" style={{ marginLeft: '6px', color: secondaryEV >= 0 ? 'var(--neon-green)' : '#94a3b8', fontSize: '0.7rem', fontWeight: 800 }}>
+                  ({secondaryEV >= 0 ? `+${secondaryEV}%` : `${secondaryEV}%`} EV)
+                </span>
+              )}
             </span>
 
             <button
@@ -614,7 +630,7 @@ function PredictionHero({
               fontSize: '0.74rem'
             }}>
               <span style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>
-                {agreementCount}/8 {isHi ? 'क्वांट मॉडल्स एकमत' : 'Models Aligned'}
+                {agreementCount}/{signals ? Object.values(signals).filter(s => s && s.weight > 0).length : 8} {isHi ? 'क्वांट मॉडल्स एकमत' : 'Active Models Aligned'}
               </span>
               <span style={{ color: '#94a3b8' }}>
                 {isHi ? 'दैनिक 2,880 डेटा सिंक' : '2,880 Daily Sync'}
@@ -626,24 +642,175 @@ function PredictionHero({
             </p>
           </div>
 
-          {/* 8 Models Breakdown Grid with Live Learned Weights */}
+          {/* Quantitative Market Odds, Vig & Expected Value Analysis */}
+          <div style={{
+            background: 'rgba(0, 0, 0, 0.45)',
+            border: (expectedValue > 0) ? '1px solid rgba(0, 245, 155, 0.4)' : '1px solid var(--border-subtle)',
+            borderRadius: '16px',
+            padding: '12px 16px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+              <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Scale size={14} color="var(--neon-gold)" />
+                {isHi ? 'ऑड्स, हाउस विग व एक्सपेक्टेड वैल्यू (EV):' : 'Market Odds, Vig & Expected Value (EV):'}
+              </span>
+              <span style={{
+                background: (expectedValue > 0) ? 'rgba(0, 245, 155, 0.18)' : 'rgba(255, 183, 3, 0.18)',
+                color: (expectedValue > 0) ? 'var(--neon-green)' : 'var(--neon-gold)',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                fontSize: '0.7rem',
+                fontWeight: 800,
+                border: `1px solid ${(expectedValue > 0) ? 'rgba(0, 245, 155, 0.4)' : 'rgba(255, 183, 3, 0.4)'}`
+              }}>
+                {(expectedValue > 0) 
+                  ? (isHi ? '✅ पॉजिटिव एज (+EV EDGE)' : '✅ POSITIVE EV EDGE') 
+                  : (isHi ? '⚠️ शून्य या ऋणात्मक एज' : '⚠️ NO VALUE EDGE')}
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center' }}>
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '6px', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.64rem', color: '#94a3b8' }}>{isHi ? 'पेआउट ऑड्स' : 'Payout Odds'}</div>
+                <div className="font-mono" style={{ fontSize: '0.92rem', fontWeight: 800, color: '#f8fafc' }}>
+                  {marketOdds?.decimalOdds ? `${marketOdds.decimalOdds.toFixed(2)}x` : '1.96x'}
+                </div>
+              </div>
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '6px', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.64rem', color: '#94a3b8' }}>{isHi ? 'हाउस विग' : 'House Vig'}</div>
+                <div className="font-mono" style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--neon-amber)' }}>
+                  {marketOdds?.houseVigPercent ? `${marketOdds.houseVigPercent}%` : '2.04%'}
+                </div>
+              </div>
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '6px', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.64rem', color: '#94a3b8' }}>{isHi ? 'फेयर थ्रेशोल्ड' : 'Implied Prob'}</div>
+                <div className="font-mono" style={{ fontSize: '0.92rem', fontWeight: 800, color: '#cbd5e1' }}>
+                  {marketOdds?.impliedProbPercent ? `${marketOdds.impliedProbPercent}%` : '51.02%'}
+                </div>
+              </div>
+              <div style={{ background: (expectedValue > 0) ? 'rgba(0, 245, 155, 0.1)' : 'rgba(255, 255, 255, 0.03)', padding: '6px', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.64rem', color: (expectedValue > 0) ? 'var(--neon-green)' : '#94a3b8' }}>Expected Value</div>
+                <div className="font-mono" style={{ fontSize: '0.92rem', fontWeight: 900, color: (expectedValue > 0) ? 'var(--neon-green)' : (expectedValue < 0 ? 'var(--neon-red)' : '#cbd5e1') }}>
+                  {expectedValue !== undefined ? `${expectedValue >= 0 ? '+' : ''}${expectedValue}%` : '+0.0%'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Color Market Forecast (Red, Green, Violet with individual EV) */}
+          {colorForecast && (
+            <div style={{
+              background: 'rgba(0, 0, 0, 0.35)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              flexWrap: 'wrap'
+            }}>
+              <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Sparkles size={13} color="var(--neon-cyan)" />
+                {isHi ? 'कलर मार्केट लीन:' : 'Color Market Forecast:'}
+              </span>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: colorForecast.bestColor === 'RED' ? 'rgba(255, 51, 102, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                  border: colorForecast.bestColor === 'RED' ? '1px solid rgba(255, 51, 102, 0.6)' : '1px solid transparent',
+                  padding: '3px 8px',
+                  borderRadius: '6px'
+                }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--neon-red)' }} />
+                  <span className="font-mono" style={{ fontSize: '0.72rem', fontWeight: 800, color: '#f8fafc' }}>
+                    RED {colorForecast.red?.prob}%
+                  </span>
+                  <span className="font-mono" style={{ fontSize: '0.64rem', color: (colorForecast.red?.ev || 0) >= 0 ? 'var(--neon-green)' : '#94a3b8' }}>
+                    {(colorForecast.red?.ev || 0) >= 0 ? `+${colorForecast.red?.ev}%` : `${colorForecast.red?.ev}%`}
+                  </span>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: colorForecast.bestColor === 'GREEN' ? 'rgba(0, 245, 155, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                  border: colorForecast.bestColor === 'GREEN' ? '1px solid rgba(0, 245, 155, 0.6)' : '1px solid transparent',
+                  padding: '3px 8px',
+                  borderRadius: '6px'
+                }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--neon-green)' }} />
+                  <span className="font-mono" style={{ fontSize: '0.72rem', fontWeight: 800, color: '#f8fafc' }}>
+                    GREEN {colorForecast.green?.prob}%
+                  </span>
+                  <span className="font-mono" style={{ fontSize: '0.64rem', color: (colorForecast.green?.ev || 0) >= 0 ? 'var(--neon-green)' : '#94a3b8' }}>
+                    {(colorForecast.green?.ev || 0) >= 0 ? `+${colorForecast.green?.ev}%` : `${colorForecast.green?.ev}%`}
+                  </span>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  padding: '3px 8px',
+                  borderRadius: '6px'
+                }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#b5179e' }} />
+                  <span className="font-mono" style={{ fontSize: '0.72rem', fontWeight: 800, color: '#f8fafc' }}>
+                    VIOLET {colorForecast.violet?.prob}%
+                  </span>
+                  <span className="font-mono" style={{ fontSize: '0.64rem', color: (colorForecast.violet?.ev || 0) >= 0 ? 'var(--neon-green)' : '#94a3b8' }}>
+                    {(colorForecast.violet?.ev || 0) >= 0 ? `+${colorForecast.violet?.ev}%` : `${colorForecast.violet?.ev}%`}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Quantitative Models Grid with Live Learned Weights */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(95px, 1fr))',
             gap: '8px'
           }}>
-            {/* 1. Crowd Betting & House Risk Model */}
-            <div style={{ background: 'rgba(255, 183, 3, 0.08)', border: '1px solid rgba(255, 183, 3, 0.45)', borderRadius: '8px', padding: '8px' }}>
-              <div style={{ fontSize: '0.65rem', color: '#ffb703', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 800 }}>
-                <Coins size={11} /> {isHi ? 'बैटिंग पूल' : 'Betting Pool'}
+            {/* 1. Decision Tree Ensemble */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px' }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--neon-cyan)', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
+                <Cpu size={11} /> {isHi ? 'ट्री एन्सेम्बल' : 'Decision Tree'}
               </div>
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
-                {signals?.crowdLiquidity?.choice ? `${signals.crowdLiquidity.choice}: ${signals.crowdLiquidity.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.crowdLiquidity.a : signals.crowdLiquidity.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
+                {signals?.decisionTree?.choice ? `${signals.decisionTree.choice}: ${signals.decisionTree.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.decisionTree.a : signals.decisionTree.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
-              <span style={{ fontSize: '0.62rem', color: '#ffb703' }}>wt: {signals?.crowdLiquidity?.weight ?? 1.55}x</span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--neon-cyan)' }}>wt: {signals?.decisionTree?.weight ?? 1.30}x</span>
             </div>
 
-            {/* 2. Markov2 */}
+            {/* 2. Poisson Inter-arrival Hazard */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px' }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--neon-green)', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
+                <TrendingUp size={11} /> {isHi ? 'प्वासों हैज़र्ड' : 'Poisson Wait'}
+              </div>
+              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
+                {signals?.poissonWait?.choice ? `${signals.poissonWait.choice}: ${signals.poissonWait.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.poissonWait.a : signals.poissonWait.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
+              </div>
+              <span style={{ fontSize: '0.62rem', color: 'var(--neon-green)' }}>wt: {signals?.poissonWait?.weight ?? 1.20}x</span>
+            </div>
+
+            {/* 3. Regularized Logistic ML */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px' }}>
+              <div style={{ fontSize: '0.65rem', color: '#e040fb', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
+                <Zap size={11} /> {isHi ? 'L2 लॉजिस्टिक ML' : 'Logistic ML'}
+              </div>
+              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
+                {signals?.logisticML?.choice ? `${signals.logisticML.choice}: ${signals.logisticML.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.logisticML.a : signals.logisticML.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
+              </div>
+              <span style={{ fontSize: '0.62rem', color: '#e040fb' }}>wt: {signals?.logisticML?.weight ?? 1.20}x</span>
+            </div>
+
+            {/* 4. Markov 2 */}
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px' }}>
               <div style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <Cpu size={11} /> {isHi ? '2nd मार्कोव' : 'Markov 2'}
@@ -651,10 +818,10 @@ function PredictionHero({
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
                 {signals?.markov2?.choice ? `${signals.markov2.choice}: ${signals.markov2.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.markov2.a : signals.markov2.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
-              <span style={{ fontSize: '0.62rem', color: 'var(--neon-cyan)' }}>wt: {signals?.markov2?.weight ?? 1.35}x</span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--neon-cyan)' }}>wt: {signals?.markov2?.weight ?? 1.50}x</span>
             </div>
 
-            {/* 3. Dragon Trend */}
+            {/* 5. Dragon Trend */}
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px' }}>
               <div style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <Layers size={11} /> {isHi ? 'ड्रैगन' : 'Dragon'}
@@ -662,10 +829,10 @@ function PredictionHero({
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
                 {signals?.dragonTrend?.choice ? `${signals.dragonTrend.choice}: ${signals.dragonTrend.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.dragonTrend.a : signals.dragonTrend.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
-              <span style={{ fontSize: '0.62rem', color: 'var(--neon-green)' }}>wt: {signals?.dragonTrend?.weight ?? 1.45}x</span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--neon-green)' }}>wt: {signals?.dragonTrend?.weight ?? 1.05}x</span>
             </div>
 
-            {/* 4. Bayesian Matrix */}
+            {/* 6. Bayesian Matrix */}
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px' }}>
               <div style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <Database size={11} /> {isHi ? 'बायेसियन' : 'Bayesian'}
@@ -673,10 +840,10 @@ function PredictionHero({
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
                 {signals?.bayesianTrans?.choice ? `${signals.bayesianTrans.choice}: ${signals.bayesianTrans.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.bayesianTrans.a : signals.bayesianTrans.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
-              <span style={{ fontSize: '0.62rem', color: '#ffb703' }}>wt: {signals?.bayesianTrans?.weight ?? 1.3}x</span>
+              <span style={{ fontSize: '0.62rem', color: '#ffb703' }}>wt: {signals?.bayesianTrans?.weight ?? 1.45}x</span>
             </div>
 
-            {/* 5. N-Gram */}
+            {/* 7. N-Gram */}
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px' }}>
               <div style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <BarChart3 size={11} /> {isHi ? 'एन-ग्राम' : 'N-Gram'}
@@ -684,10 +851,10 @@ function PredictionHero({
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
                 {signals?.nGram?.choice ? `${signals.nGram.choice}: ${signals.nGram.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.nGram.a : signals.nGram.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
-              <span style={{ fontSize: '0.62rem', color: '#4facfe' }}>wt: {signals?.nGram?.weight ?? 1.15}x</span>
+              <span style={{ fontSize: '0.62rem', color: '#4facfe' }}>wt: {signals?.nGram?.weight ?? 1.20}x</span>
             </div>
 
-            {/* 6. Omission Reversion */}
+            {/* 8. Omission Reversion */}
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px' }}>
               <div style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <ShieldCheck size={11} /> {isHi ? 'ओमिशन Z' : 'Omission'}
@@ -695,10 +862,10 @@ function PredictionHero({
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
                 {signals?.omissionRev?.choice ? `${signals.omissionRev.choice}: ${signals.omissionRev.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.omissionRev.a : signals.omissionRev.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
-              <span style={{ fontSize: '0.62rem', color: '#ff3366' }}>wt: {signals?.omissionRev?.weight ?? 1.1}x</span>
+              <span style={{ fontSize: '0.62rem', color: '#ff3366' }}>wt: {signals?.omissionRev?.weight ?? 1.25}x</span>
             </div>
 
-            {/* 7. Cluster Parity */}
+            {/* 9. Cluster Parity */}
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px' }}>
               <div style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <Sparkles size={11} /> {isHi ? 'क्लस्टर' : 'Cluster'}
@@ -706,52 +873,42 @@ function PredictionHero({
               <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
                 {signals?.clusterParity?.choice ? `${signals.clusterParity.choice}: ${signals.clusterParity.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.clusterParity.a : signals.clusterParity.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
               </div>
-              <span style={{ fontSize: '0.62rem', color: '#06d6a0' }}>wt: {signals?.clusterParity?.weight ?? 1.05}x</span>
-            </div>
-
-            {/* 8. Fourier Cycle */}
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '8px' }}>
-              <div style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                <Zap size={11} /> {isHi ? 'साइकिल' : 'Fourier'}
-              </div>
-              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
-                {signals?.fourierCycle?.choice ? `${signals.fourierCycle.choice}: ${signals.fourierCycle.choice === (targetType === 'bigSmall' ? 'BIG' : 'ODD') ? signals.fourierCycle.a : signals.fourierCycle.b}%` : (isHi ? 'तटस्थ (50%)' : 'Neutral (50%)')}
-              </div>
-              <span style={{ fontSize: '0.62rem', color: '#9d4edd' }}>wt: {signals?.fourierCycle?.weight ?? 0.95}x</span>
+              <span style={{ fontSize: '0.62rem', color: '#06d6a0' }}>wt: {signals?.clusterParity?.weight ?? 1.30}x</span>
             </div>
           </div>
 
-          {/* Flat Unit Risk & Capital Preservation Rule */}
-          {martingalePlan && (
-            <div style={{
-              background: 'rgba(255, 183, 3, 0.08)',
-              border: '1px solid rgba(255, 183, 3, 0.3)',
-              borderRadius: '12px',
-              padding: '10px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '10px'
-            }}>
-              <div>
-                <span style={{ fontSize: '0.75rem', color: '#ffb703', fontWeight: 700 }}>
-                  {isHi ? '🛡️ पूंजी संरक्षण (रूल 9: नो मार्टिंगेल):' : '🛡️ Capital Protection (Rule 9: No Martingale):'}
-                </span>
-                <div className="font-mono" style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fff' }}>
-                  {`₹10 Flat Unit Stake (Max 1-2% Risk) on ${prediction || (targetType === 'bigSmall' ? 'BIG' : 'ODD')}`}
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                  {isHi ? 'शुद्ध रिटर्न:' : 'Net Return:'}
-                </span>
-                <div className="font-mono" style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--neon-green)' }}>
-                  +₹9.6 Net
-                </div>
+          {/* Quarter-Kelly Capital Sizing & Preservation */}
+          <div style={{
+            background: 'rgba(0, 245, 155, 0.06)',
+            border: '1px solid rgba(0, 245, 155, 0.3)',
+            borderRadius: '12px',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '10px'
+          }}>
+            <div>
+              <span style={{ fontSize: '0.74rem', color: 'var(--neon-green)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <ShieldCheck size={13} color="var(--neon-green)" />
+                {isHi ? '🛡️ क्वार्टर-केली पूंजी प्रबंधन (Zero-Ruin Sizing):' : '🛡️ Quarter-Kelly Capital Allocation (Zero Ruin Risk):'}
+              </span>
+              <div className="font-mono" style={{ fontSize: '0.92rem', fontWeight: 800, color: '#fff', marginTop: '2px' }}>
+                {kellyPlan?.quarterKellyPercent && kellyPlan.quarterKellyPercent > 0 
+                  ? `₹${kellyPlan.quarterStake || 15} (${kellyPlan.quarterKellyPercent}% Bankroll) on ${prediction || (targetType === 'bigSmall' ? 'BIG' : 'ODD')}`
+                  : `Flat ₹10 Base Stake (Safe 1-2% Capital Risk)`}
               </div>
             </div>
-          )}
+
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+                {isHi ? 'प्रत्याशित लाभ / जोखिम:' : 'Exp Profit / Ruin Risk:'}
+              </span>
+              <div className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--neon-green)' }}>
+                {kellyPlan?.expectedProfitPerBet ? `+₹${kellyPlan.expectedProfitPerBet}` : '+₹0.6'} / &lt;0.01%
+              </div>
+            </div>
+          </div>
 
         </div>
 

@@ -30,6 +30,18 @@ console.log('Exact Top Number hits:', topHits, 'out of', rAll.totalBets);
 console.log('Number vs Big/Small Mismatch count:', bsMismatch, 'out of', rAll.totalBets, `(${Math.round(bsMismatch/rAll.totalBets*100)}%)`);
 
 // Check Odd/Even
+let totalOdd = 0, totalEven = 0;
+for (const h of INITIAL_SEED_HISTORY) {
+  if (h.number % 2 === 1) totalOdd++; else totalEven++;
+}
+console.log(`Seed Distribution: Odd = ${totalOdd}, Even = ${totalEven}`);
+
 const rOE = evaluateHistoryPerformance(INITIAL_SEED_HISTORY, 'all', 'oddEven');
 console.log('Mode OE ALL: WinRate:', rOE.winRate + '%', 'Wins:', rOE.totalWins, 'Losses:', rOE.totalLosses);
+
+const rOESniper = evaluateHistoryPerformance(INITIAL_SEED_HISTORY, 'sniper', 'oddEven');
+console.log('Mode OE SNIPER: WinRate:', rOESniper.winRate + '%', 'Wins:', rOESniper.totalWins, 'Losses:', rOESniper.totalLosses, 'Skips:', rOESniper.skippedRounds);
+
+const rOEUltra = evaluateHistoryPerformance(INITIAL_SEED_HISTORY, 'ultra_sniper', 'oddEven');
+console.log('Mode OE ULTRA: WinRate:', rOEUltra.winRate + '%', 'Wins:', rOEUltra.totalWins, 'Losses:', rOEUltra.totalLosses, 'Skips:', rOEUltra.skippedRounds);
 

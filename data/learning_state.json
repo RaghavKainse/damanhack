@@ -5,11 +5,13 @@
     "dragonTrend": 1.35,
     "bayesianTrans": 1.4,
     "nGram": 1.15,
-    "omissionRev": 0.95,
+    "omissionRev": 1.1,
     "clusterParity": 1.25,
     "logisticML": 1.35,
+    "decisionTree": 1.3,
+    "poissonWait": 1.2,
     "fourierCycle": 0,
-    "learningRounds": 29,
+    "learningRounds": 113,
     "winScore": 0,
     "lossScore": 0,
     "accuracyHistory": [
@@ -20,12 +22,54 @@
       0,
       0,
       0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       0
     ],
     "recentAccuracy": 0,
-    "lastTrainedIssue": "20261118100051973",
-    "dailyRoundsTrained": 29,
-    "trainedDate": "2026-11-18",
+    "lastTrainedIssue": "20261119100052015",
+    "dailyRoundsTrained": 113,
+    "trainedDate": "2026-11-19",
     "modelStats": {
       "crowdLiquidity": {
         "wins": 0,
@@ -59,12 +103,20 @@
         "wins": 0,
         "total": 0
       },
+      "decisionTree": {
+        "wins": 0,
+        "total": 0
+      },
+      "poissonWait": {
+        "wins": 0,
+        "total": 0
+      },
       "fourierCycle": {
         "wins": 0,
         "total": 0
       }
     },
-    "lastUpdated": 1795019192354
+    "lastUpdated": 1795106856474
   },
   "matrix": [
     [
@@ -188,6 +240,6 @@
       1
     ]
   ],
-  "lastUpdated": 1795019192354,
-  "dateStr": "2026-11-18"
+  "lastUpdated": 1795106856474,
+  "dateStr": "2026-11-19"
 }

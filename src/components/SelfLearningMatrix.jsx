@@ -17,6 +17,8 @@ function SelfLearningMatrix({
     omissionRev = 1.25,
     clusterParity = 1.30,
     logisticML = 1.20,
+    decisionTree = 1.30,
+    poissonWait = 1.20,
     fourierCycle = 0.85,
     learningRounds = 0,
     winScore = 0,
@@ -26,13 +28,15 @@ function SelfLearningMatrix({
   } = learnedWeights || {};
 
   const models = [
-    { key: 'markov2', name: isHi ? '2nd-ऑर्डर मार्कोव चेन' : '2nd-Order Markov', weight: markov2, color: '#00f2fe' },
+    { key: 'decisionTree', name: isHi ? 'डिसीजन ट्री एन्सेम्बल' : 'Decision Tree Ensemble', weight: decisionTree, color: '#00f2fe' },
+    { key: 'poissonWait', name: isHi ? 'प्वासों वेटिंग-टाइम हैज़र्ड' : 'Poisson Waiting Hazard', weight: poissonWait, color: '#00f59b' },
+    { key: 'logisticML', name: isHi ? 'L2 रेगुलराइज़्ड ML' : 'Regularized Logistic ML', weight: logisticML, color: '#e040fb' },
+    { key: 'markov2', name: isHi ? '2nd-ऑर्डर मार्कोव चेन' : '2nd-Order Markov', weight: markov2, color: '#38bdf8' },
     { key: 'bayesianTrans', name: isHi ? '10x10 बायेसियन मैट्रिक्स' : 'Bayesian 10x10 Matrix', weight: bayesianTrans, color: '#ffb703' },
-    { key: 'dragonTrend', name: isHi ? 'नियंत्रित ड्रैगन ट्रेंड' : 'Damped Dragon Trend', weight: dragonTrend, color: '#00f59b' },
+    { key: 'dragonTrend', name: isHi ? 'नियंत्रित ड्रैगन ट्रेंड' : 'Damped Dragon Trend', weight: dragonTrend, color: '#a3e635' },
     { key: 'nGram', name: isHi ? 'एन-ग्राम पैटर्न मैचर' : 'N-Gram Pattern', weight: nGram, color: '#4facfe' },
     { key: 'omissionRev', name: isHi ? 'ओमिशन रिवर्शन (Z-Score)' : 'Omission Reversion', weight: omissionRev, color: '#ff3366' },
     { key: 'clusterParity', name: isHi ? 'मल्टी-हॉरिजॉन क्लस्टर' : 'Multi-Horizon Cluster', weight: clusterParity, color: '#06d6a0' },
-    { key: 'logisticML', name: isHi ? 'रेगुलराइज़्ड मशीन लर्निंग (ML)' : 'Regularized Logistic ML', weight: logisticML, color: '#e040fb' },
     { key: 'fourierCycle', name: isHi ? 'हार्मोनिक वेव (निष्क्रिय)' : 'Fourier Harmonic (Disabled)', weight: fourierCycle, color: '#64748b' },
     { key: 'crowdLiquidity', name: isHi ? 'पूल मॉनिटर (निष्क्रिय)' : 'Pool Monitor (Disabled)', weight: crowdLiquidity, color: '#64748b' }
   ];

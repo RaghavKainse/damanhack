@@ -1,7 +1,133 @@
 {
-  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm",
-  "lastPromotionTimestamp": 1795018375262,
+  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco",
+  "lastPromotionTimestamp": 1795103703524,
   "history": [
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco",
+      "promotedAt": 1795103703528,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql"
+    },
+    {
+      "version": "v2.4.test-mwnqeaci",
+      "promotedAt": 1795103703522,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql",
+      "promotedAt": 1795103601645,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9"
+    },
+    {
+      "version": "v2.4.test-mwnqc3qg",
+      "promotedAt": 1795103601640,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9",
+      "promotedAt": 1795103495001,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99"
+    },
+    {
+      "version": "v2.4.test-mwnq9tg4",
+      "promotedAt": 1795103494996,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99",
+      "promotedAt": 1795103020413,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81"
+    },
+    {
+      "version": "v2.4.test-mwnpzn91",
+      "promotedAt": 1795103020405,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81",
+      "promotedAt": 1795102743025,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3"
+    },
+    {
+      "version": "v2.4.test-mwnptp7w",
+      "promotedAt": 1795102743020,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3",
+      "promotedAt": 1795102613715,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb"
+    },
+    {
+      "version": "v2.4.test-mwnpqxfw",
+      "promotedAt": 1795102613708,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb",
+      "promotedAt": 1795101531671,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm"
+    },
+    {
+      "version": "v2.4.test-mwnp3qj5",
+      "promotedAt": 1795101531665,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
     {
       "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm",
       "promotedAt": 1795018375282,
