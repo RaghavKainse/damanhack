@@ -1,7 +1,25 @@
 {
-  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei",
-  "lastPromotionTimestamp": 1795519626271,
+  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei-rollback-phzz",
+  "lastPromotionTimestamp": 1795520771418,
   "history": [
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei-rollback-phzz",
+      "promotedAt": 1795520771423,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei"
+    },
+    {
+      "version": "v2.4.test-mwumphzt",
+      "promotedAt": 1795520771417,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
     {
       "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei",
       "promotedAt": 1795519626282,

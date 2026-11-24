@@ -386,9 +386,14 @@ export function replayUntrainedHistory(historyList, mode = 'all', targetType = '
     }
   });
 
-  // Learn full 10x10 Bayesian transition matrix directly from the entire chronological sequence
+  // Learn full 10x10 Bayesian transition matrix strictly from contiguous consecutive rounds
   const matrix = getBayesianTransitionMatrix();
   for (let i = 0; i < chronological.length - 1; i++) {
+    try {
+      const aBig = BigInt(chronological[i].issueNumber);
+      const bBig = BigInt(chronological[i + 1].issueNumber);
+      if (bBig - aBig !== 1n) continue; // Skip non-consecutive rounds across gaps to prevent matrix corruption
+    } catch {}
     const from = parseInt(chronological[i].number, 10);
     const to = parseInt(chronological[i + 1].number, 10);
     if (!isNaN(from) && !isNaN(to) && from >= 0 && from <= 9 && to >= 0 && to <= 9) {
@@ -1037,6 +1042,25 @@ export function calculateNumberProbabilities(historyList, primaryLeanBS = 'BIG',
 // 🚀 6. ULTRA QUANT 7-MODEL ENSEMBLE WITH HIGH CONFLUENCE GATING
 // -------------------------------------------------------------
 
+export function getContiguousHistory(list) {
+  if (!list || list.length === 0) return [];
+  const contiguous = [list[0]];
+  for (let i = 1; i < list.length; i++) {
+    try {
+      const prev = BigInt(list[i - 1].issueNumber);
+      const curr = BigInt(list[i].issueNumber);
+      if (prev - curr === 1n) {
+        contiguous.push(list[i]);
+      } else {
+        break; // Stop at gap to preserve Markov and pattern integrity
+      }
+    } catch {
+      break;
+    }
+  }
+  return contiguous;
+}
+
 export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 'ultra_sniper', fullDayDynamics = null, crowdLiquidity = null, customWeights = null) {
   const isBS = field === 'bigSmall';
   const valA = isBS ? 'BIG' : 'ODD';
@@ -1061,14 +1085,18 @@ export function generateFieldPrediction(historyList, field = 'bigSmall', mode = 
     };
   }
 
-  const items = historyList.map(h => classifyNumber(h.number));
+  // Extract strictly contiguous draws to prevent cross-gap Markov & pattern corruption
+  const contiguous = getContiguousHistory(historyList);
+  const activeList = contiguous.length >= 5 ? contiguous : historyList.slice(0, 50);
+
+  const items = activeList.map(h => classifyNumber(h.number));
   const chronological = [...items].reverse().map(i => i[field]);
   
   const last1 = items[0][field];
   const last2 = items.length > 1 ? `${items[1][field]}->${items[0][field]}` : null;
   const last3 = items.length > 2 ? `${items[2][field]}->${items[1][field]}->${items[0][field]}` : null;
 
-  const analysis = analyzeFieldPatterns(historyList, field);
+  const analysis = analyzeFieldPatterns(activeList, field);
   const streak = analysis.currentStreak;
 
   const countAInChron = chronological.filter(c => c === valA).length;

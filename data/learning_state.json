@@ -11,64 +11,15 @@
     "bayesianTrans": 0.5,
     "omissionRev": 0.5,
     "fourierCycle": 0,
-    "learningRounds": 79,
+    "learningRounds": 9,
     "winScore": 0,
     "lossScore": 0,
     "accuracyHistory": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
       0
     ],
     "recentAccuracy": 0,
-    "lastTrainedIssue": "20261124100051374",
-    "dailyRoundsTrained": 79,
+    "lastTrainedIssue": "20261124100051413",
+    "dailyRoundsTrained": 9,
     "trainedDate": "2026-11-24",
     "modelStats": {
       "crowdLiquidity": {
@@ -116,7 +67,7 @@
         "total": 0
       }
     },
-    "lastUpdated": 1795519622821
+    "lastUpdated": 1795520790027
   },
   "matrix": [
     [
@@ -240,6 +191,6 @@
       1
     ]
   ],
-  "lastUpdated": 1795519622821,
+  "lastUpdated": 1795520795131,
   "dateStr": "2026-11-24"
 }

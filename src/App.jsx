@@ -53,7 +53,16 @@ function getInitialHistory() {
     const raw = localStorage.getItem(STORAGE_ACCUM_HISTORY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length >= 20) return parsed;
+      if (Array.isArray(parsed) && parsed.length >= 20) {
+        // Discard stale cached history if seed data is newer
+        if (INITIAL_SEED_HISTORY && INITIAL_SEED_HISTORY.length > 0) {
+          const seedLatest = BigInt(INITIAL_SEED_HISTORY[0].issueNumber);
+          const cachedLatest = BigInt(parsed[0].issueNumber);
+          if (cachedLatest >= seedLatest) {
+            return parsed;
+          }
+        }
+      }
     }
   } catch {}
   return INITIAL_SEED_HISTORY || [];
@@ -164,7 +173,7 @@ export default function App() {
           prevIssueRef.current = latestDraw.issueNumber;
         }
 
-        // Merge and accumulate deep history (up to 10,000 rounds for multi-day statistical learning)
+        // Merge and accumulate deep history, strictly sorted descending
         setHistoryList(prev => {
           const combined = [...historyRes.list];
           const seen = new Set(historyRes.list.map(x => x.issueNumber));
@@ -173,21 +182,50 @@ export default function App() {
               combined.push(item);
               seen.add(item.issueNumber);
             }
-            if (combined.length >= 10000) break;
+            if (combined.length >= 1000) break;
           }
 
-          // 24/7 Continuous Self-Training Catch-Up (Offline/Missed Rounds Experience Replay on accumulated history)
+          // Sort strictly newest first
+          combined.sort((a, b) => {
+            try {
+              const aBig = BigInt(a.issueNumber);
+              const bBig = BigInt(b.issueNumber);
+              return aBig > bBig ? -1 : (aBig < bBig ? 1 : 0);
+            } catch {
+              return b.issueNumber.localeCompare(a.issueNumber);
+            }
+          });
+
+          // Extract unbroken contiguous draws from newest to oldest
+          const contiguous = [combined[0]];
+          for (let i = 1; i < combined.length; i++) {
+            try {
+              const prevIss = BigInt(combined[i - 1].issueNumber);
+              const currIss = BigInt(combined[i].issueNumber);
+              if (prevIss - currIss === 1n) {
+                contiguous.push(combined[i]);
+              } else {
+                break; // Stop at first gap to preserve Markov chain integrity
+              }
+            } catch {
+              break;
+            }
+          }
+
+          const activeCleanList = contiguous.length >= 10 ? contiguous : combined;
+
+          // 24/7 Continuous Self-Training Catch-Up (Offline/Missed Rounds Experience Replay on clean contiguous history)
           try {
-            const freshWeights = replayUntrainedHistory(combined, predictionModeRef.current, targetTypeRef.current);
+            const freshWeights = replayUntrainedHistory(activeCleanList, predictionModeRef.current, targetTypeRef.current);
             setLearnedWeights({ ...freshWeights });
           } catch (e) {
             console.warn('Continuous self-training replay error:', e);
           }
 
           try {
-            localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(combined.slice(0, 200)));
+            localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(activeCleanList.slice(0, 200)));
           } catch {}
-          return combined;
+          return activeCleanList;
         });
       }
     } catch (err) {
@@ -294,10 +332,10 @@ export default function App() {
     return () => clearInterval(interval);
   }, [loadData]);
 
-  // On startup: populate deep historical memory from verified server storage (up to 10,000 rounds)
+  // On startup: populate deep historical memory from verified server storage
   useEffect(() => {
     let isMounted = true;
-    fetchFullDayServerHistory(5000).then(res => {
+    fetchFullDayServerHistory(500).then(res => {
       if (!isMounted || !res.success || !res.list || res.list.length === 0) return;
       setHistoryList(prev => {
         const combined = [...prev];
@@ -307,12 +345,42 @@ export default function App() {
             combined.push(item);
             seen.add(item.issueNumber);
           }
-          if (combined.length >= 10000) break;
+          if (combined.length >= 1000) break;
         }
+
+        // Sort strictly newest first
+        combined.sort((a, b) => {
+          try {
+            const aBig = BigInt(a.issueNumber);
+            const bBig = BigInt(b.issueNumber);
+            return aBig > bBig ? -1 : (aBig < bBig ? 1 : 0);
+          } catch {
+            return b.issueNumber.localeCompare(a.issueNumber);
+          }
+        });
+
+        // Extract unbroken contiguous draws from newest to oldest
+        const contiguous = [combined[0]];
+        for (let i = 1; i < combined.length; i++) {
+          try {
+            const prevIss = BigInt(combined[i - 1].issueNumber);
+            const currIss = BigInt(combined[i].issueNumber);
+            if (prevIss - currIss === 1n) {
+              contiguous.push(combined[i]);
+            } else {
+              break;
+            }
+          } catch {
+            break;
+          }
+        }
+
+        const activeCleanList = contiguous.length >= 10 ? contiguous : combined;
+
         try {
-          localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(combined.slice(0, 5000)));
+          localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(activeCleanList.slice(0, 200)));
         } catch {}
-        return combined;
+        return activeCleanList;
       });
     }).catch(() => {});
     return () => { isMounted = false; };
