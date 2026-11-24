@@ -37,3 +37,4 @@ export const INITIAL_SEED_HISTORY = ${JSON.stringify(formatted, null, 2)};
 }
 
 updateSeedHistory().catch(console.error);
+

@@ -9,3 +9,4 @@ async function checkLatest() {
 }
 
 checkLatest().catch(console.error);
+
