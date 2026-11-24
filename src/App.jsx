@@ -78,7 +78,7 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
 
-  const [predictionMode, setPredictionMode] = useState('sniper'); // 'sniper' (High Confluence Edge - avoids 50/50 chop traps)
+  const [predictionMode, setPredictionMode] = useState('all'); // 'all' (Continuous prediction on every round without skips)
   const [targetType, setTargetType] = useState('bigSmall'); // 'bigSmall' (default) or 'oddEven'
   const [learnedWeights, setLearnedWeights] = useState(getLearnedWeights());
 

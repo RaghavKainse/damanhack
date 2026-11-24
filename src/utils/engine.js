@@ -1741,8 +1741,8 @@ export function evaluateHistoryPerformance(list, mode = 'ultra_sniper', targetTy
   let maxWinStreak = 0;
   let goldenBasketHits = 0;
 
-  // Rolling performance window: 35 draws provides responsive real-time metrics with zero browser lag
-  const testWindow = Math.min(list.length - 1, 35);
+  // Rolling performance window: 100 draws provides deep, transparent audit history with sub-half-second execution
+  const testWindow = Math.min(list.length - 1, 100);
 
   for (let i = testWindow - 1; i >= 0; i--) {
     const pastData = list.slice(i + 1);

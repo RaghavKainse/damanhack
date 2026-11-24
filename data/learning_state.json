@@ -11,15 +11,21 @@
     "decisionTree": 0,
     "crowdLiquidity": 0,
     "fourierCycle": 0,
-    "learningRounds": 1,
+    "learningRounds": 9,
     "winScore": 0,
     "lossScore": 0,
     "accuracyHistory": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       0
     ],
     "recentAccuracy": 0,
-    "lastTrainedIssue": "20261124100051431",
-    "dailyRoundsTrained": 1,
+    "lastTrainedIssue": "20261124100051456",
+    "dailyRoundsTrained": 9,
     "trainedDate": "2026-11-24",
     "modelStats": {
       "crowdLiquidity": {
@@ -67,7 +73,7 @@
         "total": 0
       }
     },
-    "lastUpdated": 1795521331344
+    "lastUpdated": 1795522082623
   },
   "matrix": [
     [
@@ -191,6 +197,6 @@
       1
     ]
   ],
-  "lastUpdated": 1795521331344,
+  "lastUpdated": 1795522083663,
   "dateStr": "2026-11-24"
 }

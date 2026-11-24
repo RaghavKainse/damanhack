@@ -1,7 +1,43 @@
 {
-  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei-rollback-phzz-rollback-0v1m-rollback-181a",
-  "lastPromotionTimestamp": 1795521318376,
+  "activeVersion": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei-rollback-phzz-rollback-0v1m-rollback-181a-rollback-gh44-rollback-hauf",
+  "lastPromotionTimestamp": 1795522068511,
   "history": [
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei-rollback-phzz-rollback-0v1m-rollback-181a-rollback-gh44-rollback-hauf",
+      "promotedAt": 1795522068519,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei-rollback-phzz-rollback-0v1m-rollback-181a-rollback-gh44"
+    },
+    {
+      "version": "v2.4.test-mwunhau5",
+      "promotedAt": 1795522068509,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei-rollback-phzz-rollback-0v1m-rollback-181a-rollback-gh44",
+      "promotedAt": 1795522029988,
+      "model": "CalibratedBaseline",
+      "brierScore": 0.2488,
+      "accuracy100": 54,
+      "status": "ROLLBACK_ACTIVE",
+      "reason": "Simulated test rollback",
+      "restoredFrom": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei-rollback-phzz-rollback-0v1m-rollback-181a"
+    },
+    {
+      "version": "v2.4.test-mwungh3s",
+      "promotedAt": 1795522029976,
+      "model": "CandidateTestModel",
+      "brierScore": 0.245,
+      "accuracy100": 56,
+      "status": "ACTIVE_PRODUCTION"
+    },
     {
       "version": "v2.4.0-calibrated-rollback-eg09-rollback-f688-rollback-gypv-rollback-tt8c-rollback-uzb5-rollback-0b0w-rollback-78ze-rollback-nvxf-rollback-ttwa-rollback-0xhu-rollback-w98y-rollback-buxm-rollback-gl43-rollback-hoa6-rollback-xopp-rollback-z3rp-rollback-um9p-rollback-wshs-rollback-topk-rollback-nv04-rollback-ojti-rollback-piab-rollback-u706-rollback-38ka-rollback-tv4b-rollback-6h8g-rollback-dpj3-rollback-kslt-rollback-p6nj-rollback-r755-rollback-6g1b-rollback-k9tq-rollback-6s5v-rollback-euts-rollback-lenm-rollback-3qjb-rollback-qxg3-rollback-tp81-rollback-zn99-rollback-9tg9-rollback-c3ql-rollback-eaco-rollback-h406-rollback-hnbq-rollback-86rs-rollback-9r5c-rollback-lxem-rollback-nvau-rollback-0yei-rollback-phzz-rollback-0v1m-rollback-181a",
       "promotedAt": 1795521318382,

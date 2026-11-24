@@ -6,10 +6,18 @@ function HistoryTable({ historyLogs, language }) {
   const isHi = language === 'hi';
   const [filterType, setFilterType] = useState('ALL'); // 'ALL', 'WINS', 'LOSSES', 'ODD', 'EVEN'
   const [searchQuery, setSearchQuery] = useState('');
+  const [pageSize, setPageSize] = useState(30);
 
   if (!historyLogs || historyLogs.length === 0) {
     return null;
   }
+
+  // Calculate live summary stats across all audited rounds (Never hiding losses!)
+  const totalAudited = historyLogs.length;
+  const totalWins = historyLogs.filter(l => l.isWin === true).length;
+  const totalLosses = historyLogs.filter(l => l.isWin === false && l.action !== 'NO_CLEAR_SIGNAL' && l.action !== 'SKIP').length;
+  const decidedRounds = totalWins + totalLosses;
+  const actualAccuracy = decidedRounds > 0 ? Math.round((totalWins / decidedRounds) * 1000) / 10 : 50.0;
 
   // Filter logs
   const filtered = historyLogs.filter(log => {
@@ -27,6 +35,8 @@ function HistoryTable({ historyLogs, language }) {
     if (filterType === 'EVEN') return log.actualOddEven === 'EVEN';
     return true;
   });
+
+  const displayedLogs = pageSize === 'ALL' ? filtered : filtered.slice(0, Number(pageSize));
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -115,40 +125,130 @@ function HistoryTable({ historyLogs, language }) {
         </div>
       </div>
 
+      {/* 📊 Live Transparency & Accuracy Banner */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '10px',
+        padding: '10px 14px',
+        background: 'rgba(0, 0, 0, 0.45)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '12px',
+        marginBottom: '14px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{
+            background: 'rgba(0, 245, 155, 0.15)',
+            color: 'var(--neon-green)',
+            border: '1px solid rgba(0, 245, 155, 0.35)',
+            padding: '4px 10px',
+            borderRadius: '8px',
+            fontSize: '0.76rem',
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}>
+            <CheckCircle size={14} /> {isHi ? `कुल जीतें: ${totalWins}` : `Wins: ${totalWins}`}
+          </span>
+
+          <span style={{
+            background: 'rgba(255, 51, 102, 0.15)',
+            color: 'var(--neon-red)',
+            border: '1px solid rgba(255, 51, 102, 0.35)',
+            padding: '4px 10px',
+            borderRadius: '8px',
+            fontSize: '0.76rem',
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}>
+            <XCircle size={14} /> {isHi ? `कुल हारें: ${totalLosses}` : `Losses: ${totalLosses}`}
+          </span>
+
+          <span style={{
+            background: 'rgba(0, 242, 254, 0.15)',
+            color: 'var(--neon-cyan)',
+            border: '1px solid rgba(0, 242, 254, 0.35)',
+            padding: '4px 10px',
+            borderRadius: '8px',
+            fontSize: '0.76rem',
+            fontWeight: 800
+          }}>
+            {isHi ? `वास्तविक सटीकता: ${actualAccuracy}%` : `Actual Win Rate: ${actualAccuracy}%`} ({totalAudited} {isHi ? 'ऑडिटेड राउंड्स' : 'Draws'})
+          </span>
+        </div>
+
+        <div style={{ fontSize: '0.72rem', color: '#ffb703', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span>💯 {isHi ? '100% पारदर्शी लाइव ऑडिट (हार कभी छिपाई नहीं जाती)' : '100% Transparent Live Audit (Never Hiding Losses)'}</span>
+        </div>
+      </div>
+
       {/* Filter Badges Bar */}
       <div style={{
         display: 'flex',
-        gap: '6px',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '8px',
         marginBottom: '14px',
-        overflowX: 'auto',
         paddingBottom: '4px'
       }}>
-        {[
-          { id: 'ALL', label: isHi ? 'सभी' : 'All Draws' },
-          { id: 'WINS', label: isHi ? 'सटीक जीत (WINS)' : 'Wins Only' },
-          { id: 'BIG', label: isHi ? 'केवल बड़ा (BIG 5-9)' : 'Big Only' },
-          { id: 'SMALL', label: isHi ? 'केवल छोटा (SMALL 0-4)' : 'Small Only' },
-          { id: 'ODD', label: isHi ? 'विषम (ODD)' : 'Odd Only' },
-          { id: 'EVEN', label: isHi ? 'सम (EVEN)' : 'Even Only' }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setFilterType(tab.id)}
-            style={{
-              background: filterType === tab.id ? 'rgba(0, 242, 254, 0.18)' : 'rgba(255, 255, 255, 0.04)',
-              color: filterType === tab.id ? 'var(--neon-cyan)' : '#94a3b8',
-              border: filterType === tab.id ? '1px solid rgba(0, 242, 254, 0.4)' : '1px solid var(--border-subtle)',
-              padding: '4px 12px',
-              borderRadius: '9999px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', flexWrap: 'wrap' }}>
+          {[
+            { id: 'ALL', label: isHi ? 'सभी' : 'All Draws' },
+            { id: 'WINS', label: isHi ? 'सटीक जीत (WINS)' : 'Wins Only' },
+            { id: 'LOSSES', label: isHi ? 'हार (LOSSES)' : 'Losses Only' },
+            { id: 'BIG', label: isHi ? 'केवल बड़ा (BIG 5-9)' : 'Big Only' },
+            { id: 'SMALL', label: isHi ? 'केवल छोटा (SMALL 0-4)' : 'Small Only' },
+            { id: 'ODD', label: isHi ? 'विषम (ODD)' : 'Odd Only' },
+            { id: 'EVEN', label: isHi ? 'सम (EVEN)' : 'Even Only' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setFilterType(tab.id)}
+              style={{
+                background: filterType === tab.id ? 'rgba(0, 242, 254, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                color: filterType === tab.id ? 'var(--neon-cyan)' : '#94a3b8',
+                border: filterType === tab.id ? '1px solid rgba(0, 242, 254, 0.4)' : '1px solid var(--border-subtle)',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Page Size Selector */}
+        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.72rem', color: '#64748b', marginRight: '4px' }}>{isHi ? 'दिखाएं:' : 'Show:'}</span>
+          {[30, 60, 100, 'ALL'].map(ps => (
+            <button
+              key={ps}
+              onClick={() => setPageSize(ps)}
+              style={{
+                background: pageSize === ps ? 'rgba(0, 245, 155, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                color: pageSize === ps ? 'var(--neon-green)' : '#94a3b8',
+                border: pageSize === ps ? '1px solid rgba(0, 245, 155, 0.4)' : '1px solid var(--border-subtle)',
+                padding: '3px 8px',
+                borderRadius: '6px',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {ps === 'ALL' ? (isHi ? 'सभी' : 'All') : `${ps}`}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Table Container */}
@@ -177,7 +277,7 @@ function HistoryTable({ historyLogs, language }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.slice(0, 30).map((log, index) => {
+            {displayedLogs.map((log, index) => {
               const isOdd = log.actualOddEven === 'ODD';
               const num = parseInt(log.number, 10);
               const isMixed = num === 0 || num === 5;
@@ -320,6 +420,18 @@ function HistoryTable({ historyLogs, language }) {
             })}
           </tbody>
         </table>
+
+        {filtered.length > displayedLogs.length && (
+          <div style={{ textAlign: 'center', marginTop: '14px' }}>
+            <button
+              onClick={() => setPageSize(prev => typeof prev === 'number' ? prev + 30 : prev)}
+              className="btn-secondary"
+              style={{ padding: '6px 18px', fontSize: '0.8rem' }}
+            >
+              {isHi ? `और राउंड्स लोड करें (30 और दिखाएं) - कुल ${filtered.length}` : `Load More Rounds (+30) - ${filtered.length} total`}
+            </button>
+          </div>
+        )}
 
         {filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>

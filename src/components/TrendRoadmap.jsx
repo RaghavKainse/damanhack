@@ -42,8 +42,20 @@ function TrendRoadmap({ historyList, language, targetType = 'bigSmall' }) {
     bigRoadColumns.push(currentCol);
   }
 
-  // Hot & Cold Number Frequency over sample
+  // Hot & Cold Number Frequency & Omission Gaps over sample
   const numberCounts = Array(10).fill(0);
+  const omissions = Array(10).fill(historyList.length);
+
+  for (let d = 0; d < 10; d++) {
+    for (let i = 0; i < historyList.length; i++) {
+      const n = parseInt(historyList[i].number, 10);
+      if (n === d) {
+        omissions[d] = i;
+        break;
+      }
+    }
+  }
+
   historyList.forEach(item => {
     const n = parseInt(item.number, 10);
     if (!isNaN(n) && n >= 0 && n <= 9) {
@@ -290,6 +302,10 @@ function TrendRoadmap({ historyList, language, targetType = 'bigSmall' }) {
 
                   <div className="font-mono" style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f8fafc' }}>
                     {count} <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>hits</span>
+                  </div>
+
+                  <div style={{ fontSize: '0.68rem', color: omissions[num] >= 12 ? 'var(--neon-gold)' : '#94a3b8', marginTop: '2px', fontWeight: omissions[num] >= 12 ? 800 : 600 }}>
+                    {isHi ? `गैप: ${omissions[num]}` : `Gap: ${omissions[num]}`}
                   </div>
 
                   <div style={{ marginTop: '4px' }}>

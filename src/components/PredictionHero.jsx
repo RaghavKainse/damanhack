@@ -271,10 +271,10 @@ function PredictionHero({
           </button>
         </div>
 
-        {/* Right: Round ID & Status Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="font-mono glow-text-cyan" style={{ fontSize: '0.95rem', fontWeight: 800 }}>
-            #{targetPeriod ? targetPeriod.slice(-4) : '---'}
+        {/* Right: Full Round ID & Status Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span className="font-mono glow-text-cyan" style={{ fontSize: '0.88rem', fontWeight: 800 }}>
+            Period #{targetPeriod || '---'}
           </span>
 
           <span style={{

@@ -74,3 +74,4 @@ async function analyzeRegimesToday() {
 }
 
 analyzeRegimesToday().catch(console.error);
+
