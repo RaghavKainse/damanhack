@@ -73,7 +73,7 @@ async function runEngineBenchmark() {
     console.log(`-------------------|--------|----------|---------|-----------|--------|---------|-------|---------------`);
 
     for (const m of evalModels) {
-      const s = store[m];
+      const s = store[m]; 
       const n = s.total;
       if (n === 0) {
         console.log(`${m.padEnd(18)} |   0    |    N/A   |   N/A   |    N/A    |   N/A  |   N/A   | ${String(s.skips).padStart(5)} |      N/A      `);

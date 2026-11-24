@@ -339,7 +339,10 @@ export function modelRegularizedLogisticML(historyList, field = 'bigSmall') {
     return { model: 'RegularizedLogisticML', probA: 0.5, probB: 0.5, choice: valA, confidence: 50.0 };
   }
 
-  const chron = [...historyList].reverse();
+  const rawChron = [...historyList].reverse();
+  // Bound training window to the most recent 80 draws for peak recency & zero lag
+  const maxTrain = 80;
+  const chron = rawChron.length > maxTrain ? rawChron.slice(-maxTrain) : rawChron;
   const N = chron.length;
 
   const X = [];
@@ -373,7 +376,7 @@ export function modelRegularizedLogisticML(historyList, field = 'bigSmall') {
   const weights = Array(numFeatures).fill(0);
   const lr = 0.05;
   const l2 = 0.01;
-  const epochs = 10;
+  const epochs = 5;
 
   for (let ep = 0; ep < epochs; ep++) {
     for (let i = 0; i < X.length; i++) {
@@ -409,7 +412,7 @@ export function modelRegularizedLogisticML(historyList, field = 'bigSmall') {
   let curZ = 0;
   for (let j = 0; j < numFeatures; j++) curZ += weights[j] * curX[j];
   const predProbA = 1 / (1 + Math.exp(-Math.max(-10, Math.min(10, curZ))));
-  const boundedP = Math.max(0.10, Math.min(0.90, predProbA));
+  const boundedP = Math.max(0.40, Math.min(0.60, predProbA));
   const probB = 1 - boundedP;
   const choice = boundedP >= 0.5 ? valA : valB;
   const confidence = Math.round(Math.max(boundedP, probB) * 1000) / 10;
@@ -1207,7 +1210,7 @@ export function modelPoissonWaitingTimes(historyList, field = 'bigSmall') {
     probA += hazardFactor; // As current run of B extends, slight mean reversion pull toward A
   }
 
-  probA = Math.max(0.38, Math.min(0.62, probA));
+  probA = Math.max(0.44, Math.min(0.56, probA));
   const probB = 1 - probA;
   const choice = probA >= 0.50 ? valA : valB;
   const confidence = Math.round(Math.max(probA, probB) * 1000) / 10;

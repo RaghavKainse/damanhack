@@ -1,17 +1,17 @@
 {
   "weights": {
     "crowdLiquidity": 0,
-    "markov2": 1.45,
-    "dragonTrend": 1.35,
-    "bayesianTrans": 1.4,
-    "nGram": 1.15,
-    "omissionRev": 1.1,
-    "clusterParity": 1.25,
-    "logisticML": 1.35,
-    "decisionTree": 1.3,
-    "poissonWait": 1.2,
+    "decisionTree": 1.85,
+    "markov2": 1.8,
+    "nGram": 1.6,
+    "logisticML": 1.4,
+    "dragonTrend": 1.2,
+    "poissonWait": 0.8,
+    "clusterParity": 0.6,
+    "bayesianTrans": 0.5,
+    "omissionRev": 0.5,
     "fourierCycle": 0,
-    "learningRounds": 113,
+    "learningRounds": 79,
     "winScore": 0,
     "lossScore": 0,
     "accuracyHistory": [
@@ -67,9 +67,9 @@
       0
     ],
     "recentAccuracy": 0,
-    "lastTrainedIssue": "20261119100052015",
-    "dailyRoundsTrained": 113,
-    "trainedDate": "2026-11-19",
+    "lastTrainedIssue": "20261124100051374",
+    "dailyRoundsTrained": 79,
+    "trainedDate": "2026-11-24",
     "modelStats": {
       "crowdLiquidity": {
         "wins": 0,
@@ -116,7 +116,7 @@
         "total": 0
       }
     },
-    "lastUpdated": 1795106856474
+    "lastUpdated": 1795519622821
   },
   "matrix": [
     [
@@ -240,6 +240,6 @@
       1
     ]
   ],
-  "lastUpdated": 1795106856474,
-  "dateStr": "2026-11-19"
+  "lastUpdated": 1795519622821,
+  "dateStr": "2026-11-24"
 }

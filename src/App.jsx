@@ -69,7 +69,7 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
 
-  const [predictionMode, setPredictionMode] = useState('all'); // 'all' (Predict Every Round without skips)
+  const [predictionMode, setPredictionMode] = useState('sniper'); // 'sniper' (High Confluence Edge - avoids 50/50 chop traps)
   const [targetType, setTargetType] = useState('bigSmall'); // 'bigSmall' (default) or 'oddEven'
   const [learnedWeights, setLearnedWeights] = useState(getLearnedWeights());
 
@@ -185,7 +185,7 @@ export default function App() {
           }
 
           try {
-            localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(combined.slice(0, 5000)));
+            localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(combined.slice(0, 200)));
           } catch {}
           return combined;
         });
@@ -216,12 +216,8 @@ export default function App() {
     // 2. Continuous local data persistence: append confirmed result to local historical memory
     setHistoryList(currentHistory => {
       const merged = [newDraw, ...currentHistory.filter(h => h.issueNumber !== newDraw.issueNumber)].slice(0, 10000);
-      const nextPred = generatePrediction(merged, currentMode, currentTarget, freshWeights);
-      setPrediction(nextPred);
-      const nextPerf = evaluateHistoryPerformance(merged, currentMode, currentTarget, freshWeights);
-      setPerformance(nextPerf);
       try {
-        localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(merged.slice(0, 5000)));
+        localStorage.setItem(STORAGE_ACCUM_HISTORY, JSON.stringify(merged.slice(0, 200)));
       } catch {}
       return merged;
     });
@@ -240,7 +236,8 @@ export default function App() {
           origin: { y: 0.6 }
         });
       } else {
-        setLossStreak(prev => prev + 1);
+        // Strict 3-step sequence risk bounding: hard reset on step 3 to prevent runaway Martingale drawdowns
+        setLossStreak(prev => (prev >= 2 ? 0 : prev + 1));
         soundManager.playWarning();
       }
     }
